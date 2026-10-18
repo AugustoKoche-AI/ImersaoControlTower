@@ -201,8 +201,8 @@ completa e reconstrução em 18/10 reproduziram os 15 números da verificação)
 | `Function ... is not empty` ao apagar o modelo | versão órfã de um registro que falhou | o `99-limpar` apaga as versões antes |
 | `bundle deploy`: *dashboard has been modified remotely* | alguém editou o dashboard da noite 2 na tela | traga a edição para o JSON ou, se puder perder, `--force` (decisão de quem é dono do dashboard) |
 
-**Tempos medidos:** features ~8 s · modelo ~55 s · score ~45 s (+ ~1 min de
-partida do serverless na primeira tarefa).
+**Tempos medidos:** features ~8 s · modelo ~55 s · score ~45 s · job completo
+com as 8 tarefas **5 min 45 s**.
 
 ---
 

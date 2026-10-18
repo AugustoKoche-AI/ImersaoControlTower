@@ -94,4 +94,4 @@ FROM lakehouse_atlas.gold.score_estouro_30d ORDER BY ranking LIMIT 15;
 | 40 linhas em vez de 36 | faltou filtrar `status = 'em_andamento'` | join com `silver.projetos` |
 | a noite 4 não acha a coluna | nome ou tipo mudou | o contrato acima é fixo: `CAST` explícito na escrita |
 
-**Tempo medido:** ~45 s de notebook. Job completo com as 8 tarefas: estimado em ~8 min (5 min 40 s da noite 2 + ~2 min da noite 3; não medido de ponta a ponta porque o deploy do bundle ficou bloqueado, ver APRENDIZADOS).
+**Tempo medido:** ~45 s de notebook. Job completo com as 8 tarefas: **5 min 45 s** (medido em 18/10).
