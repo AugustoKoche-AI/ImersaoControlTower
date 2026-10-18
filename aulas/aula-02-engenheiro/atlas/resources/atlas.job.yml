@@ -8,6 +8,7 @@
 #   prompt 3  + (o mesmo pipeline ganha a gold) + testes_de_qualidade
 #   prompt 4  + rdo_com_ia
 #   prompt 5  + metricas_governadas
+#   noite 3   + ml_features → ml_modelo → ml_score
 #
 # A ordem não é sugestão: cada camada lê a anterior. Se a conferência da bronze
 # falhar, nada roda — e é isso que impede o dashboard de mostrar meio dado com
@@ -63,3 +64,28 @@ resources:
             warehouse_id: ${var.warehouse_id}
             file:
               path: ../src/metricas/metricas.sql
+
+        # ── noite 3 · ML é mais uma camada do mesmo pipeline ─────────
+        # 6. as features: uma linha por obra e semana, só olhando para trás
+        - task_key: ml_features
+          depends_on: [{ task_key: metricas_governadas }]
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/ml/01-features.sql
+
+        # 7. o modelo: baseline, treino, testes, MLflow e Unity Catalog (@prod)
+        - task_key: ml_modelo
+          depends_on: [{ task_key: ml_features }]
+          notebook_task:
+            notebook_path: ../src/ml/02-modelo.py
+            base_parameters:
+              catalog: ${var.catalog}
+
+        # 8. o score de hoje: a lista que a diretoria abre na segunda
+        - task_key: ml_score
+          depends_on: [{ task_key: ml_modelo }]
+          notebook_task:
+            notebook_path: ../src/ml/03-score.py
+            base_parameters:
+              catalog: ${var.catalog}
