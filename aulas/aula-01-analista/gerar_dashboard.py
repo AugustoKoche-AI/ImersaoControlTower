@@ -17,47 +17,51 @@ import subprocess
 
 AQUI = pathlib.Path(__file__).resolve().parent
 SAIDA = AQUI / "dashboard-bronze.lvdash.json"
-NOME = "Torre de Controle · Noite 1 (bronze)"
+NOME = "Projeto Farol · Noite 1 (bronze)"
 
-SQL_OBRAS = """-- Tudo na bronze é texto: todo acesso começa com CAST, replace e coalesce de data.
+SQL_PROJETOS = """-- Tudo na bronze é texto e cada ferramenta tem seu formato: este painel lê o
+-- rascunho_tarefas (exemplo 05), que empilha Excel, ClickUp e MS Project à mão.
 -- É o imposto que a camada silver vai eliminar na noite 2.
-WITH t AS (
-  SELECT projeto_id,
-         CAST(valor_planejado AS DECIMAL(18,2)) AS vp,
-         LEAST(CAST(pct_concluido AS DOUBLE), 100) / 100 AS pct,
-         GREATEST(0, LEAST(1, datediff(DATE'2026-10-16', CAST(inicio_baseline AS DATE))
-                  / datediff(CAST(fim_baseline AS DATE), CAST(inicio_baseline AS DATE)))) AS pct_plan
-  FROM tarefas
+WITH v AS (
+  SELECT projeto_id, max(ferramenta) AS ferramenta,
+         SUM(horas) AS horas_totais,
+         SUM(horas * pct_concluido / 100) AS horas_agregadas,
+         SUM(horas * GREATEST(0, LEAST(1, datediff(DATE'2026-10-16', inicio_baseline)
+                  / datediff(fim_baseline, inicio_baseline)))) AS horas_planejadas
+  FROM rascunho_tarefas
+  GROUP BY projeto_id
 ),
-v AS (SELECT projeto_id, SUM(vp * pct_plan) AS pv, SUM(vp * pct) AS ev FROM t GROUP BY projeto_id),
-c AS (SELECT projeto_id, SUM(CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2))) AS ac FROM custos GROUP BY projeto_id),
+c AS (SELECT projeto_id, SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) AS ac FROM custos GROUP BY projeto_id),
+f AS (SELECT projeto_id, lower(farol) AS farol FROM status_semanal WHERE data_status = '2026-10-16'),
 o AS (
-  SELECT p.projeto_id, concat(p.projeto_id, ' · ', p.nome_projeto) AS obra, p.cliente, p.setor,
-         upper(trim(p.uf)) AS uf,
+  SELECT p.projeto_id, concat(p.projeto_id, ' · ', p.nome_projeto) AS projeto, p.cliente, p.segmento,
+         v.ferramenta, f.farol,
          CAST(p.valor_contrato AS DECIMAL(18,2)) AS valor_contrato,
          CAST(p.orcamento_custo AS DECIMAL(18,2)) AS orcamento,
          datediff(CAST(p.data_fim_baseline AS DATE),
                   coalesce(try_to_date(p.data_inicio, 'yyyy-MM-dd'), try_to_date(p.data_inicio, 'dd/MM/yyyy'))) AS duracao,
-         v.pv, v.ev, c.ac
-  FROM projetos p JOIN v USING (projeto_id) JOIN c USING (projeto_id)
+         v.horas_agregadas / v.horas_planejadas AS spi,
+         CAST(p.orcamento_custo AS DECIMAL(18,2)) * v.horas_agregadas / v.horas_totais / c.ac AS cpi
+  FROM projetos p JOIN v USING (projeto_id) JOIN c USING (projeto_id) LEFT JOIN f USING (projeto_id)
   WHERE p.status = 'em_andamento'
 )
-SELECT projeto_id, obra, cliente, setor, uf, valor_contrato, orcamento,
-       ROUND(ev / pv, 2) AS spi,
-       ROUND(ev / ac, 2) AS cpi,
-       CASE WHEN ev / pv < 0.8 OR ev / ac < 0.8 THEN 'crítico'
-            WHEN ev / pv < 0.9 OR ev / ac < 0.9 THEN 'atenção' ELSE 'ok' END AS situacao,
-       CASE WHEN ev / pv < 0.8 OR ev / ac < 0.8 THEN 1 ELSE 0 END AS critica,
-       CASE WHEN ev / pv < 0.9 OR ev / ac < 0.9 THEN 1 ELSE 0 END AS em_risco,
-       GREATEST(0, orcamento / (ev / ac) - orcamento) AS estouro_previsto,
-       (valor_contrato - orcamento / (ev / ac)) / valor_contrato AS margem_projetada,
-       ROUND(duracao / (ev / pv) - duracao) AS atraso_projetado_dias
+SELECT projeto_id, projeto, cliente, segmento, ferramenta, farol, valor_contrato, orcamento,
+       ROUND(spi, 2) AS spi,
+       ROUND(cpi, 2) AS cpi,
+       CASE WHEN LEAST(spi, cpi) < 0.8 THEN 'crítico'
+            WHEN LEAST(spi, cpi) < 0.9 THEN 'atenção' ELSE 'ok' END AS situacao,
+       CASE WHEN LEAST(spi, cpi) < 0.8 THEN 1 ELSE 0 END AS critico,
+       CASE WHEN LEAST(spi, cpi) < 0.9 THEN 1 ELSE 0 END AS em_risco,
+       CASE WHEN farol = 'verde' AND spi < 0.9 THEN 1 ELSE 0 END AS melancia,
+       GREATEST(0, orcamento / cpi - orcamento) AS estouro_previsto,
+       (valor_contrato - orcamento / cpi) / valor_contrato AS margem_projetada,
+       ROUND(duracao / spi - duracao) AS atraso_projetado_dias
 FROM o
-ORDER BY LEAST(ev / pv, ev / ac)"""
+ORDER BY LEAST(spi, cpi)"""
 
 SQL_CUSTOS = """SELECT date_trunc('MONTH', CAST(data AS DATE)) AS mes,
        categoria,
-       CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2)) AS valor
+       CAST(replace(valor, ',', '.') AS DECIMAL(18,2)) AS valor
 FROM custos"""
 
 
@@ -89,44 +93,47 @@ BRL_KPI = {"type": "number-currency", "currencyCode": "BRL", "abbreviation": "co
 
 
 def contador(nome, campo, expr, titulo, fmt, pos):
-    return widget(nome, "ds_obras", [(campo, expr)],
+    return widget(nome, "ds_projetos", [(campo, expr)],
                   {"version": 2, "widgetType": "counter",
                    "encodings": {"value": {"fieldName": campo, "displayName": titulo, "format": fmt}},
                    "frame": {"showTitle": True, "title": titulo}}, pos)
 
 
 def montar() -> dict:
+    cor_situacao = {"type": "categorical", "mappings": [
+        {"value": "crítico", "color": "#FF5F46"}, {"value": "atenção", "color": "#F6C344"},
+        {"value": "ok", "color": "#22C2F4"}]}
     layout = [
-        texto("titulo", "# Torre de Controle · Construtora Atlas Engenharia\n\n"
-              "**Quais obras estão atrasadas e quanto isso custa?** Tudo aqui lê a camada **bronze**, "
-              "o dado como veio dos sistemas. Repare no SQL dos datasets: `CAST`, `replace` e `try_to_date` "
-              "em toda coluna. Hoje do dataset: 16/10/2026.", (0, 0, 12, 3)),
+        texto("titulo", "# Projeto Farol · Torre de Controle da Vértice Tecnologia\n\n"
+              "**Quais projetos estão mais atrasados e quanto isso custa?** Primeira versão, feita na noite 1: "
+              "lê a camada **bronze**, com as tarefas do Excel, do ClickUp e do MS Project empilhadas à mão. "
+              "Repare no SQL dos datasets: `CAST`, `replace` e `try_to_date` em toda coluna. Hoje do dataset: 16/10/2026.",
+              (0, 0, 12, 3)),
         contador("kpi-carteira", "sum(valor_contrato)", "SUM(`valor_contrato`)", "Carteira em andamento", BRL_KPI, (0, 3, 3, 4)),
-        contador("kpi-risco", "sum(em_risco)", "SUM(`em_risco`)", "Obras com SPI ou CPI < 0,9",
+        contador("kpi-risco", "sum(em_risco)", "SUM(`em_risco`)", "Projetos com SPI ou CPI < 0,9",
                  {"type": "number-plain"}, (3, 3, 3, 4)),
-        contador("kpi-criticas", "sum(critica)", "SUM(`critica`)", "Obras críticas (< 0,8)",
+        contador("kpi-criticos", "sum(critico)", "SUM(`critico`)", "Projetos críticos (< 0,8)",
                  {"type": "number-plain"}, (6, 3, 3, 4)),
-        contador("kpi-estouro", "sum(estouro_previsto)", "SUM(`estouro_previsto`)", "Estouro previsto (EAC − orçamento)",
-                 BRL_KPI, (9, 3, 3, 4)),
+        contador("kpi-melancia", "sum(melancia)", "SUM(`melancia`)", "Farol verde com SPI < 0,9",
+                 {"type": "number-plain"}, (9, 3, 3, 4)),
         texto("secao-risco", "## Onde está o problema\n\nSPI < 1 é atraso; CPI < 1 é cada real gastando mais do que entrega. "
               "Clique numa barra para filtrar a tabela.", (0, 7, 12, 2)),
-        widget("estouro-obra", "ds_obras", [("obra", "`obra`"), ("sum(estouro_previsto)", "SUM(`estouro_previsto`)")],
+        widget("spi-projeto", "ds_projetos", [("projeto", "`projeto`"), ("min(spi)", "MIN(`spi`)"), ("situacao", "`situacao`")],
                {"version": 3, "widgetType": "bar",
-                "encodings": {"y": {"fieldName": "obra", "scale": {"type": "categorical",
-                                    "sort": {"by": "x-reversed"}}, "displayName": "Obra"},
-                              "x": {"fieldName": "sum(estouro_previsto)", "scale": {"type": "quantitative"},
-                                    "displayName": "Estouro previsto", "format": BRL}},
-                "frame": {"showTitle": True, "title": "Estouro de custo previsto por obra"}}, (0, 9, 7, 7)),
-        widget("situacao", "ds_obras", [("situacao", "`situacao`"), ("count(projeto_id)", "COUNT(`projeto_id`)")],
-               {"version": 3, "widgetType": "pie",
-                "encodings": {"angle": {"fieldName": "count(projeto_id)", "scale": {"type": "quantitative"},
-                                        "displayName": "Obras"},
-                              "color": {"fieldName": "situacao", "scale": {"type": "categorical", "mappings": [
-                                  {"value": "crítico", "color": "#FF5F46"}, {"value": "atenção", "color": "#F6C344"},
-                                  {"value": "ok", "color": "#22C2F4"}]}, "displayName": "Situação"}},
-                "frame": {"showTitle": True, "title": "Obras em andamento por situação"}}, (7, 9, 5, 7)),
+                "encodings": {"y": {"fieldName": "projeto", "scale": {"type": "categorical",
+                                    "sort": {"by": "x"}}, "displayName": "Projeto"},
+                              "x": {"fieldName": "min(spi)", "scale": {"type": "quantitative"}, "displayName": "SPI"},
+                              "color": {"fieldName": "situacao", "scale": cor_situacao, "displayName": "Situação"}},
+                "frame": {"showTitle": True, "title": "SPI por projeto (do mais atrasado ao mais adiantado)"}}, (0, 9, 7, 9)),
+        widget("situacao-ferramenta", "ds_projetos",
+               [("ferramenta", "`ferramenta`"), ("situacao", "`situacao`"), ("count(projeto_id)", "COUNT(`projeto_id`)")],
+               {"version": 3, "widgetType": "bar",
+                "encodings": {"x": {"fieldName": "ferramenta", "scale": {"type": "categorical"}, "displayName": "Ferramenta"},
+                              "y": {"fieldName": "count(projeto_id)", "scale": {"type": "quantitative"}, "displayName": "Projetos"},
+                              "color": {"fieldName": "situacao", "scale": cor_situacao, "displayName": "Situação"}},
+                "frame": {"showTitle": True, "title": "Projetos em andamento por ferramenta e situação"}}, (7, 9, 5, 9)),
         texto("secao-custo", "## Para onde vai o dinheiro\n\nCusto real por mês e categoria. Sem trocar a vírgula "
-              "decimal por ponto, 540 lançamentos somem do total em silêncio.", (0, 16, 12, 2)),
+              "decimal por ponto, 671 lançamentos somem do total em silêncio.", (0, 18, 12, 2)),
         widget("custo-mes", "ds_custos", [("monthly(mes)", "DATE_TRUNC(\"MONTH\", `mes`)"), ("categoria", "`categoria`"),
                                          ("sum(valor)", "SUM(`valor`)")],
                {"version": 3, "widgetType": "bar",
@@ -135,30 +142,32 @@ def montar() -> dict:
                                     "displayName": "Custo real", "format": BRL},
                               "color": {"fieldName": "categoria", "scale": {"type": "categorical"},
                                         "displayName": "Categoria"}},
-                "frame": {"showTitle": True, "title": "Custo real por mês"}}, (0, 18, 12, 6)),
-        texto("secao-tabela", "## Todas as obras em andamento\n\nOrdenadas da pior para a melhor. "
-              "⚠️ UF ainda vem suja na origem (mg, ' MG '): aqui foi corrigida com `upper(trim())`.", (0, 24, 12, 2)),
-        widget("tabela-obras", "ds_obras",
-               [(c, f"`{c}`") for c in ("obra", "cliente", "uf", "spi", "cpi", "situacao",
+                "frame": {"showTitle": True, "title": "Custo real por mês"}}, (0, 20, 12, 6)),
+        texto("secao-tabela", "## Todos os projetos em andamento\n\nOrdenados do pior para o melhor. "
+              "Compare o **farol do gerente** com a situação calculada: o manual diz que verde é só com SPI ≥ 0,95.",
+              (0, 26, 12, 2)),
+        widget("tabela-projetos", "ds_projetos",
+               [(c, f"`{c}`") for c in ("projeto", "cliente", "ferramenta", "spi", "cpi", "situacao", "farol",
                                          "estouro_previsto", "margem_projetada", "atraso_projetado_dias")],
                {"version": 2, "widgetType": "table",
                 "encodings": {"columns": [
-                    {"fieldName": "obra", "displayName": "Obra"},
+                    {"fieldName": "projeto", "displayName": "Projeto"},
                     {"fieldName": "cliente", "displayName": "Cliente"},
-                    {"fieldName": "uf", "displayName": "UF"},
+                    {"fieldName": "ferramenta", "displayName": "Ferramenta"},
                     {"fieldName": "spi", "displayName": "SPI"},
                     {"fieldName": "cpi", "displayName": "CPI"},
                     {"fieldName": "situacao", "displayName": "Situação"},
+                    {"fieldName": "farol", "displayName": "Farol do gerente"},
                     {"fieldName": "estouro_previsto", "displayName": "Estouro previsto",
                      "format": {"type": "number-currency", "currencyCode": "BRL",
                                 "decimalPlaces": {"type": "max", "places": 0}}},
                     {"fieldName": "margem_projetada", "displayName": "Margem projetada",
                      "format": {"type": "number-percent", "decimalPlaces": {"type": "max", "places": 1}}},
                     {"fieldName": "atraso_projetado_dias", "displayName": "Atraso projetado (dias)"}]},
-                "frame": {"showTitle": True, "title": "Obras em andamento"}}, (0, 26, 12, 8), desagregado=True),
+                "frame": {"showTitle": True, "title": "Projetos em andamento"}}, (0, 28, 12, 9), desagregado=True),
     ]
     return {
-        "datasets": [ds("ds_obras", "Obras em andamento (bronze)", SQL_OBRAS),
+        "datasets": [ds("ds_projetos", "Projetos em andamento (bronze)", SQL_PROJETOS),
                      ds("ds_custos", "Custos (bronze)", SQL_CUSTOS)],
         "pages": [{"name": "noite1", "displayName": "Noite 1", "pageType": "PAGE_TYPE_CANVAS",
                    "layoutVersion": "GRID_V1", "layout": layout}],
@@ -183,7 +192,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--deploy", action="store_true")
     ap.add_argument("--profile")
-    ap.add_argument("--catalog", default="lakehouse_atlas")
+    ap.add_argument("--catalog", default="lakehouse_vertice")
     a = ap.parse_args()
     painel = montar()
     SAIDA.write_text(json.dumps(painel, ensure_ascii=False, indent=2), encoding="utf-8")

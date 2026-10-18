@@ -18,7 +18,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 2. UF escrita de três jeitos
+-- MAGIC 2. A ferramenta escrita de vários jeitos, e projeto sem o código da ferramenta
 
 -- COMMAND ----------
 
@@ -28,7 +28,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 3. Tarefa com mais de 100% concluída. Não existe: é erro de digitação no cronograma.
+-- MAGIC 3. Excel: a mesma coluna de data tem texto ('03/02/2026') e número de série do Excel ('46056')
 
 -- COMMAND ----------
 
@@ -38,7 +38,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 4. Custo com vírgula decimal: '12345,67'. CAST disso quebra (ou vira nulo).
+-- MAGIC 4. Excel: o % concluído vem como '45%', '10,5%' ou 0.45. E tem tarefa com MAIS de 100%.
 
 -- COMMAND ----------
 
@@ -48,7 +48,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 5. Estorno: valor negativo. NÃO é erro, é informação: o lançamento foi revertido.
+-- MAGIC 5. Excel: a linha de TOTAL que o gerente deixou no fim da planilha. Somar tudo conta duas vezes.
 
 -- COMMAND ----------
 
@@ -58,7 +58,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 6. O mesmo fornecedor digitado de quatro jeitos no ERP de compras
+-- MAGIC 6. ClickUp: o status "concluído" escrito de 4 jeitos, "em andamento" de 5
 
 -- COMMAND ----------
 
@@ -68,7 +68,8 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 7. Equipe duplicada no cadastro do RH
+-- MAGIC 7. MS Project: tarefa-resumo (Summary = 1) soma as horas das tarefas de baixo.
+-- MAGIC    Quem soma a coluna Work inteira conta as horas três vezes (projeto, fase, tarefa).
 
 -- COMMAND ----------
 
@@ -78,7 +79,47 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 8. RDO não preenchido
+-- MAGIC 8. Custo com vírgula decimal: '12345,67'. CAST disso quebra (ou vira nulo).
+
+-- COMMAND ----------
+
+-- escreva aqui a sua query
+
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 9. Estorno: valor negativo. NÃO é erro, é informação: o lançamento foi revertido.
+
+-- COMMAND ----------
+
+-- escreva aqui a sua query
+
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 10. A mesma consultoria digitada de quatro jeitos em compras
+
+-- COMMAND ----------
+
+-- escreva aqui a sua query
+
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 11. Pessoa duplicada no cadastro do RH
+
+-- COMMAND ----------
+
+-- escreva aqui a sua query
+
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 12. Status semanal não preenchido
 
 -- COMMAND ----------
 

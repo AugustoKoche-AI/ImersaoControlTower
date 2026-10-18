@@ -1,12 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Noite 1 · Carregar os dados da Atlas Engenharia
+# MAGIC # Noite 1 · Carregar os dados da Vértice Tecnologia
+# MAGIC
+# MAGIC Você acaba de ser promovido de engenheiro de dados a **CTO da Vértice**. Primeira pergunta da diretoria:
+# MAGIC *quais projetos estão mais atrasados?* Ninguém sabe responder, porque cada gerente usa uma ferramenta.
 # MAGIC
 # MAGIC Rode este notebook **uma vez**, de cima para baixo (botão **Run all**). Ele:
 # MAGIC
-# MAGIC 1. cria o catálogo `lakehouse_atlas`, os schemas `bronze`, `silver`, `gold` e o volume `bronze.raw`
-# MAGIC 2. gera os arquivos dos sistemas da obra **direto no volume** (ERP, cronograma, ponto, frota, almoxarifado, RDO e os PDFs)
-# MAGIC 3. confere que os 4 padrões da história estão lá
+# MAGIC 1. cria o catálogo `lakehouse_vertice`, os schemas `bronze`, `silver`, `gold` e o volume `bronze.raw`
+# MAGIC 2. gera os arquivos **direto no volume**: 20 planilhas Excel, 25 exports do ClickUp, 15 arquivos do MS Project,
+# MAGIC    os CSVs do PMO, RH, timesheet, financeiro e compras, os postmortems e os PDFs
+# MAGIC 3. confere que os 5 padrões da história estão lá
 # MAGIC
 # MAGIC Nada para baixar nem subir: o gerador está neste repositório (`material/gerar_dataset.py`) e a seed é fixa,
 # MAGIC então o seu dado é **idêntico** ao do instrutor.
@@ -16,7 +20,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalogo", "lakehouse_atlas")
+dbutils.widgets.text("catalogo", "lakehouse_vertice")
 CATALOGO = dbutils.widgets.get("catalogo")
 
 import os, pathlib, sys
@@ -33,7 +37,7 @@ print("repositório em", RAIZ)
 
 # COMMAND ----------
 
-sql = (AULA / "00-setup-catalogo.sql").read_text(encoding="utf-8").replace("lakehouse_atlas", CATALOGO)
+sql = (AULA / "00-setup-catalogo.sql").read_text(encoding="utf-8").replace("lakehouse_vertice", CATALOGO)
 comandos = [c.strip() for c in sql.split(";")
             if any(l.strip() and not l.strip().startswith("--") for l in c.splitlines())]
 for c in comandos:
@@ -43,7 +47,7 @@ for c in comandos:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Os arquivos dos sistemas, direto no volume
+# MAGIC ## 2. Os arquivos das ferramentas, direto no volume
 
 # COMMAND ----------
 
@@ -57,25 +61,25 @@ for pasta in gerar_dataset.PASTAS_GERADAS:
         shutil.rmtree(destino / pasta)
 contagens = gerar_dataset.gerar(destino, seed=42)
 for k, v in contagens.items():
-    print(f"{k:<18} {v:>9,}".replace(",", "."))
+    print(f"{k:<20} {v:>9,}".replace(",", "."))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 3. Conferência: a história está no dado?
-# MAGIC Recalcula SPI e CPI direto dos arquivos e checa os 4 padrões
-# MAGIC (CPI caindo, chuva no Pará, fornecedor atrasado, guindaste parado).
+# MAGIC Junta as três ferramentas em Python, recalcula SPI e CPI e checa os 5 padrões
+# MAGIC (CPI caindo, freeze da Black Friday, consultoria atrasada, SREs ociosos, squad com rotatividade).
 
 # COMMAND ----------
 
 import subprocess
 r = subprocess.run([sys.executable, str(RAIZ / "material" / "validar_padroes.py"), "--dados", str(destino)],
                    capture_output=True, text=True)
-print(r.stdout[-2500:])
+print(r.stdout[-3000:])
 assert r.returncode == 0, r.stderr or "algum padrão falhou"
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Pronto
-# MAGIC Agora abra o **`01-ingestao-bronze.sql`** no SQL Editor e rode tudo: os arquivos viram as 12 tabelas da bronze.
+# MAGIC Agora abra o **`01-ingestao-bronze.sql`** no SQL Editor e rode tudo: os arquivos viram as 13 tabelas da bronze.

@@ -11,44 +11,70 @@
 -- 1. Data em dois formatos: 2025-03-14 e 14/03/2025 na mesma coluna
 SELECT COUNT(*) FILTER (WHERE data_inicio LIKE '%/%') AS formato_brasileiro,
        COUNT(*) FILTER (WHERE data_inicio LIKE '%-%') AS formato_iso
-FROM lakehouse_atlas.bronze.projetos;
+FROM lakehouse_vertice.bronze.projetos;
 
--- 2. UF escrita de três jeitos
-SELECT uf, COUNT(*) AS obras
-FROM lakehouse_atlas.bronze.projetos
-GROUP BY uf
-ORDER BY upper(trim(uf));
+-- 2. A ferramenta escrita de vários jeitos, e projeto sem o código da ferramenta
+SELECT ferramenta, COUNT(*) AS projetos,
+       COUNT(*) FILTER (WHERE codigo_ferramenta IS NULL) AS sem_codigo
+FROM lakehouse_vertice.bronze.projetos
+GROUP BY ferramenta
+ORDER BY lower(ferramenta);
 
--- 3. Tarefa com mais de 100% concluída. Não existe: é erro de digitação no cronograma.
-SELECT tarefa_id, projeto_id, descricao, pct_concluido
-FROM lakehouse_atlas.bronze.tarefas
-WHERE CAST(pct_concluido AS DOUBLE) > 100
-ORDER BY CAST(pct_concluido AS DOUBLE) DESC;
+-- 3. Excel: a mesma coluna de data tem texto ('03/02/2026') e número de série do Excel ('46056')
+SELECT COUNT(*) FILTER (WHERE inicio_previsto LIKE '%/%')     AS data_como_texto,
+       COUNT(*) FILTER (WHERE inicio_previsto NOT LIKE '%/%') AS data_como_numero
+FROM lakehouse_vertice.bronze.excel_tarefas;
 
--- 4. Custo com vírgula decimal: '12345,67'. CAST disso quebra (ou vira nulo).
-SELECT COUNT(*) FILTER (WHERE valor_real LIKE '%,%') AS com_virgula,
-       COUNT(*)                                       AS total
-FROM lakehouse_atlas.bronze.custos;
+-- 4. Excel: o % concluído vem como '45%', '10,5%' ou 0.45. E tem tarefa com MAIS de 100%.
+SELECT pct_concluido, COUNT(*) AS tarefas
+FROM lakehouse_vertice.bronze.excel_tarefas
+WHERE pct_concluido NOT LIKE '%\%%' OR pct_concluido LIKE '1__%'
+GROUP BY pct_concluido
+ORDER BY tarefas DESC
+LIMIT 15;
 
--- 5. Estorno: valor negativo. NÃO é erro, é informação: o lançamento foi revertido.
+-- 5. Excel: a linha de TOTAL que o gerente deixou no fim da planilha. Somar tudo conta duas vezes.
+SELECT arquivo, tarefa, horas_previstas
+FROM lakehouse_vertice.bronze.excel_tarefas
+WHERE tarefa = 'TOTAL';
+
+-- 6. ClickUp: o status "concluído" escrito de 4 jeitos, "em andamento" de 5
+SELECT status.status AS status, COUNT(*) AS tarefas
+FROM lakehouse_vertice.bronze.clickup_tarefas
+GROUP BY status.status
+ORDER BY tarefas DESC;
+
+-- 7. MS Project: tarefa-resumo (Summary = 1) soma as horas das tarefas de baixo.
+--    Quem soma a coluna Work inteira conta as horas três vezes (projeto, fase, tarefa).
+SELECT Summary, OutlineLevel, COUNT(*) AS linhas
+FROM lakehouse_vertice.bronze.msproject_tarefas
+GROUP BY Summary, OutlineLevel
+ORDER BY OutlineLevel;
+
+-- 8. Custo com vírgula decimal: '12345,67'. CAST disso quebra (ou vira nulo).
+SELECT COUNT(*) FILTER (WHERE valor LIKE '%,%') AS com_virgula,
+       COUNT(*)                                  AS total
+FROM lakehouse_vertice.bronze.custos;
+
+-- 9. Estorno: valor negativo. NÃO é erro, é informação: o lançamento foi revertido.
 SELECT categoria, COUNT(*) AS estornos
-FROM lakehouse_atlas.bronze.custos
-WHERE valor_real LIKE '-%'
+FROM lakehouse_vertice.bronze.custos
+WHERE valor LIKE '-%'
 GROUP BY categoria;
 
--- 6. O mesmo fornecedor digitado de quatro jeitos no ERP de compras
-SELECT fornecedor, COUNT(*) AS pedidos
-FROM lakehouse_atlas.bronze.compras
-WHERE lower(fornecedor) LIKE '%norte%'
+-- 10. A mesma consultoria digitada de quatro jeitos em compras
+SELECT fornecedor, COUNT(*) AS entregas
+FROM lakehouse_vertice.bronze.entregas_fornecedor
+WHERE lower(fornecedor) LIKE '%forge%'
 GROUP BY fornecedor;
 
--- 7. Equipe duplicada no cadastro do RH
-SELECT equipe_id, COUNT(*) AS vezes
-FROM lakehouse_atlas.bronze.equipes
-GROUP BY equipe_id
+-- 11. Pessoa duplicada no cadastro do RH
+SELECT colaborador_id, COUNT(*) AS vezes
+FROM lakehouse_vertice.bronze.colaboradores
+GROUP BY colaborador_id
 HAVING COUNT(*) > 1;
 
--- 8. RDO não preenchido
-SELECT COUNT(*) AS rdos_vazios
-FROM lakehouse_atlas.bronze.rdo
-WHERE texto_livre IS NULL OR trim(texto_livre) IN ('', 'N/A', 'ver RDO físico');
+-- 12. Status semanal não preenchido
+SELECT COUNT(*) AS status_vazios
+FROM lakehouse_vertice.bronze.status_semanal
+WHERE texto_status IS NULL OR trim(texto_status) IN ('', 'N/A', 'ver ata da reunião');

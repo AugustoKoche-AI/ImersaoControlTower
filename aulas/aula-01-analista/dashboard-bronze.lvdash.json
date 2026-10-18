@@ -1,44 +1,48 @@
 {
   "datasets": [
     {
-      "name": "ds_obras",
-      "displayName": "Obras em andamento (bronze)",
+      "name": "ds_projetos",
+      "displayName": "Projetos em andamento (bronze)",
       "queryLines": [
-        "-- Tudo na bronze é texto: todo acesso começa com CAST, replace e coalesce de data.\n",
+        "-- Tudo na bronze é texto e cada ferramenta tem seu formato: este painel lê o\n",
+        "-- rascunho_tarefas (exemplo 05), que empilha Excel, ClickUp e MS Project à mão.\n",
         "-- É o imposto que a camada silver vai eliminar na noite 2.\n",
-        "WITH t AS (\n",
-        "  SELECT projeto_id,\n",
-        "         CAST(valor_planejado AS DECIMAL(18,2)) AS vp,\n",
-        "         LEAST(CAST(pct_concluido AS DOUBLE), 100) / 100 AS pct,\n",
-        "         GREATEST(0, LEAST(1, datediff(DATE'2026-10-16', CAST(inicio_baseline AS DATE))\n",
-        "                  / datediff(CAST(fim_baseline AS DATE), CAST(inicio_baseline AS DATE)))) AS pct_plan\n",
-        "  FROM tarefas\n",
+        "WITH v AS (\n",
+        "  SELECT projeto_id, max(ferramenta) AS ferramenta,\n",
+        "         SUM(horas) AS horas_totais,\n",
+        "         SUM(horas * pct_concluido / 100) AS horas_agregadas,\n",
+        "         SUM(horas * GREATEST(0, LEAST(1, datediff(DATE'2026-10-16', inicio_baseline)\n",
+        "                  / datediff(fim_baseline, inicio_baseline)))) AS horas_planejadas\n",
+        "  FROM rascunho_tarefas\n",
+        "  GROUP BY projeto_id\n",
         "),\n",
-        "v AS (SELECT projeto_id, SUM(vp * pct_plan) AS pv, SUM(vp * pct) AS ev FROM t GROUP BY projeto_id),\n",
-        "c AS (SELECT projeto_id, SUM(CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2))) AS ac FROM custos GROUP BY projeto_id),\n",
+        "c AS (SELECT projeto_id, SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) AS ac FROM custos GROUP BY projeto_id),\n",
+        "f AS (SELECT projeto_id, lower(farol) AS farol FROM status_semanal WHERE data_status = '2026-10-16'),\n",
         "o AS (\n",
-        "  SELECT p.projeto_id, concat(p.projeto_id, ' · ', p.nome_projeto) AS obra, p.cliente, p.setor,\n",
-        "         upper(trim(p.uf)) AS uf,\n",
+        "  SELECT p.projeto_id, concat(p.projeto_id, ' · ', p.nome_projeto) AS projeto, p.cliente, p.segmento,\n",
+        "         v.ferramenta, f.farol,\n",
         "         CAST(p.valor_contrato AS DECIMAL(18,2)) AS valor_contrato,\n",
         "         CAST(p.orcamento_custo AS DECIMAL(18,2)) AS orcamento,\n",
         "         datediff(CAST(p.data_fim_baseline AS DATE),\n",
         "                  coalesce(try_to_date(p.data_inicio, 'yyyy-MM-dd'), try_to_date(p.data_inicio, 'dd/MM/yyyy'))) AS duracao,\n",
-        "         v.pv, v.ev, c.ac\n",
-        "  FROM projetos p JOIN v USING (projeto_id) JOIN c USING (projeto_id)\n",
+        "         v.horas_agregadas / v.horas_planejadas AS spi,\n",
+        "         CAST(p.orcamento_custo AS DECIMAL(18,2)) * v.horas_agregadas / v.horas_totais / c.ac AS cpi\n",
+        "  FROM projetos p JOIN v USING (projeto_id) JOIN c USING (projeto_id) LEFT JOIN f USING (projeto_id)\n",
         "  WHERE p.status = 'em_andamento'\n",
         ")\n",
-        "SELECT projeto_id, obra, cliente, setor, uf, valor_contrato, orcamento,\n",
-        "       ROUND(ev / pv, 2) AS spi,\n",
-        "       ROUND(ev / ac, 2) AS cpi,\n",
-        "       CASE WHEN ev / pv < 0.8 OR ev / ac < 0.8 THEN 'crítico'\n",
-        "            WHEN ev / pv < 0.9 OR ev / ac < 0.9 THEN 'atenção' ELSE 'ok' END AS situacao,\n",
-        "       CASE WHEN ev / pv < 0.8 OR ev / ac < 0.8 THEN 1 ELSE 0 END AS critica,\n",
-        "       CASE WHEN ev / pv < 0.9 OR ev / ac < 0.9 THEN 1 ELSE 0 END AS em_risco,\n",
-        "       GREATEST(0, orcamento / (ev / ac) - orcamento) AS estouro_previsto,\n",
-        "       (valor_contrato - orcamento / (ev / ac)) / valor_contrato AS margem_projetada,\n",
-        "       ROUND(duracao / (ev / pv) - duracao) AS atraso_projetado_dias\n",
+        "SELECT projeto_id, projeto, cliente, segmento, ferramenta, farol, valor_contrato, orcamento,\n",
+        "       ROUND(spi, 2) AS spi,\n",
+        "       ROUND(cpi, 2) AS cpi,\n",
+        "       CASE WHEN LEAST(spi, cpi) < 0.8 THEN 'crítico'\n",
+        "            WHEN LEAST(spi, cpi) < 0.9 THEN 'atenção' ELSE 'ok' END AS situacao,\n",
+        "       CASE WHEN LEAST(spi, cpi) < 0.8 THEN 1 ELSE 0 END AS critico,\n",
+        "       CASE WHEN LEAST(spi, cpi) < 0.9 THEN 1 ELSE 0 END AS em_risco,\n",
+        "       CASE WHEN farol = 'verde' AND spi < 0.9 THEN 1 ELSE 0 END AS melancia,\n",
+        "       GREATEST(0, orcamento / cpi - orcamento) AS estouro_previsto,\n",
+        "       (valor_contrato - orcamento / cpi) / valor_contrato AS margem_projetada,\n",
+        "       ROUND(duracao / spi - duracao) AS atraso_projetado_dias\n",
         "FROM o\n",
-        "ORDER BY LEAST(ev / pv, ev / ac)\n"
+        "ORDER BY LEAST(spi, cpi)\n"
       ]
     },
     {
@@ -47,7 +51,7 @@
       "queryLines": [
         "SELECT date_trunc('MONTH', CAST(data AS DATE)) AS mes,\n",
         "       categoria,\n",
-        "       CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2)) AS valor\n",
+        "       CAST(replace(valor, ',', '.') AS DECIMAL(18,2)) AS valor\n",
         "FROM custos\n"
       ]
     }
@@ -62,7 +66,7 @@
         {
           "widget": {
             "name": "titulo",
-            "textbox_spec": "# Torre de Controle · Construtora Atlas Engenharia\n\n**Quais obras estão atrasadas e quanto isso custa?** Tudo aqui lê a camada **bronze**, o dado como veio dos sistemas. Repare no SQL dos datasets: `CAST`, `replace` e `try_to_date` em toda coluna. Hoje do dataset: 16/10/2026."
+            "textbox_spec": "# Projeto Farol · Torre de Controle da Vértice Tecnologia\n\n**Quais projetos estão mais atrasados e quanto isso custa?** Primeira versão, feita na noite 1: lê a camada **bronze**, com as tarefas do Excel, do ClickUp e do MS Project empilhadas à mão. Repare no SQL dos datasets: `CAST`, `replace` e `try_to_date` em toda coluna. Hoje do dataset: 16/10/2026."
           },
           "position": {
             "x": 0,
@@ -78,7 +82,7 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_obras",
+                  "datasetName": "ds_projetos",
                   "fields": [
                     {
                       "name": "sum(valor_contrato)",
@@ -127,7 +131,7 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_obras",
+                  "datasetName": "ds_projetos",
                   "fields": [
                     {
                       "name": "sum(em_risco)",
@@ -144,7 +148,7 @@
               "encodings": {
                 "value": {
                   "fieldName": "sum(em_risco)",
-                  "displayName": "Obras com SPI ou CPI < 0,9",
+                  "displayName": "Projetos com SPI ou CPI < 0,9",
                   "format": {
                     "type": "number-plain"
                   }
@@ -152,7 +156,7 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Obras com SPI ou CPI < 0,9"
+                "title": "Projetos com SPI ou CPI < 0,9"
               }
             }
           },
@@ -165,16 +169,16 @@
         },
         {
           "widget": {
-            "name": "kpi-criticas",
+            "name": "kpi-criticos",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_obras",
+                  "datasetName": "ds_projetos",
                   "fields": [
                     {
-                      "name": "sum(critica)",
-                      "expression": "SUM(`critica`)"
+                      "name": "sum(critico)",
+                      "expression": "SUM(`critico`)"
                     }
                   ],
                   "disaggregated": false
@@ -186,8 +190,8 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "sum(critica)",
-                  "displayName": "Obras críticas (< 0,8)",
+                  "fieldName": "sum(critico)",
+                  "displayName": "Projetos críticos (< 0,8)",
                   "format": {
                     "type": "number-plain"
                   }
@@ -195,7 +199,7 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Obras críticas (< 0,8)"
+                "title": "Projetos críticos (< 0,8)"
               }
             }
           },
@@ -208,16 +212,16 @@
         },
         {
           "widget": {
-            "name": "kpi-estouro",
+            "name": "kpi-melancia",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_obras",
+                  "datasetName": "ds_projetos",
                   "fields": [
                     {
-                      "name": "sum(estouro_previsto)",
-                      "expression": "SUM(`estouro_previsto`)"
+                      "name": "sum(melancia)",
+                      "expression": "SUM(`melancia`)"
                     }
                   ],
                   "disaggregated": false
@@ -229,22 +233,16 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "sum(estouro_previsto)",
-                  "displayName": "Estouro previsto (EAC − orçamento)",
+                  "fieldName": "sum(melancia)",
+                  "displayName": "Farol verde com SPI < 0,9",
                   "format": {
-                    "type": "number-currency",
-                    "currencyCode": "BRL",
-                    "abbreviation": "compact",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 0
-                    }
+                    "type": "number-plain"
                   }
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Estouro previsto (EAC − orçamento)"
+                "title": "Farol verde com SPI < 0,9"
               }
             }
           },
@@ -269,20 +267,24 @@
         },
         {
           "widget": {
-            "name": "estouro-obra",
+            "name": "spi-projeto",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_obras",
+                  "datasetName": "ds_projetos",
                   "fields": [
                     {
-                      "name": "obra",
-                      "expression": "`obra`"
+                      "name": "projeto",
+                      "expression": "`projeto`"
                     },
                     {
-                      "name": "sum(estouro_previsto)",
-                      "expression": "SUM(`estouro_previsto`)"
+                      "name": "min(spi)",
+                      "expression": "MIN(`spi`)"
+                    },
+                    {
+                      "name": "situacao",
+                      "expression": "`situacao`"
                     }
                   ],
                   "disaggregated": false
@@ -294,77 +296,21 @@
               "widgetType": "bar",
               "encodings": {
                 "y": {
-                  "fieldName": "obra",
+                  "fieldName": "projeto",
                   "scale": {
                     "type": "categorical",
                     "sort": {
-                      "by": "x-reversed"
+                      "by": "x"
                     }
                   },
-                  "displayName": "Obra"
+                  "displayName": "Projeto"
                 },
                 "x": {
-                  "fieldName": "sum(estouro_previsto)",
+                  "fieldName": "min(spi)",
                   "scale": {
                     "type": "quantitative"
                   },
-                  "displayName": "Estouro previsto",
-                  "format": {
-                    "type": "number-currency",
-                    "currencyCode": "BRL",
-                    "abbreviation": "compact",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 1
-                    }
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Estouro de custo previsto por obra"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 9,
-            "width": 7,
-            "height": 7
-          }
-        },
-        {
-          "widget": {
-            "name": "situacao",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_obras",
-                  "fields": [
-                    {
-                      "name": "situacao",
-                      "expression": "`situacao`"
-                    },
-                    {
-                      "name": "count(projeto_id)",
-                      "expression": "COUNT(`projeto_id`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "pie",
-              "encodings": {
-                "angle": {
-                  "fieldName": "count(projeto_id)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Obras"
+                  "displayName": "SPI"
                 },
                 "color": {
                   "fieldName": "situacao",
@@ -390,7 +336,86 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Obras em andamento por situação"
+                "title": "SPI por projeto (do mais atrasado ao mais adiantado)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 7,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "situacao-ferramenta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_projetos",
+                  "fields": [
+                    {
+                      "name": "ferramenta",
+                      "expression": "`ferramenta`"
+                    },
+                    {
+                      "name": "situacao",
+                      "expression": "`situacao`"
+                    },
+                    {
+                      "name": "count(projeto_id)",
+                      "expression": "COUNT(`projeto_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "ferramenta",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Ferramenta"
+                },
+                "y": {
+                  "fieldName": "count(projeto_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Projetos"
+                },
+                "color": {
+                  "fieldName": "situacao",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "crítico",
+                        "color": "#FF5F46"
+                      },
+                      {
+                        "value": "atenção",
+                        "color": "#F6C344"
+                      },
+                      {
+                        "value": "ok",
+                        "color": "#22C2F4"
+                      }
+                    ]
+                  },
+                  "displayName": "Situação"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Projetos em andamento por ferramenta e situação"
               }
             }
           },
@@ -398,17 +423,17 @@
             "x": 7,
             "y": 9,
             "width": 5,
-            "height": 7
+            "height": 9
           }
         },
         {
           "widget": {
             "name": "secao-custo",
-            "textbox_spec": "## Para onde vai o dinheiro\n\nCusto real por mês e categoria. Sem trocar a vírgula decimal por ponto, 540 lançamentos somem do total em silêncio."
+            "textbox_spec": "## Para onde vai o dinheiro\n\nCusto real por mês e categoria. Sem trocar a vírgula decimal por ponto, 671 lançamentos somem do total em silêncio."
           },
           "position": {
             "x": 0,
-            "y": 16,
+            "y": 18,
             "width": 12,
             "height": 2
           }
@@ -482,7 +507,7 @@
           },
           "position": {
             "x": 0,
-            "y": 18,
+            "y": 20,
             "width": 12,
             "height": 6
           }
@@ -490,35 +515,35 @@
         {
           "widget": {
             "name": "secao-tabela",
-            "textbox_spec": "## Todas as obras em andamento\n\nOrdenadas da pior para a melhor. ⚠️ UF ainda vem suja na origem (mg, ' MG '): aqui foi corrigida com `upper(trim())`."
+            "textbox_spec": "## Todos os projetos em andamento\n\nOrdenados do pior para o melhor. Compare o **farol do gerente** com a situação calculada: o manual diz que verde é só com SPI ≥ 0,95."
           },
           "position": {
             "x": 0,
-            "y": 24,
+            "y": 26,
             "width": 12,
             "height": 2
           }
         },
         {
           "widget": {
-            "name": "tabela-obras",
+            "name": "tabela-projetos",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_obras",
+                  "datasetName": "ds_projetos",
                   "fields": [
                     {
-                      "name": "obra",
-                      "expression": "`obra`"
+                      "name": "projeto",
+                      "expression": "`projeto`"
                     },
                     {
                       "name": "cliente",
                       "expression": "`cliente`"
                     },
                     {
-                      "name": "uf",
-                      "expression": "`uf`"
+                      "name": "ferramenta",
+                      "expression": "`ferramenta`"
                     },
                     {
                       "name": "spi",
@@ -531,6 +556,10 @@
                     {
                       "name": "situacao",
                       "expression": "`situacao`"
+                    },
+                    {
+                      "name": "farol",
+                      "expression": "`farol`"
                     },
                     {
                       "name": "estouro_previsto",
@@ -555,16 +584,16 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "obra",
-                    "displayName": "Obra"
+                    "fieldName": "projeto",
+                    "displayName": "Projeto"
                   },
                   {
                     "fieldName": "cliente",
                     "displayName": "Cliente"
                   },
                   {
-                    "fieldName": "uf",
-                    "displayName": "UF"
+                    "fieldName": "ferramenta",
+                    "displayName": "Ferramenta"
                   },
                   {
                     "fieldName": "spi",
@@ -577,6 +606,10 @@
                   {
                     "fieldName": "situacao",
                     "displayName": "Situação"
+                  },
+                  {
+                    "fieldName": "farol",
+                    "displayName": "Farol do gerente"
                   },
                   {
                     "fieldName": "estouro_previsto",
@@ -609,15 +642,15 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Obras em andamento"
+                "title": "Projetos em andamento"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 26,
+            "y": 28,
             "width": 12,
-            "height": 8
+            "height": 9
           }
         }
       ]

@@ -1,6 +1,6 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC EXEMPLO 04: GROUP BY — quanto a Atlas gasta por mês?
+-- MAGIC EXEMPLO 04: GROUP BY — quanto a Vértice gasta por mês?
 -- MAGIC Conceito: GROUP BY, date_trunc, try_cast, replace
 -- MAGIC Pergunta de negócio: qual é o custo real da carteira, mês a mês?
 -- MAGIC Conexão: a primeira query FALHA DE PROPÓSITO. Rode com --continuar.
@@ -45,7 +45,8 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 5. Por categoria: para onde vai o dinheiro?
+-- MAGIC 5. Por categoria: para onde vai o dinheiro de uma empresa de tecnologia?
+-- MAGIC    (spoiler: gente. Folha alocada é quase dois terços do custo)
 
 -- COMMAND ----------
 

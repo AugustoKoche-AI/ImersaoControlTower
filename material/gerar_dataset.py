@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gera o dataset da Construtora Atlas Engenharia (EPC fictícia).
+"""Gera o dataset da Vértice Tecnologia (empresa de tecnologia fictícia).
 
 Uso:
     python3 material/gerar_dataset.py --saida ./dados --seed 42
@@ -7,167 +7,136 @@ Uso:
 Só biblioteca padrão. A seed é fixa: todo aluno gera exatamente os mesmos
 arquivos e chega aos mesmos números.
 
-O dado é SIMULADO, não sorteado linha a linha: cada obra avança semana a
-semana com uma velocidade (chuva, falta de guindaste e equipe fraca atrasam),
-cada avanço consome material e gera custo. Por isso SPI, CPI, ociosidade e
-ruptura de estoque saem coerentes entre si.
+O case: você era engenheiro de dados e acaba de ser promovido a CTO da
+Vértice (520 pessoas, 60 projetos de clientes). O primeiro grande problema:
+ninguém sabe quais projetos estão atrasados, porque cada gerente usa uma
+ferramenta. 20 projetos vivem em planilhas Excel, 25 no ClickUp e 15 no
+MS Project. A Torre de Controle junta tudo.
+
+O dado é SIMULADO, não sorteado linha a linha: cada projeto avança semana a
+semana com uma velocidade (freeze, falta de SRE e squad com rotatividade
+atrasam), cada avanço consome horas e gera custo. Por isso SPI, CPI,
+ociosidade e ruptura de capacidade saem coerentes entre si.
 
 Padrões embutidos (o que os KPIs precisam mostrar):
-  1. 8 obras com CPI caindo a partir do 9º mês (aditivos não cobrados)
-  2. chuva no Pará entre dezembro e março atrasando 3 obras
-  3. a Metalúrgica Norte Aço entrega com lead time 40% acima do prometido
-  4. dois guindastes de 90 t parados em MG (P007) enquanto o RDO da obra
-     P011, no Pará, reclama de falta de guindaste
+  1. 8 projetos com CPI caindo a partir do 6º mês (escopo cresce sem aditivo)
+  2. o change freeze da Black Friday (nov a jan) trava os 3 projetos de e-commerce
+  3. a consultoria CodeForge entrega com prazo 40% acima do prometido,
+     e o nome dela aparece escrito de 4 jeitos
+  4. dois SREs seniores (COL0017, COL0018) ociosos no PRJ-007, que ainda está
+     no desenho, enquanto o status report do PRJ-011 reclama de falta de SRE
+  5. dois squads com rotatividade alta (PRJ-016, PRJ-030) e velocidade baixa
 
-A sujeira também é proposital (ver material/CLAUDE.md): limpar é o
-conteúdo da noite 2. NÃO conserte o gerador.
+A sujeira também é proposital: limpar é o conteúdo da noite 2.
+NÃO conserte o gerador.
 """
 from __future__ import annotations
 
 import argparse
 import csv
 import datetime as dt
+import json
 import math
 import pathlib
 import random
 import shutil
 import sys
+import unicodedata
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from pdf_simples import escrever_pdf  # noqa: E402
+from xlsx_simples import escrever_xlsx, serial_excel  # noqa: E402
 
 HOJE = dt.date(2026, 10, 16)          # o "hoje" do dataset (sexta-feira)
-N_PROJETOS = 40
-TAREFAS_POR_PROJETO = 200
+N_PROJETOS = 60
+N_COLABORADORES = 520
+CUSTO_HORA_REF = 150.0                 # R$/h usado para converter orçamento em horas planejadas
 
-CPI_CAINDO = ["P002", "P005", "P009", "P014", "P018", "P021", "P027", "P033"]
-PARA_CHUVA = ["P003", "P011", "P024"]
-EQUIPE_FRACA = ["P016", "P030"]
-OBRA_GUINDASTE_PARADO = "P007"         # MG, guindastes ociosos
-OBRA_SEM_GUINDASTE = "P011"            # PA, falta guindaste
-GUINDASTES_PARADOS = ["EQ0017", "EQ0018"]
-FORNECEDOR_ATRASADO = "Metalúrgica Norte Aço Ltda"
-PASTAS_GERADAS = ["erp", "cronograma", "rh", "ponto", "frota", "almoxarifado", "rdo", "documentos"]
-CONTRATOS_PDF = ["P002", "P005", "P007", "P011", "P014", "P018", "P024", "P033"]
+CPI_CAINDO = ["PRJ-002", "PRJ-005", "PRJ-009", "PRJ-014", "PRJ-018", "PRJ-021", "PRJ-027", "PRJ-033"]
+ECOMMERCE_FREEZE = ["PRJ-003", "PRJ-011", "PRJ-024"]
+SQUAD_ROTATIVIDADE = ["PRJ-016", "PRJ-030"]
+PROJETO_SRE_OCIOSO = "PRJ-007"         # ainda no discovery, não precisa de SRE
+PROJETO_SEM_SRE = "PRJ-011"            # em implantação, reclama de falta de SRE
+SRES_OCIOSOS = ["COL0017", "COL0018"]
+TROCA_SRE = HOJE - dt.timedelta(weeks=12)          # sexta em que os SREs saíram do PRJ-011
+FREEZE_2025 = (dt.date(2025, 11, 1), dt.date(2026, 1, 10))
+FREEZE_2026 = (dt.date(2026, 11, 1), dt.date(2027, 1, 10))
+PRAZO_ADITIVO_DIAS = 30               # tempo para aprovar mais horas/créditos (ruptura de capacidade)
+CONSULTORIA_ATRASADA = "CodeForge Consultoria Ltda"
+GRAFIAS_CODEFORGE = [CONSULTORIA_ATRASADA, "Codeforge Consultoria", "CODEFORGE CONSULTORIA LTDA", "Code Forge Consultoria"]
+FERRAMENTAS = {"excel": 20, "clickup": 25, "msproject": 15}
+PASTAS_GERADAS = ["pmo", "excel", "clickup", "msproject", "rh", "timesheet", "financeiro", "compras",
+                  "incidentes", "documentos"]
 
 # ---------------------------------------------------------------- cadastros
 
 CLIENTES = {
-    "mineracao": ["Mineração Vale do Ferro", "Serra Dourada Mineração", "Companhia Mineira Horizonte",
-                  "Bauxita Norte S.A.", "Níquel Carajás Mineração"],
-    "oleo_gas": ["Petro Atlântica", "Gás do Recôncavo", "Terminal Oceânico Sul", "Refinaria Guanabara Nova"],
-    "agro": ["Agroindustrial Cerrado Verde", "Usina Boa Safra Bioenergia", "Cooperativa Grão Forte",
-             "Etanol Pantanal", "Fertilizantes Planalto"],
+    "varejo": ["Rede Mercantil Brasil", "Magazine Horizonte", "Supermercados Bom Preço", "Moda Viva Lojas",
+               "Farmácias Saúde Já"],
+    "financeiro": ["Banco Meridiano", "Cooperativa de Crédito Aliança", "Seguradora Porto Firme",
+                   "Fintech Pagar Fácil", "Corretora Valor Real"],
+    "saude": ["Hospital Santa Clara", "Rede Diagnóstica Vida", "Operadora Bem Cuidar"],
+    "logistica": ["Transportadora Rota Norte", "Logística Expressa Brasil", "Porto Seco Campinas"],
+    "industria": ["Indústria Metal Forte", "Alimentos Campo Bom", "Química Atlântica"],
 }
-TIPOS_OBRA = {
-    "mineracao": ["Planta de beneficiamento", "Correia transportadora de minério", "Usina de pelotização",
-                  "Descaracterização de barragem", "Pátio de estocagem de minério"],
-    "oleo_gas": ["Unidade de tratamento de gás", "Esferas de armazenamento de GLP", "Dutovia e estação de compressão"],
-    "oleo_gas_costa": ["Terminal de GNL", "Base de apoio offshore", "Píer de carregamento",
-                       "Unidade de tratamento de gás", "Tancagem de derivados"],
-    "agro": ["Usina de etanol de milho", "Planta de esmagamento de soja", "Armazém graneleiro",
-             "Unidade de biogás", "Fábrica de fertilizantes"],
+TIPOS_PROJETO = {
+    "varejo": ["App de fidelidade", "Integração omnichannel", "Migração do PDV para cloud", "Portal B2B",
+               "Gestão de estoque em tempo real"],
+    "financeiro": ["Core bancário - módulo de crédito", "App de investimentos", "APIs de Open Finance",
+                   "Antifraude em tempo real", "Migração do mainframe para cloud"],
+    "saude": ["Prontuário eletrônico", "Portal do paciente", "Integração com laboratórios", "Telemedicina"],
+    "logistica": ["TMS - gestão de transporte", "Rastreamento em tempo real", "Roteirizador", "Portal do embarcador"],
+    "industria": ["Implantação de ERP", "MES chão de fábrica", "Data lake industrial", "Manutenção preditiva"],
 }
-UFS = {
-    "mineracao": ["MG", "PA", "GO", "BA", "MG", "PA"],
-    "oleo_gas": ["RJ", "ES", "BA", "SP", "RJ"],
-    "agro": ["MT", "GO", "MS", "SP", "MA", "PR", "MT"],
-}
-MUNICIPIOS = {
-    "MG": ["Itabira", "Congonhas", "Paracatu", "Mariana", "Sete Lagoas"],
-    "PA": ["Parauapebas", "Canaã dos Carajás", "Marabá", "Barcarena"],
-    "GO": ["Catalão", "Rio Verde", "Niquelândia"],
-    "BA": ["Camaçari", "Jacobina", "Candeias"],
-    "RJ": ["Macaé", "Itaguaí", "Duque de Caxias"],
-    "ES": ["Linhares", "Aracruz", "Anchieta"],
-    "SP": ["Cubatão", "Paulínia", "Ribeirão Preto"],
-    "MT": ["Sorriso", "Lucas do Rio Verde", "Primavera do Leste"],
-    "MS": ["Dourados", "Três Lagoas"],
-    "MA": ["São Luís", "Balsas"],
-    "PR": ["Ponta Grossa", "Cascavel"],
-}
-# óleo e gás com píer, terminal ou base offshore só em município do litoral
-COSTEIROS = {"Macaé", "Itaguaí", "Duque de Caxias", "Linhares", "Aracruz", "Anchieta", "Camaçari", "Candeias",
-             "Cubatão", "São Luís", "Barcarena"}
+TIPOS_ECOMMERCE = ["Nova plataforma de e-commerce", "Checkout e meios de pagamento", "Marketplace de sellers"]
 NOMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabriela", "Henrique", "Isabela", "João",
-         "Karina", "Leonardo", "Marina", "Nelson", "Olívia", "Paulo", "Renata", "Sérgio", "Tatiana", "Vítor"]
+         "Karina", "Leonardo", "Marina", "Nelson", "Olívia", "Paulo", "Renata", "Sérgio", "Tatiana", "Vítor",
+         "Amanda", "Caio", "Débora", "Felipe", "Juliana", "Lucas", "Patrícia", "Rafael", "Sabrina", "Thiago"]
 SOBRENOMES = ["Almeida", "Barros", "Cardoso", "Duarte", "Esteves", "Ferraz", "Gomes", "Lacerda", "Moura",
-              "Nogueira", "Pacheco", "Queiroz", "Rezende", "Siqueira", "Teixeira", "Vasconcelos"]
+              "Nogueira", "Pacheco", "Queiroz", "Rezende", "Siqueira", "Teixeira", "Vasconcelos", "Monteiro",
+              "Ribeiro", "Santana", "Xavier"]
 
-# disciplina: (fração de início, fração de fim) do prazo baseline, peso no orçamento
-DISCIPLINAS = {
-    "civil": (0.00, 0.55, 0.26),
-    "estrutura_metalica": (0.22, 0.70, 0.20),
-    "tubulacao": (0.40, 0.86, 0.15),
-    "mecanica": (0.45, 0.88, 0.14),
-    "eletrica": (0.50, 0.92, 0.12),
-    "instrumentacao": (0.60, 0.94, 0.07),
-    "comissionamento": (0.86, 1.00, 0.06),
+# fase: (fração de início, fração de fim) do prazo baseline, peso no orçamento
+FASES = {
+    "discovery": (0.00, 0.14, 0.06),
+    "arquitetura": (0.06, 0.28, 0.08),
+    "desenvolvimento": (0.15, 0.80, 0.45),
+    "integracao": (0.40, 0.86, 0.15),
+    "testes": (0.50, 0.93, 0.14),
+    "implantacao": (0.84, 1.00, 0.12),
 }
 ATIVIDADES = {
-    "civil": ["Escavação e reaterro", "Concretagem de fundação", "Armação de pilares", "Forma e concretagem de laje",
-              "Base de equipamento", "Drenagem pluvial", "Pavimentação de acesso"],
-    "estrutura_metalica": ["Montagem de pórtico", "Montagem de estrutura do galpão", "Torque de parafusos",
-                           "Içamento de treliça", "Montagem de passarela", "Cobertura metálica"],
-    "tubulacao": ["Pré-fabricação de spool", "Montagem de linha", "Teste hidrostático", "Soldagem de tubulação",
-                  "Suportação de tubos"],
-    "mecanica": ["Montagem de moinho", "Alinhamento de bomba", "Montagem de correia", "Instalação de redutor",
-                 "Nivelamento de equipamento"],
-    "eletrica": ["Lançamento de cabos", "Montagem de eletrocalha", "Instalação de painel CCM",
-                 "Montagem de subestação", "Aterramento"],
-    "instrumentacao": ["Instalação de transmissores", "Montagem de válvulas de controle", "Loop check",
-                       "Lançamento de cabos de instrumentação"],
-    "comissionamento": ["Testes a frio", "Testes a quente", "Partida assistida", "Punch list"],
+    "discovery": ["Levantamento de requisitos", "Workshop com a área de negócio", "Mapeamento de processos",
+                  "Definição do escopo do MVP", "Entrevistas com usuários"],
+    "arquitetura": ["Desenho da arquitetura da solução", "Modelo de dados", "Prova de conceito",
+                    "Desenho das integrações", "Revisão de segurança da arquitetura"],
+    "desenvolvimento": ["API de cadastro", "Tela de login", "Módulo de pagamentos", "Serviço de notificações",
+                        "Backoffice administrativo", "Relatórios gerenciais", "Busca de produtos",
+                        "Carrinho de compras", "Motor de regras", "Cadastro de clientes", "Painel do usuário",
+                        "Autenticação SSO"],
+    "integracao": ["Integração com o ERP do cliente", "Integração com gateway de pagamento", "Integração com CRM",
+                   "Mensageria entre serviços", "Carga inicial de dados", "Integração com o legado"],
+    "testes": ["Testes integrados", "Teste de carga", "Homologação com usuários", "Testes de regressão",
+               "Pentest", "Correção de bugs da homologação"],
+    "implantacao": ["Pipeline de deploy em produção", "Plano de go-live", "Migração dos dados de produção",
+                    "Treinamento de usuários", "Go-live", "Operação assistida"],
 }
-# material: (descrição, unidade, disciplina, preço unitário R$, lead time dias, qtd base por R$ 20 mi)
-MATERIAIS = [
-    ("M001", "Cimento CP-II 50kg", "saco", "civil", 38.0, 7, 22000),
-    ("M002", "Aço CA-50 vergalhão", "t", "civil", 6200.0, 15, 420),
-    ("M003", "Concreto usinado fck 30", "m3", "civil", 520.0, 3, 5200),
-    ("M004", "Brita 1", "m3", "civil", 110.0, 5, 3800),
-    ("M005", "Compensado para forma 18mm", "chapa", "civil", 145.0, 10, 2600),
-    ("M006", "Perfil laminado W 310", "t", "estrutura_metalica", 9800.0, 30, 380),
-    ("M007", "Chapa grossa ASTM A36", "t", "estrutura_metalica", 8700.0, 35, 210),
-    ("M008", "Parafuso estrutural ASTM A325", "un", "estrutura_metalica", 9.5, 20, 46000),
-    ("M009", "Telha trapezoidal TP-40", "m2", "estrutura_metalica", 78.0, 25, 9000),
-    ("M010", "Tubo aço carbono 6 pol SCH40", "m", "tubulacao", 410.0, 40, 5200),
-    ("M011", "Flange 6 pol classe 150", "un", "tubulacao", 380.0, 30, 900),
-    ("M012", "Curva 90 graus 6 pol", "un", "tubulacao", 260.0, 30, 1200),
-    ("M013", "Válvula gaveta 6 pol", "un", "tubulacao", 4300.0, 60, 140),
-    ("M014", "Eletrodo E7018", "kg", "tubulacao", 32.0, 10, 6500),
-    ("M015", "Rolamento autocompensador", "un", "mecanica", 2900.0, 45, 220),
-    ("M016", "Correia transportadora 48 pol", "m", "mecanica", 1450.0, 75, 1100),
-    ("M017", "Redutor de velocidade", "un", "mecanica", 68000.0, 90, 14),
-    ("M018", "Cabo de potência 1kV 95mm2", "m", "eletrica", 98.0, 30, 26000),
-    ("M019", "Eletrocalha perfurada 300mm", "m", "eletrica", 120.0, 20, 6800),
-    ("M020", "Painel CCM", "un", "eletrica", 185000.0, 90, 6),
-    ("M021", "Luminária LED industrial", "un", "eletrica", 640.0, 25, 700),
-    ("M022", "Transmissor de pressão", "un", "instrumentacao", 7400.0, 60, 110),
-    ("M023", "Cabo de instrumentação 2x1,5mm2", "m", "instrumentacao", 14.0, 20, 32000),
-    ("M024", "Válvula de controle 4 pol", "un", "instrumentacao", 38000.0, 90, 24),
-    ("M025", "Óleo lubrificante ISO VG 220", "l", "comissionamento", 28.0, 10, 3500),
-]
+# papel: (custo/hora R$ faixa)
+PAPEIS = {
+    "tech_lead": (150, 210), "product_owner": (120, 170), "qa": (80, 120), "sre": (140, 200),
+    "dev_backend": (90, 160), "dev_frontend": (85, 150), "dev_mobile": (90, 155), "designer_ux": (85, 130),
+    "engenheiro_dados": (100, 165), "arquiteto": (170, 230), "agilista": (100, 140), "gestor_engenharia": (190, 260),
+}
+PAPEIS_DEV = ("dev_backend", "dev_frontend", "dev_mobile", "engenheiro_dados", "qa")
+# fornecedor: (fase em que entrega, prazo contratado em dias, serviço)
 FORNECEDORES = {
-    "civil": ["Cimentos Planalto", "Concreteira Rocha Firme", "Aço Brasil Distribuidora"],
-    "estrutura_metalica": [FORNECEDOR_ATRASADO, FORNECEDOR_ATRASADO, "Estruturas Minas Forte"],
-    "tubulacao": ["Tubos & Conexões Atlântico", "Válvulas Paulista"],
-    "mecanica": ["MecParts Industrial", "Transmissão Pesada Ltda"],
-    "eletrica": ["Eletro Cabos Sudeste", "Painéis Força Total"],
-    "instrumentacao": ["InstruTech Automação"],
-    "comissionamento": ["Lubrificantes Nacional"],
+    CONSULTORIA_ATRASADA: ("desenvolvimento", 30, "Sprint"),
+    "Pixel Design Studio": ("arquitetura", 20, "Pacote de telas"),
+    "QualiTest Brasil": ("testes", 20, "Ciclo de testes"),
+    "SecureOps Segurança": ("testes", 25, "Pentest"),
+    "DataPrime Analytics": ("integracao", 30, "Lote de integração"),
 }
-# a sujeira: o mesmo fornecedor digitado de quatro jeitos no ERP de compras
-GRAFIAS_NORTE_ACO = [FORNECEDOR_ATRASADO, "Metalurgica Norte Aco", "METALÚRGICA NORTE AÇO LTDA",
-                     "Norte Aço Metalúrgica"]
-FUNCOES_EQUIPE = ["civil", "armacao", "montagem_mecanica", "estrutura_metalica", "tubulacao", "soldagem",
-                  "eletrica", "instrumentacao", "andaimes"]
-TIPOS_EQUIPAMENTO = [  # tipo, modelo, custo/hora, quantidade
-    ("guindaste", "Guindaste 90t", 950.0, 24), ("guindaste", "Guindaste 220t", 2100.0, 8),
-    ("escavadeira", "Escavadeira 30t", 380.0, 44), ("caminhao_munck", "Caminhão munck 40tm", 260.0, 38),
-    ("retroescavadeira", "Retroescavadeira", 190.0, 34), ("plataforma_elevatoria", "PTA 26m", 160.0, 46),
-    ("gerador", "Gerador 450kVA", 140.0, 40), ("compressor", "Compressor 750pcm", 120.0, 36),
-    ("rolo_compactador", "Rolo compactador", 210.0, 30),
-]
+NUVEM = "NuvemSul Cloud"
 
 
 # ----------------------------------------------------------------- utilidades
@@ -179,10 +148,6 @@ def sextas(inicio: dt.date, fim: dt.date) -> list[dt.date]:
         out.append(d)
         d += dt.timedelta(days=7)
     return out
-
-
-def dias_uteis(segunda: dt.date) -> list[dt.date]:
-    return [segunda + dt.timedelta(days=i) for i in range(5)]
 
 
 def iso(d: dt.date | None) -> str:
@@ -197,15 +162,22 @@ def clamp(x: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, x))
 
 
-def chuvoso(uf: str, d: dt.date, rng: random.Random) -> bool:
-    m = d.month
-    if uf == "PA":
-        p = 0.68 if m in (12, 1, 2, 3) else (0.35 if m in (4, 11) else 0.08)
-    elif uf in ("MG", "GO", "MT", "MS", "SP", "RJ", "ES", "PR"):
-        p = 0.32 if m in (11, 12, 1, 2, 3) else (0.12 if m in (4, 10) else 0.03)
-    else:  # BA, MA
-        p = 0.22 if m in (3, 4, 5, 6) else 0.06
-    return rng.random() < p
+def ms(d: dt.date) -> str:
+    """Data como o ClickUp devolve: milissegundos desde 1970, em texto (meio-dia UTC)."""
+    return str(int(dt.datetime(d.year, d.month, d.day, 12, tzinfo=dt.timezone.utc).timestamp() * 1000))
+
+
+def slug(texto: str) -> str:
+    t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return "".join(c if c.isalnum() else "_" for c in t).strip("_").lower()
+
+
+def em_freeze(d: dt.date) -> bool:
+    return FREEZE_2025[0] <= d <= FREEZE_2025[1] + dt.timedelta(days=6)
+
+
+def fim_de_ano(d: dt.date) -> bool:
+    return (d.month == 12 and d.day >= 20) or (d.month == 1 and d.day <= 6)
 
 
 def escrever_csv(caminho: pathlib.Path, cabecalho: list[str], linhas: list[list]) -> None:
@@ -216,97 +188,114 @@ def escrever_csv(caminho: pathlib.Path, cabecalho: list[str], linhas: list[list]
         w.writerows(linhas)
 
 
-# ----------------------------------------------------------------- simulação
+def pessoa(rng: random.Random) -> str:
+    return f"{rng.choice(NOMES)} {rng.choice(SOBRENOMES)}"
 
-def gerar(saida: pathlib.Path, seed: int) -> dict:
-    rng = random.Random(seed)
 
-    # ---- projetos -----------------------------------------------------------
-    setores = ["mineracao"] * 16 + ["oleo_gas"] * 12 + ["agro"] * 12
-    rng.shuffle(setores)
-    projetos = []
-    usados = set()
+# ----------------------------------------------------------------- projetos
+
+def gerar_projetos(rng: random.Random) -> list[dict]:
+    segmentos = ["varejo"] * 15 + ["financeiro"] * 17 + ["saude"] * 9 + ["logistica"] * 9 + ["industria"] * 10
+    rng.shuffle(segmentos)
+    ferramentas = [f for f, n in FERRAMENTAS.items() for _ in range(n)]
+    rng.shuffle(ferramentas)
+    # quem precisa estar em qual ferramenta (a história atravessa as três)
+    fixas = {"PRJ-011": "excel", "PRJ-007": "msproject", "PRJ-003": "clickup", "PRJ-024": "msproject",
+             "PRJ-016": "clickup", "PRJ-030": "excel"}
+    for pid, f in fixas.items():
+        i = int(pid[4:]) - 1
+        if ferramentas[i] != f:
+            j = next(k for k, g in enumerate(ferramentas)
+                     if g == f and f"PRJ-{k + 1:03d}" not in fixas)
+            ferramentas[i], ferramentas[j] = ferramentas[j], ferramentas[i]
+    projetos, usados = [], set()
     for i in range(N_PROJETOS):
-        pid = f"P{i + 1:03d}"
-        setor = setores[i]
-        if pid in PARA_CHUVA or pid == OBRA_SEM_GUINDASTE:
-            setor, uf = "mineracao", "PA"
-        elif pid == OBRA_GUINDASTE_PARADO:
-            setor, uf = "mineracao", "MG"
+        pid = f"PRJ-{i + 1:03d}"
+        seg = "varejo" if pid in ECOMMERCE_FREEZE else segmentos[i]
+        if pid in ECOMMERCE_FREEZE:
+            tipo = TIPOS_ECOMMERCE[ECOMMERCE_FREEZE.index(pid)]
         else:
-            uf = rng.choice(UFS[setor])
-            if uf == "PA":
-                uf = "MG"
-        if pid in CPI_CAINDO:
-            inicio = dt.date(2024, 11, 1) + dt.timedelta(days=rng.randint(0, 210))
-            meses = rng.randint(24, 27)
-        elif pid in PARA_CHUVA:
-            inicio = dt.date(2025, 3, 1) + dt.timedelta(days=rng.randint(0, 150))
-            meses = rng.randint(18, 22)
-        elif pid == OBRA_GUINDASTE_PARADO:
-            inicio, meses = dt.date(2025, 6, 2), 20
-        else:
-            inicio = dt.date(2024, 10, 1) + dt.timedelta(days=rng.randint(0, 520))
-            meses = rng.randint(14, 24)
-        duracao = int(meses * 30.4)
-        if setor == "oleo_gas":
-            uf = rng.choice(["RJ", "ES", "BA", "RJ", "SP"]) if uf not in ("RJ", "ES", "BA", "SP") else uf
-        municipio = rng.choice(MUNICIPIOS[uf])
-        tipos = TIPOS_OBRA["oleo_gas_costa"] if (setor == "oleo_gas" and municipio in COSTEIROS) else TIPOS_OBRA[setor]
-        nome = f"{rng.choice(tipos)} {municipio}"
-        while nome in usados:                       # nome de obra é único na carteira
-            nome = f"{rng.choice(tipos)} {municipio}" if rng.random() < 0.7 else f"{nome} - fase 2"
+            tipo = rng.choice(TIPOS_PROJETO[seg])
+        cliente = rng.choice(CLIENTES[seg])
+        nome = f"{tipo} - {cliente}"
+        while nome in usados:
+            cliente = rng.choice(CLIENTES[seg])
+            tipo = rng.choice(TIPOS_PROJETO[seg])
+            nome = f"{tipo} - {cliente}"
         usados.add(nome)
-        valor = round(rng.lognormvariate(math.log(19e6), 0.45) / 1000) * 1000
-        valor = clamp(valor, 6e6, 62e6)
-        orcamento = round(valor * rng.uniform(0.80, 0.86), 2)
+        if pid in CPI_CAINDO:
+            inicio = dt.date(2024, 12, 2) + dt.timedelta(days=rng.randint(0, 180))
+            meses = rng.randint(18, 22)
+        elif pid in ECOMMERCE_FREEZE:
+            inicio = dt.date(2025, 3, 3) + dt.timedelta(days=rng.randint(0, 120))
+            meses = rng.randint(16, 19)
+        elif pid == PROJETO_SRE_OCIOSO:
+            inicio, meses = dt.date(2026, 5, 4), 14
+        elif pid == PROJETO_SEM_SRE:
+            inicio, meses = dt.date(2025, 4, 7), 17
+        elif pid in SQUAD_ROTATIVIDADE:
+            inicio = dt.date(2025, 5, 5) + dt.timedelta(days=rng.randint(0, 60))
+            meses = rng.randint(16, 18)
+        else:
+            inicio = dt.date(2024, 12, 2) + dt.timedelta(days=rng.randint(0, 500))
+            meses = rng.randint(10, 22)
+        duracao = int(meses * 30.4)
+        valor = round(rng.lognormvariate(math.log(4.6e6), 0.5) / 1000) * 1000
+        valor = clamp(valor, 1.2e6, 18e6)
+        orcamento = round(valor * rng.uniform(0.72, 0.82), 2)
         if pid in CPI_CAINDO:
             vel = rng.uniform(0.95, 1.02)
-        elif pid in EQUIPE_FRACA:
-            vel = rng.uniform(0.80, 0.86)
+        elif pid in SQUAD_ROTATIVIDADE:
+            vel = rng.uniform(0.78, 0.84)
+        elif pid == PROJETO_SEM_SRE:
+            vel = rng.uniform(0.86, 0.90)
         else:
-            vel = rng.uniform(0.96, 1.05)
+            vel = rng.uniform(0.84, 1.04)
         projetos.append(dict(
-            id=pid, setor=setor, uf=uf, municipio=municipio,
-            cliente=rng.choice(CLIENTES[setor]), nome=nome,
+            id=pid, segmento=seg, tipo=tipo, cliente=cliente, nome=nome, ferramenta=ferramentas[i],
             valor=valor, orcamento=orcamento, inicio=inicio, duracao=duracao,
             fim_baseline=inicio + dt.timedelta(days=duracao), vel=vel,
-            custo_base=rng.uniform(0.96, 1.035),
-            gerente=f"{rng.choice(NOMES)} {rng.choice(SOBRENOMES)}",
-            engenheiro=f"{rng.choice(NOMES)} {rng.choice(SOBRENOMES)}",
+            custo_base=rng.uniform(0.96, 1.035), gerente=pessoa(rng),
         ))
+    return projetos
 
-    # ---- tarefas (baseline) --------------------------------------------------
-    pesos_disc = [(d, v[2]) for d, v in DISCIPLINAS.items()]
-    tarefas = {}  # pid -> lista de dicts
+
+def gerar_tarefas(projetos: list[dict], rng: random.Random) -> dict[str, list[dict]]:
+    pesos = [(f, v[2]) for f, v in FASES.items()]
+    soma_pesos = sum(v[2] for v in FASES.values())
+    tarefas = {}
     for p in projetos:
-        lista = []
         brutos = []
-        for t in range(TAREFAS_POR_PROJETO):
-            disc = rng.choices([d for d, _ in pesos_disc], [w for _, w in pesos_disc])[0]
-            ini_f, fim_f, _ = DISCIPLINAS[disc]
+        for _ in range(rng.randint(60, 110)):
+            fase = rng.choices([f for f, _ in pesos], [w for _, w in pesos])[0]
+            ini_f, fim_f, _ = FASES[fase]
             a = rng.uniform(ini_f, fim_f - 0.04)
-            dur = clamp(rng.uniform(0.035, 0.16), 0.03, fim_f - a)
-            brutos.append((disc, a, dur, rng.lognormvariate(0, 0.6)))
+            dur = clamp(rng.uniform(0.04, 0.18), 0.03, fim_f - a)
+            brutos.append((fase, a, dur, rng.lognormvariate(0, 0.6)))
         brutos.sort(key=lambda x: (x[1], x[0]))
-        soma_peso = {}
-        for disc, _, _, w in brutos:
-            soma_peso[disc] = soma_peso.get(disc, 0) + w
-        for n, (disc, a, dur, w) in enumerate(brutos, 1):
-            vp = p["orcamento"] * DISCIPLINAS[disc][2] / sum(v[2] for v in DISCIPLINAS.values()) * w / soma_peso[disc]
+        soma_fase = {}
+        for fase, _, _, w in brutos:
+            soma_fase[fase] = soma_fase.get(fase, 0) + w
+        lista = []
+        for n, (fase, a, dur, w) in enumerate(brutos, 1):
+            vp = p["orcamento"] * FASES[fase][2] / soma_pesos * w / soma_fase[fase]
+            horas = max(8, round(vp / CUSTO_HORA_REF))
             lista.append(dict(
-                id=f"{p['id']}-T{n:03d}", disc=disc,
-                atividade=rng.choice(ATIVIDADES[disc]),
+                n=n, fase=fase, atividade=rng.choice(ATIVIDADES[fase]),
                 a=a * p["duracao"], L=max(7.0, dur * p["duracao"]),
-                u=rng.uniform(0.92, 1.12), vp=round(vp, 2),
+                u=rng.uniform(0.92, 1.12), horas=horas,
                 ini_real=None, fim_real=None, pct=0.0,
             ))
+        tot = sum(t["horas"] for t in lista)
+        for t in lista:                 # valor planejado proporcional às horas (é o que o aluno consegue calcular)
+            t["vp"] = p["orcamento"] * t["horas"] / tot
         tarefas[p["id"]] = lista
+    return tarefas
 
-    # ---- simulação semanal por obra -------------------------------------------
-    hist = {}        # pid -> lista de dicts por semana (sexta)
-    avanco = []      # linhas de avanco_semanal
-    chuva_dia = {}   # (pid, data) -> bool
+
+def simular(projetos: list[dict], tarefas: dict, rng: random.Random) -> dict[str, list[dict]]:
+    """Avanço semanal: um relógio `tau` anda com a velocidade da semana; cada tarefa avança com ele."""
+    hist = {}
     for p in projetos:
         pid = p["id"]
         tau = 0.0
@@ -314,50 +303,54 @@ def gerar(saida: pathlib.Path, seed: int) -> dict:
         concluido = None
         for sexta in sextas(p["inicio"], HOJE):
             segunda = sexta - dt.timedelta(days=4)
-            dias = [d for d in dias_uteis(segunda) if d >= p["inicio"]]
-            chuvas = 0
-            for d in dias:
-                c = chuvoso(p["uf"], d, rng)
-                chuva_dia[(pid, d)] = c
-                chuvas += c
-            frac_chuva = chuvas / max(1, len(dias))
-            pena = 0.62 if p["uf"] == "PA" else 0.18
-            vel = p["vel"] * (1 - pena * frac_chuva) * rng.gauss(1, 0.06)
-            sem_guindaste = pid == OBRA_SEM_GUINDASTE and sexta >= HOJE - dt.timedelta(weeks=12)
-            if sem_guindaste:
-                vel *= 0.72
-            vel = clamp(vel, 0.15, 1.25)
-            tau += 7 * vel * (len(dias) / 5)
-            ev = 0.0
-            ev_disc = {}
+            dias_semana = len([d for d in range(5) if segunda + dt.timedelta(days=d) >= p["inicio"]])
+            vel = p["vel"] * rng.gauss(1, 0.06)
+            freeze = pid in ECOMMERCE_FREEZE and em_freeze(sexta)
+            if freeze:
+                vel *= 0.30
+            if fim_de_ano(sexta):
+                vel *= 0.55
+            sem_sre = pid == PROJETO_SEM_SRE and sexta > TROCA_SRE
+            if sem_sre:
+                vel *= 0.62
+            if pid in SQUAD_ROTATIVIDADE and sexta > HOJE - dt.timedelta(days=270):
+                vel *= 0.85                                  # gente saindo e gente nova chegando
+            vel = clamp(vel, 0.10, 1.25)
+            tau += 7 * vel * (dias_semana / 5)
+            dia_proj = (sexta - p["inicio"]).days
+            ev = pv = 0.0
+            ev_fase = {}
             for t in tarefas[pid]:
-                antes = t["pct"]
                 pct = clamp((tau - t["a"]) / (t["L"] * t["u"]), 0.0, 1.0)
                 if pct > 0 and t["ini_real"] is None:
                     t["ini_real"] = segunda + dt.timedelta(days=rng.randint(0, 4))
                 if pct >= 1 and t["fim_real"] is None:
                     t["fim_real"] = sexta - dt.timedelta(days=rng.randint(0, 2))
                 t["pct"] = pct
-                if pct != antes:
-                    avanco.append([f"{t['id']}", pid, iso(sexta), round(pct * 100, 1)])
                 ev += t["vp"] * pct
-                ev_disc[t["disc"]] = ev_disc.get(t["disc"], 0) + t["vp"] * pct
-            mes = (sexta - p["inicio"]).days / 30.4
+                pv += t["vp"] * clamp((dia_proj - t["a"]) / t["L"], 0.0, 1.0)
+                ev_fase[t["fase"]] = ev_fase.get(t["fase"], 0) + t["vp"] * pct
+            mes = dia_proj / 30.4
             fator = p["custo_base"] * rng.gauss(1, 0.025)
-            if pid in CPI_CAINDO and mes >= 9:
-                fator += min(0.40, 0.034 * (mes - 9 + 1))
-            semanas.append(dict(sexta=sexta, segunda=segunda, vel=vel, chuva=frac_chuva, ev=ev,
-                                ev_disc=ev_disc, fator=fator, sem_guindaste=sem_guindaste, dias=dias))
+            if pid in CPI_CAINDO and mes >= 6:
+                fator += min(0.40, 0.034 * (mes - 6 + 1))
+            semanas.append(dict(sexta=sexta, segunda=segunda, vel=vel, ev=ev, pv=pv, ev_fase=ev_fase,
+                                fator=fator, freeze=freeze, sem_sre=sem_sre, mes=mes))
             if all(t["pct"] >= 1 for t in tarefas[pid]):
                 concluido = sexta
                 break
         p["concluido"] = concluido
         hist[pid] = semanas
+    return hist
 
-    # ---- custos -------------------------------------------------------------
+
+# ----------------------------------------------------------------- custos
+
+def gerar_custos(projetos, hist, rng):
     custos = []
-    cat_pesos = [("mao_de_obra", 0.36), ("material", 0.30), ("equipamento", 0.14),
-                 ("subcontrato", 0.14), ("indiretos", 0.06)]
+    cat_pesos = [("pessoal", 0.62), ("consultoria", 0.14), ("cloud", 0.12), ("licencas", 0.07), ("despesas", 0.05)]
+    descricao = {"pessoal": "Folha alocada", "consultoria": "Horas de consultoria", "cloud": f"Fatura {NUVEM}",
+                 "licencas": "Licenças de software", "despesas": "Viagens e despesas"}
     nlanc = 0
     for p in projetos:
         queima = p["orcamento"] * 7 / p["duracao"]
@@ -365,353 +358,675 @@ def gerar(saida: pathlib.Path, seed: int) -> dict:
         for s in hist[p["id"]]:
             dev = s["ev"] - ev_ant
             ev_ant = s["ev"]
-            ociosidade = queima * 0.30 * max(0.0, 0.95 - s["vel"])
+            ociosidade = queima * 0.30 * max(0.0, 0.95 - s["vel"])   # gente parada continua custando
             ac = dev * s["fator"] + ociosidade
-            extra = dev * max(0.0, s["fator"] - p["custo_base"] - 0.06)  # aditivo não cobrado
+            extra = dev * max(0.0, s["fator"] - p["custo_base"] - 0.06)  # escopo que cresceu sem aditivo
             for cat, w in cat_pesos:
                 valor = ac * w
-                if cat == "subcontrato":
+                if cat == "consultoria":
                     valor += extra * 0.5
-                if cat == "mao_de_obra":
+                if cat == "pessoal":
                     valor += extra * 0.2 - extra * 0.7 * w
                 if valor <= 0:
                     continue
-                partes = rng.randint(1, 2) if cat != "indiretos" else 1
-                for k in range(partes):
+                partes = rng.randint(1, 2) if cat in ("pessoal", "consultoria") else 1
+                for _ in range(partes):
                     nlanc += 1
                     v = round(valor / partes * rng.uniform(0.9, 1.1), 2)
-                    d = rng.choice(s["dias"])
+                    d = s["segunda"] + dt.timedelta(days=rng.randint(0, 4))
                     txt = f"{v:.2f}"
                     if rng.random() < 0.03:                 # sujeira: decimal com vírgula
                         txt = txt.replace(".", ",")
                     custos.append([f"L{nlanc:07d}", p["id"], iso(d), cat,
-                                   f"{cat.upper()} {p['id']} semana {iso(s['segunda'])}", txt,
-                                   f"CC-{p['id']}-{cat[:3].upper()}"])
+                                   f"{descricao[cat]} {p['id']} semana {iso(s['segunda'])}", txt,
+                                   f"CC-{p['id'][4:]}-{cat[:3].upper()}"])
                     if rng.random() < 0.015:                # estorno (é informação, não erro)
                         nlanc += 1
                         custos.append([f"L{nlanc:07d}", p["id"], iso(min(HOJE, d + dt.timedelta(days=rng.randint(3, 20)))),
                                        cat, f"ESTORNO ref L{nlanc - 1:07d}", f"{-round(v * rng.uniform(0.2, 1.0), 2):.2f}",
-                                       f"CC-{p['id']}-{cat[:3].upper()}"])
+                                       f"CC-{p['id'][4:]}-{cat[:3].upper()}"])
+    return custos
 
-    # ---- materiais, compras e estoque ------------------------------------------
-    def frac_planejada(pid: str, disc: str, dia_proj: float) -> float:
-        tot = sum(t["vp"] for t in tarefas[pid] if t["disc"] == disc)
-        acc = sum(t["vp"] * clamp((dia_proj - t["a"]) / t["L"], 0, 1)
-                  for t in tarefas[pid] if t["disc"] == disc)
-        return acc / tot if tot else 0.0
 
-    compras, estoque = [], []
-    rupturas = {}   # (pid, sexta) -> lista de (material, fornecedor)
-    npedido = 0
+# ----------------------------------------------------------------- pessoas
+
+def gerar_pessoas(projetos, hist, rng):
+    """Colaboradores, alocações e timesheet semanal."""
+    colaboradores, alocacoes = [], []
+    pid_idx = {p["id"]: p for p in projetos}
+
+    def novo(papel, admissao, senioridade=None):
+        cid = f"COL{len(colaboradores) + 1:04d}"
+        lo, hi = PAPEIS[papel]
+        sen = senioridade or rng.choices(["junior", "pleno", "senior", "especialista"], [0.2, 0.42, 0.3, 0.08])[0]
+        mult = {"junior": 0.75, "pleno": 1.0, "senior": 1.25, "especialista": 1.45}[sen]
+        colaboradores.append(dict(id=cid, nome=pessoa(rng), papel=papel, senioridade=sen,
+                                  custo=round(rng.uniform(lo, hi) * mult / 1.1, 2), admissao=admissao,
+                                  desligamento=None))
+        return colaboradores[-1]
+
     for p in projetos:
         pid = p["id"]
-        escala = p["valor"] / 20e6
-        tot_disc = {d: sum(t["vp"] for t in tarefas[pid] if t["disc"] == d) for d in DISCIPLINAS}
-        for mid, desc, un, disc, preco, lead, qbase in MATERIAIS:
-            Q = qbase * escala * rng.uniform(0.8, 1.2)
-            forn_lista = FORNECEDORES[disc]
-            saldo, pendentes = 0.0, []   # pendentes: (data_entrega, qtd)
-            frac_ant = 0.0
-            ini_disc = p["inicio"] + dt.timedelta(days=DISCIPLINAS[disc][0] * p["duracao"] - lead - 14)
-            for s in hist[pid]:
-                if s["sexta"] < ini_disc:
-                    continue
-                frac = s["ev_disc"].get(disc, 0) / tot_disc[disc] if tot_disc[disc] else 0
-                consumo = Q * max(0.0, frac - frac_ant)
-                frac_ant = frac
-                chegou = sum(q for d, q in pendentes if d <= s["sexta"])
-                pendentes = [(d, q) for d, q in pendentes if d > s["sexta"]]
-                saldo += chegou
-                if consumo > saldo + 1e-9 and frac < 0.999:
-                    rupturas.setdefault((pid, s["sexta"]), []).append((desc, mid))
-                saldo = max(0.0, saldo - consumo)
-                # previsão do planejamento: próximas 4 semanas na velocidade atual
-                dia_proj = (s["sexta"] - p["inicio"]).days
-                ritmo = clamp(s["vel"], 0.4, 1.1)
-                prev = Q * max(0.0, frac_planejada(pid, disc, dia_proj + 28) - frac_planejada(pid, disc, dia_proj)) * ritmo / 28
-                if frac < 0.999 and prev > 0:
-                    alvo = prev * (lead + 21)
-                    posicao = saldo + sum(q for _, q in pendentes)
-                    if posicao < alvo:
-                        qtd = max(alvo * 1.3 - posicao, prev * 14)
-                        qtd = round(qtd) if un in ("un", "saco", "chapa") else round(qtd, 1)
-                        if qtd > 0:
-                            npedido += 1
-                            forn = rng.choice(forn_lista)
-                            fator = rng.uniform(1.30, 1.52) if forn == FORNECEDOR_ATRASADO else rng.uniform(0.85, 1.12)
-                            dped = s["sexta"] - dt.timedelta(days=rng.randint(0, 3))
-                            dprom = dped + dt.timedelta(days=lead)
-                            dent = dped + dt.timedelta(days=round(lead * fator))
-                            pendentes.append((dent, qtd))
-                            grafia = rng.choice(GRAFIAS_NORTE_ACO) if forn == FORNECEDOR_ATRASADO else forn
-                            entregue = dent <= HOJE
-                            compras.append([f"PC{npedido:06d}", pid, mid, grafia, qtd,
-                                            round(preco * rng.uniform(0.95, 1.08), 2), iso(dped), iso(dprom),
-                                            iso(dent) if entregue else "", lead,
-                                            "entregue" if entregue else "em_aberto"])
-                if frac > 0 or saldo > 0 or pendentes:
-                    s_txt = round(saldo, 1)
-                    if rng.random() < 0.002:              # sujeira: saldo negativo (erro de inventário)
-                        s_txt = -round(rng.uniform(1, 50), 1)
-                    estoque.append([pid, mid, iso(s["sexta"]), s_txt, round(prev, 3)])
+        fim_proj = p["concluido"]
+        n = rng.randint(5, 11)
+        papeis = ["tech_lead", "product_owner", "qa"]
+        if rng.random() < 0.35 and pid not in (PROJETO_SEM_SRE, PROJETO_SRE_OCIOSO):
+            papeis.append("sre")
+        while len(papeis) < n:
+            papeis.append(rng.choices(["dev_backend", "dev_frontend", "dev_mobile", "designer_ux", "engenheiro_dados"],
+                                      [0.40, 0.25, 0.15, 0.08, 0.12])[0])
+        for papel in papeis:
+            adm = p["inicio"] - dt.timedelta(days=rng.randint(20, 1600))
+            c = novo(papel, adm)
+            pct = 50 if papel in ("product_owner", "designer_ux") and rng.random() < 0.5 else 100
+            sai = None
+            if pid in SQUAD_ROTATIVIDADE and rng.random() < 0.55:
+                sai = HOJE - dt.timedelta(days=rng.randint(10, 240))
+            elif rng.random() < 0.06:
+                sai = p["inicio"] + dt.timedelta(days=rng.randint(30, max(31, (HOJE - p["inicio"]).days)))
+            if sai and sai <= p["inicio"] + dt.timedelta(days=14):
+                sai = None
+            if sai and fim_proj and sai > fim_proj:
+                sai = None
+            if sai:
+                c["desligamento"] = min(sai, HOJE)
+            fim = c["desligamento"] or fim_proj
+            alocacoes.append([c["id"], pid, p["inicio"], fim, pct])
+            if c["desligamento"]:                         # reposição: alguém novo entra semanas depois
+                entra = c["desligamento"] + dt.timedelta(days=rng.randint(14, 35))
+                if entra < HOJE and (not fim_proj or entra < fim_proj):
+                    r = novo(papel, entra - dt.timedelta(days=rng.randint(0, 5)), rng.choice(["junior", "pleno"]))
+                    alocacoes.append([r["id"], pid, entra, fim_proj, pct])
 
-    # ---- equipes e apontamentos -----------------------------------------------
-    equipes, apontamentos = [], []
-    napont = 0
-    for i in range(120):
-        p = projetos[i % N_PROJETOS]
-        eid = f"EQP{i + 1:03d}"
-        funcao = FUNCOES_EQUIPE[i % len(FUNCOES_EQUIPE)]
-        hc = rng.randint(6, 18)
-        custo = round(rng.uniform(48, 115), 2)
-        equipes.append([eid, funcao, p["uf"], custo, hc, p["id"]])
-        for s in hist[p["id"]]:
-            for d in s["dias"]:
-                napont += 1
-                disp = hc * 8.0
-                util = 0.32 + 0.62 * min(s["vel"], 1.05) / 1.05 + rng.gauss(0, 0.05)
-                if chuva_dia.get((p["id"], d)) and p["uf"] == "PA":
-                    util -= 0.25
-                if s["sem_guindaste"] and funcao in ("montagem_mecanica", "estrutura_metalica"):
-                    util -= 0.30
-                util = clamp(util, 0.10, 1.12)            # >1 = hora extra, é legítimo
-                apontamentos.append([f"A{napont:07d}", eid, p["id"], iso(d), disp, round(disp * util, 1)])
-    for eid in ("EQP014", "EQP057", "EQP101"):            # sujeira: equipe duplicada no cadastro do RH
-        orig = next(e for e in equipes if e[0] == eid)
-        equipes.append([eid, orig[1].upper(), orig[2].lower(), orig[3], orig[4] + 2, orig[5]])
+    # os dois SREs da história: saem do PRJ-011 e vão para o PRJ-007, que ainda está no desenho
+    p11, p07 = pid_idx[PROJETO_SEM_SRE], pid_idx[PROJETO_SRE_OCIOSO]
+    for cid in SRES_OCIOSOS:
+        c = next(x for x in colaboradores if x["id"] == cid)
+        c.update(papel="sre", senioridade="senior", custo=round(rng.uniform(185, 200), 2),
+                 admissao=dt.date(2022, 3, 1) + dt.timedelta(days=rng.randint(0, 300)), desligamento=None)
+        alocacoes[:] = [a for a in alocacoes if a[0] != cid]
+        alocacoes.append([cid, PROJETO_SEM_SRE, p11["inicio"], TROCA_SRE, 100])
+        alocacoes.append([cid, PROJETO_SRE_OCIOSO, TROCA_SRE + dt.timedelta(days=3), None, 100])
+    del p07
 
-    # ---- equipamentos e uso semanal ---------------------------------------------
-    equipamentos, uso = [], []
-    n = 0
-    ativos = [p for p in projetos]
-    for tipo, modelo, custo, qtd in TIPOS_EQUIPAMENTO:
-        for _ in range(qtd):
-            n += 1
-            eqid = f"EQ{n:04d}"
-            if eqid in GUINDASTES_PARADOS:
-                p = next(x for x in projetos if x["id"] == OBRA_GUINDASTE_PARADO)
-            else:
-                p = ativos[rng.randrange(len(ativos))] if rng.random() > 0.07 else None
-                if p and p["id"] == OBRA_SEM_GUINDASTE and tipo == "guindaste":
-                    p = next(x for x in projetos if x["id"] == "P012")
-            modelo_txt = modelo if eqid not in GUINDASTES_PARADOS else "Guindaste 90t"
-            equipamentos.append([eqid, tipo, modelo_txt, p["id"] if p else "", p["uf"] if p else "MG",
-                                 custo, "proprio" if rng.random() < 0.55 else "locado"])
-            if not p:
-                continue
-            for s in hist[p["id"]]:
-                util = clamp(rng.uniform(0.45, 0.85) * min(s["vel"], 1.05), 0.05, 1.0)
-                if eqid in GUINDASTES_PARADOS and s["sexta"] >= HOJE - dt.timedelta(weeks=14):
-                    util = rng.uniform(0.02, 0.09)
-                uso.append([eqid, p["id"], iso(s["segunda"]), 44.0, round(44.0 * util, 1)])
+    # quem não está em projeto: plataforma, arquitetura, gestão
+    while len(colaboradores) < N_COLABORADORES:
+        novo(rng.choice(["arquiteto", "sre", "agilista", "gestor_engenharia", "sre"]),
+             dt.date(2020, 1, 6) + dt.timedelta(days=rng.randint(0, 2000)))
 
-    # ---- RDO (relatório diário de obra) ---------------------------------------
-    rdo = []
-    nrdo = 0
-    frases = {
-        "chuva": ["Chuva forte a partir das {h}h paralisou a frente de {ativ}.",
-                  "Precipitação intensa durante o turno, serviço de {ativ} suspenso.",
-                  "Temporal na região. Equipe recolhida, {ativ} sem avanço.",
-                  "Solo encharcado após chuva da madrugada impediu {ativ}."],
-        "falta_material": ["Frente de {ativ} parada aguardando {mat}.",
-                           "Falta de {mat} no almoxarifado, {ativ} interrompida.",
-                           "Fornecedor não entregou {mat} na data prometida. Equipe remanejada.",
-                           "Sem {mat} em estoque; {ativ} reprogramada."],
-        "falta_equipamento": ["Aguardando guindaste de 90t para içamento; {ativ} parada.",
-                              "Sem guindaste disponível na obra, montagem não avançou.",
-                              "Içamento adiado: guindaste ainda não mobilizado.",
-                              "Equipe de montagem ociosa por falta de guindaste."],
-        "mao_de_obra": ["Efetivo reduzido: {n} faltas na equipe de {ativ}.",
-                        "Rotatividade alta, equipe de {ativ} incompleta.",
-                        "Atraso na mobilização de soldadores qualificados."],
-        "retrabalho": ["Retrabalho na {ativ} após reprovação da inspeção.",
-                       "Solda reprovada no ensaio, refazendo {ativ}."],
-        "cliente": ["Aguardando liberação da permissão de trabalho pelo cliente.",
-                    "Interferência com a operação do cliente, frente de {ativ} bloqueada.",
-                    "Cliente solicitou alteração de projeto; {ativ} suspensa."],
-    }
-    impactos = ["Impacto estimado: 1 dia.", "Perda de meio turno.", "Impacto estimado de {d} dias na frente.",
-                "", "", "Sem impacto no caminho crítico."]
-    for p in projetos:
-        pid = p["id"]
+    # timesheet semanal
+    apontamentos = []
+    papel_de = {c["id"]: c["papel"] for c in colaboradores}
+    for cid, pid, ini, fim, pct in alocacoes:
         for s in hist[pid]:
-            rupt = rupturas.get((pid, s["sexta"]), [])
-            ativas = sorted({t["disc"] for t in tarefas[pid] if 0 < t["pct"] < 1}) or ["civil"]
-            for d in s["dias"]:
-                nrdo += 1
-                disc = rng.choice(ativas)
-                ativ = rng.choice(ATIVIDADES[disc]).lower()
-                efetivo = rng.randint(40, 160)
-                causa = None
-                if chuva_dia.get((pid, d)) and rng.random() < (0.85 if p["uf"] == "PA" else 0.5):
-                    causa = "chuva"
-                elif s["sem_guindaste"] and rng.random() < 0.55:
-                    causa = "falta_equipamento"
-                elif rupt and rng.random() < 0.5:
-                    causa = "falta_material"
-                elif pid in EQUIPE_FRACA and rng.random() < 0.30:
-                    causa = "mao_de_obra"
-                else:
-                    r = rng.random()
-                    causa = ("retrabalho" if r < 0.03 else "cliente" if r < 0.06 else
-                             "mao_de_obra" if r < 0.08 else None)
-                clima = "chuvoso" if chuva_dia.get((pid, d)) else rng.choice(["ensolarado", "nublado", "ensolarado"])
-                partes = [f"RDO {br(d)} - {pid}.", f"Clima: {clima}.", f"Efetivo: {efetivo} colaboradores.",
-                          f"Atividades: {rng.choice(ATIVIDADES[disc])}; {rng.choice(ATIVIDADES[rng.choice(ativas)])}."]
-                if causa:
-                    mat = rng.choice(rupt)[0].lower() if rupt else "perfis metálicos"
-                    partes.append("Ocorrências: " + rng.choice(frases[causa]).format(
-                        h=rng.randint(9, 15), ativ=ativ, mat=mat, n=rng.randint(3, 12)))
-                    partes.append(rng.choice(impactos).format(d=rng.randint(2, 4)))
-                else:
-                    partes.append(rng.choice(["Ocorrências: sem ocorrências.", "Sem ocorrências relevantes.",
-                                              "Ocorrências: nenhuma.", "Dia produtivo, sem ocorrências."]))
-                if rng.random() < 0.01:
-                    partes.append("Quase acidente registrado na movimentação de carga, DDS reforçado.")
-                texto = " ".join(x for x in partes if x)
-                r = rng.random()
-                if r < 0.006:                               # sujeira: RDO não preenchido
-                    texto = rng.choice(["", "N/A", "ver RDO físico"])
-                elif r < 0.03:
-                    texto = texto.upper()
-                rdo.append([f"RDO{nrdo:06d}", pid, iso(d), p["engenheiro"], texto])
+            if s["sexta"] < ini or (fim and s["segunda"] > fim):
+                continue
+            disp = 40.0 * pct / 100
+            papel = papel_de[cid]
+            util = 0.55 + 0.40 * min(s["vel"], 1.05) / 1.05 + rng.gauss(0, 0.05)
+            if s["freeze"] and papel in PAPEIS_DEV:
+                util -= 0.30
+            if s["sem_sre"] and papel in PAPEIS_DEV:
+                util -= 0.22
+            if cid in SRES_OCIOSOS and pid == PROJETO_SRE_OCIOSO:
+                util = rng.uniform(0.02, 0.09)
+            util = clamp(util, 0.02, 1.15)                # >1 = hora extra, é legítimo
+            apontamentos.append([cid, pid, iso(s["segunda"]), disp, round(disp * util, 1)])
+    return colaboradores, alocacoes, apontamentos
 
-    # ---- escrever CSVs --------------------------------------------------------
-    linhas_proj = []
+
+# ----------------------------------------------------------------- fornecedores e capacidade
+
+def frac_planejada(tarefas_p, fases, dia_proj):
+    tot = sum(t["vp"] for t in tarefas_p if t["fase"] in fases)
+    acc = sum(t["vp"] * clamp((dia_proj - t["a"]) / t["L"], 0, 1) for t in tarefas_p if t["fase"] in fases)
+    return acc / tot if tot else 0.0
+
+
+def gerar_fornecedores(projetos, tarefas, hist, rng):
+    entregas = []
+    atrasos = {}            # (pid, sexta) -> True se há entrega da CodeForge vencida e não entregue
+    usa = {}
+    n = 0
     for p in projetos:
-        uf = p["uf"]
-        r = rng.random()
-        if r < 0.15:
-            uf = uf.lower()                                 # sujeira: UF em caixa e com espaço
-        elif r < 0.25:
-            uf = f" {uf} "
-        data_ini = br(p["inicio"]) if rng.random() < 0.3 else iso(p["inicio"])   # sujeira: 2 formatos
-        status = "concluido" if p["concluido"] else "em_andamento"
-        linhas_proj.append([p["id"], p["nome"], p["cliente"], p["setor"], uf, p["municipio"],
-                            f"{p['valor']:.2f}", f"{p['orcamento']:.2f}", data_ini, iso(p["fim_baseline"]),
-                            status, p["gerente"]])
-    escrever_csv(saida / "erp/projetos.csv",
-                 ["projeto_id", "nome_projeto", "cliente", "setor", "uf", "municipio", "valor_contrato",
-                  "orcamento_custo", "data_inicio", "data_fim_baseline", "status", "gerente_projeto"], linhas_proj)
+        pid = p["id"]
+        usa[pid] = [f for f in FORNECEDORES
+                    if rng.random() < (0.45 if f == CONSULTORIA_ATRASADA else 0.28)
+                    or (f == CONSULTORIA_ATRASADA and pid in CPI_CAINDO)]   # escopo extra vira hora de consultoria
+        for forn in usa[pid]:
+            fase, prazo, servico = FORNECEDORES[forn]
+            tot = sum(t["vp"] for t in tarefas[pid] if t["fase"] == fase)
+            prox = None
+            lote = 0
+            for s in hist[pid]:
+                frac = s["ev_fase"].get(fase, 0) / tot if tot else 0
+                if not (0.0 < frac < 0.97):
+                    continue
+                if prox is None or s["sexta"] >= prox:
+                    lote += 1
+                    n += 1
+                    fator = rng.uniform(1.30, 1.52) if forn == CONSULTORIA_ATRASADA else rng.uniform(0.85, 1.12)
+                    dped = s["sexta"] - dt.timedelta(days=rng.randint(0, 3))
+                    dprom = dped + dt.timedelta(days=prazo)
+                    dent = dped + dt.timedelta(days=round(prazo * fator))
+                    entregue = dent <= HOJE
+                    nome = rng.choice(GRAFIAS_CODEFORGE) if forn == CONSULTORIA_ATRASADA else forn
+                    item = f"{servico} {lote} - {rng.choice(ATIVIDADES[fase])}"
+                    valor = round(rng.uniform(60e3, 260e3) * (p["valor"] / 4.6e6) ** 0.5, 2)
+                    entregas.append([f"ENT{n:05d}", pid, nome, item, f"{valor:.2f}", iso(dped), iso(dprom),
+                                     iso(dent) if entregue else "", prazo, "entregue" if entregue else "em_aberto"])
+                    if forn == CONSULTORIA_ATRASADA:
+                        for s2 in hist[pid]:
+                            if dprom < s2["sexta"] < dent:
+                                atrasos[(pid, s2["sexta"])] = nome
+                    prox = s["sexta"] + dt.timedelta(weeks=rng.randint(3, 6))
+    return entregas, atrasos, usa
 
-    linhas_tar = []
+
+def gerar_capacidade(projetos, tarefas, hist, usa, rng):
+    """Banco de horas da consultoria e créditos de cloud: saldo semanal e consumo previsto."""
+    contratos, consumo = [], []
+    n = 0
     for p in projetos:
-        for t in tarefas[p["id"]]:
-            pct = round(t["pct"] * 100, 1)
-            if rng.random() < 0.006:                        # sujeira: % acima de 100
-                pct = round(100 + rng.uniform(1, 18), 1)
-            linhas_tar.append([t["id"], p["id"], t["disc"], t["atividade"],
-                               iso(p["inicio"] + dt.timedelta(days=round(t["a"]))),
-                               iso(p["inicio"] + dt.timedelta(days=round(t["a"] + t["L"]))),
-                               iso(t["ini_real"]), iso(t["fim_real"]), pct, f"{t['vp']:.2f}"])
-    escrever_csv(saida / "cronograma/tarefas.csv",
-                 ["tarefa_id", "projeto_id", "disciplina", "descricao", "inicio_baseline", "fim_baseline",
-                  "inicio_real", "fim_real", "pct_concluido", "valor_planejado"], linhas_tar)
-    escrever_csv(saida / "cronograma/avanco_semanal.csv",
-                 ["tarefa_id", "projeto_id", "data_medicao", "pct_concluido"], avanco)
-    escrever_csv(saida / "erp/custos.csv",
-                 ["lancamento_id", "projeto_id", "data", "categoria", "descricao", "valor_real", "centro_custo"],
-                 custos)
-    escrever_csv(saida / "erp/materiais.csv",
-                 ["material_id", "descricao", "unidade", "disciplina", "preco_referencia", "lead_time_contratado_dias"],
-                 [[m[0], m[1], m[2], m[3], m[4], m[5]] for m in MATERIAIS])
-    escrever_csv(saida / "erp/compras.csv",
-                 ["pedido_id", "projeto_id", "material_id", "fornecedor", "quantidade", "valor_unitario",
-                  "data_pedido", "data_prometida", "data_entrega", "lead_time_dias", "status"], compras)
-    escrever_csv(saida / "almoxarifado/estoque.csv",
-                 ["projeto_id", "material_id", "data", "saldo", "consumo_previsto_dia"], estoque)
-    escrever_csv(saida / "rh/equipes.csv",
-                 ["equipe_id", "funcao", "uf_base", "custo_hora", "headcount", "projeto_id_atual"], equipes)
-    escrever_csv(saida / "ponto/apontamentos.csv",
-                 ["apontamento_id", "equipe_id", "projeto_id", "data", "horas_disponiveis", "horas_apontadas"],
-                 apontamentos)
-    escrever_csv(saida / "frota/equipamentos.csv",
-                 ["equipamento_id", "tipo", "modelo", "projeto_id_atual", "uf_atual", "custo_hora", "propriedade"],
-                 equipamentos)
-    escrever_csv(saida / "frota/uso_equipamentos.csv",
-                 ["equipamento_id", "projeto_id", "semana_inicio", "horas_disponiveis", "horas_operadas"], uso)
-    escrever_csv(saida / "rdo/rdo.csv", ["rdo_id", "projeto_id", "data", "responsavel", "texto_livre"], rdo)
-
-    # ---- PDFs: RDOs de amostra e contratos ------------------------------------
-    amostra = [r for r in rdo if r[1] in (OBRA_SEM_GUINDASTE, OBRA_GUINDASTE_PARADO, "P024")
-               and r[2] >= iso(HOJE - dt.timedelta(days=62)) and len(r[4]) > 10]
-    for r in amostra:
-        escrever_pdf(saida / f"documentos/rdo/{r[1]}/{r[0]}_{r[2]}.pdf", [
-            ("titulo", "Construtora Atlas Engenharia - Relatório Diário de Obra"),
-            ("subtitulo", f"Obra {r[1]} · Data {br(dt.date.fromisoformat(r[2]))} · Responsável: {r[3]}"),
-            ("espaco", ""), ("normal", r[4]),
-        ])
-    for pid in CONTRATOS_PDF:
-        escrever_pdf(saida / f"documentos/contratos/contrato_{pid}.pdf", contrato(next(x for x in projetos if x["id"] == pid), rng))
-
-    return dict(projetos=len(projetos), tarefas=len(linhas_tar), avanco_semanal=len(avanco), custos=len(custos),
-                compras=len(compras), estoque=len(estoque), equipes=len(equipes), apontamentos=len(apontamentos),
-                equipamentos=len(equipamentos), uso_equipamentos=len(uso), rdo=len(rdo), materiais=len(MATERIAIS),
-                pdf_rdo=len(amostra), pdf_contratos=len(CONTRATOS_PDF))
+        pid = p["id"]
+        planos = [("creditos_cloud", NUVEM, "R$", p["orcamento"] * 0.12, list(FASES), p["fim_baseline"])]
+        if CONSULTORIA_ATRASADA in usa[pid]:
+            horas_dev = sum(t["horas"] for t in tarefas[pid] if t["fase"] == "desenvolvimento")
+            planos.append(("banco_de_horas", CONSULTORIA_ATRASADA, "horas", horas_dev * 0.30,
+                           ["desenvolvimento", "integracao", "testes"], p["fim_baseline"]))
+        for tipo, forn, unidade, necessidade, fases, fim_vig in planos:
+            n += 1
+            cid = f"CT{n:04d}"
+            folga = rng.uniform(1.00, 1.18) if tipo == "banco_de_horas" else rng.uniform(1.06, 1.40)
+            qtd = round(necessidade * folga, 0)
+            preco = 1.0 if unidade == "R$" else 185.0
+            contratos.append([cid, pid, forn, tipo, unidade, f"{qtd:.0f}", iso(p["inicio"]), iso(fim_vig),
+                              f"{qtd * preco:.2f}"])
+            tot = sum(t["vp"] for t in tarefas[pid] if t["fase"] in fases)
+            saldo = qtd
+            frac_ant = 0.0
+            for s in hist[pid]:
+                frac = sum(s["ev_fase"].get(f, 0) for f in fases) / tot if tot else 0
+                uso = necessidade * max(0.0, frac - frac_ant) * s["fator"] / p["custo_base"]
+                if tipo == "creditos_cloud":
+                    uso += necessidade * 0.004 * (1 if frac > 0.05 else 0)       # ambiente ligado custa
+                frac_ant = frac
+                saldo = max(0.0, saldo - uso)
+                dia_proj = (s["sexta"] - p["inicio"]).days
+                ritmo = clamp(s["vel"], 0.4, 1.1) * s["fator"] / p["custo_base"]
+                prev = necessidade * max(0.0, frac_planejada(tarefas[pid], fases, dia_proj + 28)
+                                         - frac_planejada(tarefas[pid], fases, dia_proj)) * ritmo / 28
+                if tipo == "creditos_cloud" and frac > 0.05 and frac < 0.999:
+                    prev += necessidade * 0.004 / 7
+                if frac >= 0.999 and tipo == "banco_de_horas":
+                    continue
+                s_txt = round(saldo, 1)
+                if rng.random() < 0.002:                  # sujeira: saldo negativo (erro de lançamento)
+                    s_txt = -round(rng.uniform(1, 50), 1)
+                consumo.append([cid, iso(s["sexta"]), round(uso, 1), s_txt, round(prev, 2)])
+    return contratos, consumo
 
 
-def contrato(p: dict, rng: random.Random) -> list[tuple[str, str]]:
-    """Contrato EPC com cláusulas que mudam de obra para obra (é o que o agente precisa ler)."""
-    multa_dia = rng.choice([0.05, 0.08, 0.10, 0.15])
-    teto = rng.choice([5, 8, 10])
-    chuva_exclui = p["id"] in ("P011", "P003", "P002", "P014")
-    icamento_contratada = p["id"] not in ("P005",)
-    estrutura_cliente = p["id"] == "P005"
-    bonus = p["id"] in ("P018", "P033")
-    reajuste = rng.choice(["IPCA", "INCC-DI"])
-    retencao = rng.choice([5, 10])
-    valor = f"R$ {p['valor']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+# ----------------------------------------------------------------- textos
+
+FRASES = {
+    "change_freeze": ["Change freeze da Black Friday: deploys em produção suspensos pelo cliente até 10/01.",
+                      "Janela de mudança fechada pelo cliente (congelamento de fim de ano); {ativ} pronta, mas sem poder subir.",
+                      "Freeze de produção do cliente travou o deploy de {ativ}.",
+                      "Sem janela de deploy por causa do congelamento da Black Friday."],
+    "falta_sre": ["Sem SRE alocado: pipeline de deploy quebrado e ninguém para corrigir.",
+                  "Ambiente de homologação fora do ar há {n} dias, sem responsável de infraestrutura.",
+                  "Deploy de {ativ} parado aguardando alguém de SRE para configurar o cluster.",
+                  "Time de dev ocioso esperando ambiente; pedimos SRE de novo ao PMO."],
+    "dependencia_fornecedor": ["Entrega da {forn} atrasada; {ativ} bloqueada aguardando o módulo.",
+                               "Consultoria ({forn}) ainda não entregou a sprint prometida; integração parada.",
+                               "{forn} pediu mais {n} dias para entregar {ativ}."],
+    "rotatividade": ["Saída de {n2} desenvolvedores no mês; {ativ} ficou sem dono.",
+                     "Onboarding de pessoas novas consumindo o tech lead; velocidade caiu.",
+                     "Rotatividade alta no squad, {ativ} replanejada."],
+    "mudanca_escopo": ["Cliente pediu nova integração fora do escopo; change request ainda não aprovado e o time já está trabalhando nela.",
+                       "Escopo de {ativ} cresceu depois da reunião com o cliente, sem aditivo.",
+                       "Retrabalho por mudança de regra de negócio pedida pelo cliente."],
+    "bug_retrabalho": ["Bugs críticos na homologação de {ativ}; sprint dedicada a correções.",
+                       "Teste de regressão reprovou {ativ}, refazendo."],
+    "aprovacao_cliente": ["Aguardando aprovação do cliente para seguir com {ativ}.",
+                          "Homologação do cliente atrasada, usuários-chave sem agenda."],
+}
+IMPACTOS = ["Impacto estimado: 1 semana.", "Impacto estimado de {d} dias no cronograma.",
+            "Sem impacto no caminho crítico.", "", ""]
+SEM_BLOQUEIO = ["Bloqueios: nenhum.", "Sem bloqueios.", "Bloqueios: nada relevante.", "Semana produtiva, sem bloqueios."]
+
+
+def gerar_status(projetos, tarefas, hist, atrasos, rng):
+    linhas = []
+    for p in projetos:
+        pid = p["id"]
+        tot = sum(t["vp"] for t in tarefas[pid])
+        for s in hist[pid]:
+            pct = round(s["ev"] / tot * 100)
+            spi = s["ev"] / s["pv"] if s["pv"] > 0 else 1.0
+            # o farol é do gerente, e gerente é otimista: só fica vermelho bem depois do número
+            farol = "verde" if spi >= 0.86 else ("amarelo" if spi >= 0.76 else "vermelho")
+            fase = max(s["ev_fase"], key=lambda f: 0 if s["ev_fase"][f] >= sum(t["vp"] for t in tarefas[pid] if t["fase"] == f) * 0.999 else 1 + FASES[f][0]) \
+                if s["ev_fase"] else "discovery"
+            ativ = rng.choice(ATIVIDADES[fase]).lower()
+            causa = None
+            r = rng.random()
+            if s["freeze"] and r < 0.85:
+                causa = "change_freeze"
+            elif s["sem_sre"] and r < 0.90:
+                causa = "falta_sre"
+            elif (pid, s["sexta"]) in atrasos and r < 0.35:
+                causa = "dependencia_fornecedor"
+            elif pid in SQUAD_ROTATIVIDADE and s["sexta"] > HOJE - dt.timedelta(days=270) and r < 0.45:
+                causa = "rotatividade"
+            elif pid in CPI_CAINDO and s["mes"] >= 6 and r < 0.35:
+                causa = "mudanca_escopo"
+            else:
+                r2 = rng.random()
+                causa = ("bug_retrabalho" if r2 < 0.06 else "aprovacao_cliente" if r2 < 0.14 else
+                         "mudanca_escopo" if r2 < 0.17 else None)
+            partes = [f"Status semanal {pid} - {br(s['sexta'])}.", f"Avanço: {pct}%.", f"Farol: {farol}.",
+                      f"Entregas da semana: {rng.choice(ATIVIDADES[fase])}; {rng.choice(ATIVIDADES[fase])}."]
+            if causa:
+                partes.append("Bloqueios: " + rng.choice(FRASES[causa]).format(
+                    ativ=ativ, n=rng.randint(2, 6), n2=rng.randint(2, 4), forn=atrasos.get((pid, s["sexta"]), "consultoria")))
+                partes.append(rng.choice(IMPACTOS).format(d=rng.randint(3, 10)))
+            else:
+                partes.append(rng.choice(SEM_BLOQUEIO))
+            texto = " ".join(x for x in partes if x)
+            farol_txt = farol
+            r = rng.random()
+            if r < 0.01:                                   # sujeira: status não preenchido
+                texto = rng.choice(["", "N/A", "ver ata da reunião"])
+            elif r < 0.03:
+                texto = texto.upper()
+            if rng.random() < 0.12:
+                farol_txt = rng.choice([farol.capitalize(), farol.upper()])
+            linhas.append([pid, iso(s["sexta"]), p["gerente"], farol_txt, pct, texto])
+    return linhas
+
+
+SERVICOS = {"e-commerce": "checkout", "Checkout": "API de pagamentos", "Marketplace": "portal de sellers",
+            "App": "app mobile", "Portal": "portal web", "Core": "motor de crédito", "APIs": "gateway de APIs",
+            "Antifraude": "motor antifraude", "Migração": "plataforma em cloud", "Prontuário": "prontuário",
+            "Integração": "barramento de integração", "Telemedicina": "sala de teleconsulta", "TMS": "TMS",
+            "Rastreamento": "rastreamento", "Roteirizador": "roteirizador", "ERP": "ERP", "MES": "MES",
+            "Data lake": "data lake", "Manutenção": "modelo preditivo", "Gestão": "estoque online"}
+CAUSAS_PM = {
+    "deploy_sem_teste": ["Deploy da versão {v} subiu sem passar pela suíte de regressão; uma alteração no {comp} quebrou o fluxo principal.",
+                         "Hotfix aplicado direto em produção, sem teste integrado, derrubou o {comp}."],
+    "configuracao": ["Variável de ambiente errada no {comp} depois de uma mudança de configuração.",
+                     "Certificado TLS do {comp} expirou sem alerta."],
+    "capacidade": ["Pico de acesso esgotou o pool de conexões do banco do {comp}.",
+                   "O autoscaling não acompanhou o tráfego e a fila de mensagens do {comp} cresceu sem controle."],
+    "dependencia_externa": ["Instabilidade no gateway de pagamento do parceiro afetou o {comp}.",
+                            "A API do ERP do cliente ficou fora do ar e o {comp} parou de sincronizar."],
+    "pipeline_sem_dono": ["Pipeline de deploy sem responsável falhou no meio do rollout; uma versão parcial do {comp} ficou em produção.",
+                          "Cluster de homologação sem manutenção caiu e levou junto o {comp} de produção, que dividia o mesmo banco."],
+}
+
+
+def gerar_postmortems(projetos, hist, rng):
+    linhas = []
+    n = 0
+    for p in projetos:
+        pid = p["id"]
+        comp = next((v for k, v in SERVICOS.items() if k.lower() in p["tipo"].lower()), "sistema principal")
+        for s in hist[pid]:
+            if s["freeze"] or s["ev"] <= 0:
+                continue
+            taxa = 0.022
+            if pid in SQUAD_ROTATIVIDADE:
+                taxa = 0.07
+            if s["sem_sre"]:
+                taxa = 0.35
+            if rng.random() >= taxa:
+                continue
+            n += 1
+            d = s["segunda"] + dt.timedelta(days=rng.randint(0, 4))
+            if s["sem_sre"] and rng.random() < 0.7:
+                causa = "pipeline_sem_dono"
+            elif pid in SQUAD_ROTATIVIDADE and rng.random() < 0.7:
+                causa = "deploy_sem_teste"
+            else:
+                causa = rng.choice(["deploy_sem_teste", "configuracao", "capacidade", "dependencia_externa"])
+            sev = rng.choices(["SEV1", "SEV2", "SEV3"], [0.12, 0.33, 0.55])[0]
+            dur = rng.randint(12, 60) if sev == "SEV3" else rng.randint(35, 190)
+            h, m = rng.randint(8, 21), rng.randint(0, 59)
+            fim = dt.datetime(2000, 1, 1, h, m) + dt.timedelta(minutes=dur)
+            if rng.random() < 0.5:
+                tempo = f"Alerta às {h}h{m:02d}, mitigado às {fim.hour}h{fim.minute:02d} ({dur} minutos)."
+            else:
+                tempo = f"Duração total do incidente: {dur // 60}h{dur % 60:02d}min." if dur >= 60 else \
+                    f"Duração total do incidente: {dur} min."
+            clientes = rng.randint(80, 4000) * (5 if sev == "SEV1" else 1)
+            texto = (f"Postmortem INC-{n:04d} - {br(d)}. Projeto {pid}. Serviço afetado: {comp}. Severidade: {sev}. "
+                     f"{tempo} Causa raiz: " + rng.choice(CAUSAS_PM[causa]).format(v=f"{rng.randint(1, 4)}.{rng.randint(0, 20)}.{rng.randint(0, 9)}", comp=comp)
+                     + f" Impacto: cerca de {clientes} usuários do cliente {p['cliente']} afetados. "
+                     + rng.choice(["Ação: incluir o teste que faltou no pipeline.", "Ação: criar alerta e runbook.",
+                                   "Ação: revisar a alocação de SRE no projeto.", "Ação: acordar janela de deploy com o cliente."]))
+            linhas.append([f"INC-{n:04d}", pid, iso(d), sev, texto])
+    return linhas
+
+
+# ----------------------------------------------------------------- arquivos por ferramenta
+
+def escrever_excel(saida, p, tarefas_p, rng, codigo):
+    cab = ["ID", "Fase", "Tarefa", "Responsável", "Início previsto", "Término previsto", "Início real",
+           "Término real", "% Concluído", "Horas previstas"]
+    linhas = [cab]
+
+    def data(d):
+        if d is None:
+            return None
+        return br(d) if rng.random() < 0.6 else serial_excel(d)   # sujeira: texto ou número de série
+
+    for t in tarefas_p:
+        pct = round(t["pct"] * 100, 1)
+        pct_cel = f"{pct:g}%".replace(".", ",") if rng.random() < 0.7 else round(pct / 100, 3)
+        if rng.random() < 0.006:                           # sujeira: % acima de 100
+            pct_cel = f"{round(100 + rng.uniform(1, 18)):d}%"
+        horas = t["horas"] if rng.random() > 0.03 else f"{t['horas']}h"
+        linhas.append([t["n"], t["fase"].capitalize(), t["atividade"], t["resp"],
+                       data(p["inicio"] + dt.timedelta(days=round(t["a"]))),
+                       data(p["inicio"] + dt.timedelta(days=round(t["a"] + t["L"]))),
+                       data(t["ini_real"]), data(t["fim_real"]), pct_cel, horas])
+    linhas.append([None, None, "TOTAL", None, None, None, None, None, None, sum(t["horas"] for t in tarefas_p)])
+    escrever_xlsx(saida / "excel" / codigo, linhas)
+
+
+def escrever_clickup(saida, p, tarefas_p, rng, codigo, list_id):
+    tasks = []
+    for t in tarefas_p:
+        pct = round(t["pct"] * 100)
+        if pct >= 100:
+            st = rng.choice([("done", "closed"), ("concluído", "closed"), ("Done", "closed"), ("closed", "closed")])
+        elif pct == 0:
+            st = rng.choice([("to do", "open"), ("backlog", "open"), ("a fazer", "open")])
+        else:
+            st = rng.choice([("in progress", "custom"), ("em andamento", "custom"), ("doing", "custom"),
+                             ("review", "custom"), ("In Progress", "custom")])
+        ini_b = p["inicio"] + dt.timedelta(days=round(t["a"]))
+        fim_b = p["inicio"] + dt.timedelta(days=round(t["a"] + t["L"]))
+        tasks.append({
+            "id": f"86b{int(list_id) % 9973:04x}{t['n']:03d}",
+            "name": t["atividade"],
+            "status": {"status": st[0], "type": st[1]},
+            "start_date": ms(t["ini_real"]) if t["ini_real"] else None,
+            "due_date": ms(fim_b if pct < 100 else t["fim_real"]),
+            "date_done": ms(t["fim_real"]) if t["fim_real"] else None,
+            "time_estimate": t["horas"] * 3_600_000,
+            "assignees": [{"username": t["resp"]}],
+            "custom_fields": [
+                {"name": "Fase", "type": "drop_down", "value": t["fase"]},
+                {"name": "Progresso (%)", "type": "number", "value": pct if rng.random() < 0.7 else str(pct)},
+                {"name": "Início baseline", "type": "date", "value": ms(ini_b)},
+                {"name": "Fim baseline", "type": "date", "value": ms(fim_b)},
+            ],
+            "tags": [{"name": t["fase"]}],
+        })
+    doc = {"list": {"id": list_id, "name": p["nome"], "space": f"Delivery {p['segmento'].capitalize()}"},
+           "exported_at": "2026-10-16T06:00:00Z", "tasks": tasks}
+    caminho = saida / "clickup" / codigo
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    caminho.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def escrever_msproject(saida, p, tarefas_p, codigo):
+    def dh(d, hora="08:00:00"):
+        return f"{d.isoformat()}T{hora}" if d else None
+
+    def tag(nome, valor):
+        return f"<{nome}>{valor}</{nome}>" if valor is not None else ""
+
+    def esc(s):
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    blocos = []
+    uid = 0
+    tot_h = sum(t["horas"] for t in tarefas_p)
+    ev_h = sum(t["horas"] * t["pct"] for t in tarefas_p)
+    blocos.append("<Task>" + tag("UID", 0) + tag("ID", 0) + tag("Name", esc(p["nome"])) + tag("OutlineLevel", 0)
+                  + tag("Summary", 1) + tag("Start", dh(p["inicio"])) + tag("Finish", dh(p["fim_baseline"], "17:00:00"))
+                  + tag("Work", f"PT{tot_h}H0M0S") + tag("PercentComplete", round(ev_h / tot_h * 100)) + "</Task>")
+    for fase in FASES:
+        lista = [t for t in tarefas_p if t["fase"] == fase]
+        if not lista:
+            continue
+        uid += 1
+        h = sum(t["horas"] for t in lista)
+        ini = p["inicio"] + dt.timedelta(days=round(min(t["a"] for t in lista)))
+        fim = p["inicio"] + dt.timedelta(days=round(max(t["a"] + t["L"] for t in lista)))
+        blocos.append("<Task>" + tag("UID", uid) + tag("ID", uid) + tag("Name", fase.capitalize()) + tag("OutlineLevel", 1)
+                      + tag("Summary", 1) + tag("Start", dh(ini)) + tag("Finish", dh(fim, "17:00:00"))
+                      + tag("Work", f"PT{h}H0M0S")
+                      + tag("PercentComplete", round(sum(t["horas"] * t["pct"] for t in lista) / h * 100))
+                      + "<Baseline>" + tag("Number", 0) + tag("Start", dh(ini)) + tag("Finish", dh(fim, "17:00:00"))
+                      + tag("Work", f"PT{h}H0M0S") + "</Baseline></Task>")
+        for t in lista:
+            uid += 1
+            ini_b = p["inicio"] + dt.timedelta(days=round(t["a"]))
+            fim_b = p["inicio"] + dt.timedelta(days=round(t["a"] + t["L"]))
+            blocos.append("<Task>" + tag("UID", uid) + tag("ID", uid) + tag("Name", esc(t["atividade"])) + tag("OutlineLevel", 2)
+                          + tag("Summary", 0) + tag("Start", dh(t["ini_real"] or ini_b)) + tag("Finish", dh(t["fim_real"] or fim_b, "17:00:00"))
+                          + tag("ActualStart", dh(t["ini_real"])) + tag("ActualFinish", dh(t["fim_real"], "17:00:00"))
+                          + tag("Work", f"PT{t['horas']}H0M0S") + tag("PercentComplete", round(t["pct"] * 100))
+                          + "<Baseline>" + tag("Number", 0) + tag("Start", dh(ini_b)) + tag("Finish", dh(fim_b, "17:00:00"))
+                          + tag("Work", f"PT{t['horas']}H0M0S") + "</Baseline></Task>")
+    xml = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+           '<Project xmlns="http://schemas.microsoft.com/project">'
+           f"<Name>{esc(codigo)}</Name><Title>{esc(p['nome'])}</Title><Author>{esc(p['gerente'])}</Author>"
+           f"<StartDate>{dh(p['inicio'])}</StartDate><Tasks>" + "\n".join(blocos) + "</Tasks></Project>\n")
+    caminho = saida / "msproject" / codigo
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    caminho.write_text(xml, encoding="utf-8")
+
+
+# ----------------------------------------------------------------- documentos
+
+CONTRATOS = [
+    # fornecedor, objeto, valor anual, fim vigência, renovação automática, aviso prévio (dias),
+    # multa por atraso (% ao dia), teto da multa (%), SLA, reajuste
+    (CONSULTORIA_ATRASADA, "prestação de serviços de desenvolvimento de software sob demanda, em sprints",
+     14_800_000, dt.date(2027, 3, 31), True, 60, 0.5, 10, "entrega de cada sprint até a data acordada na ordem de serviço", "IPCA"),
+    ("Pixel Design Studio", "design de interfaces e pesquisa com usuários", 2_100_000, dt.date(2027, 6, 30), True, 30,
+     0.2, 5, "entrega de cada pacote de telas em até 20 dias corridos", "IPCA"),
+    ("QualiTest Brasil", "testes funcionais e de regressão terceirizados", 3_400_000, dt.date(2026, 12, 31), False, 30,
+     0.3, 8, "ciclo de testes concluído em até 20 dias corridos", "IGP-M"),
+    ("SecureOps Segurança", "testes de invasão (pentest) e revisão de segurança", 1_250_000, dt.date(2027, 1, 31), True, 45,
+     0.3, 10, "relatório de pentest em até 25 dias corridos", "IPCA"),
+    ("DataPrime Analytics", "desenvolvimento de integrações e cargas de dados", 2_900_000, dt.date(2026, 11, 30), True, 60,
+     0.25, 8, "lote de integração entregue em até 30 dias corridos", "IPCA"),
+    (NUVEM, "serviços de computação em nuvem com compromisso anual de consumo", 18_500_000, dt.date(2026, 12, 31), True, 90,
+     None, None, "disponibilidade mensal de 99,9%, com crédito de 10% da fatura por mês abaixo do SLA", "USD/PTAX"),
+    ("Observa360", "plataforma de observabilidade (logs, métricas e alertas), 600 licenças", 1_980_000, dt.date(2026, 11, 30), True, 30,
+     None, None, "disponibilidade mensal de 99,5%", "IPCA"),
+    ("CodeVault", "repositórios de código e esteira de integração contínua, 520 licenças", 1_420_000, dt.date(2027, 2, 28), True, 60,
+     None, None, "disponibilidade mensal de 99,9%", "IPCA"),
+]
+
+
+def contrato_pdf(c, rng):
+    forn, objeto, valor, fim, renova, aviso, multa, teto, sla, reajuste = c
+    inicio = fim.replace(year=fim.year - 1) + dt.timedelta(days=1)
+    v = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     clausulas = [
-        ("CLÁUSULA 1 - OBJETO",
-         f"Execução, em regime de empreitada global (EPC), das obras de {p['nome']}, no município de "
-         f"{p['municipio']}/{p['uf']}, compreendendo engenharia, suprimentos, construção, montagem e comissionamento."),
-        ("CLÁUSULA 2 - VALOR",
-         f"O valor global do contrato é de {valor}, com medições mensais e retenção técnica de {retencao}% "
-         f"de cada medição, liberada no aceite final."),
-        ("CLÁUSULA 3 - PRAZO",
-         f"O prazo de execução é de {p['duracao']} dias corridos, contados da ordem de serviço emitida em "
-         f"{br(p['inicio'])}, com término contratual em {br(p['fim_baseline'])}."),
-        ("CLÁUSULA 4 - MULTA POR ATRASO",
-         f"O atraso na conclusão sujeita a CONTRATADA a multa de {str(multa_dia).replace('.', ',')}% do valor "
-         f"global por dia corrido, limitada a {teto}% do valor do contrato. A multa é descontada da medição "
-         f"seguinte à sua aplicação."),
-        ("CLÁUSULA 5 - EVENTOS CLIMÁTICOS",
-         ("Dias de chuva que excederem a média histórica mensal do INMET para a região não serão computados "
-          "como atraso, desde que registrados no RDO do dia e comunicados à fiscalização em até 48 horas.")
-         if chuva_exclui else
-         ("Os riscos climáticos, inclusive chuvas acima da média, estão incluídos no preço e no prazo e não "
-          "dão direito a prorrogação nem afastam a aplicação de multa.")),
-        ("CLÁUSULA 6 - EQUIPAMENTOS DE IÇAMENTO",
-         ("O fornecimento, a mobilização e a manutenção de guindastes e demais equipamentos de içamento são de "
-          "responsabilidade exclusiva da CONTRATADA. A indisponibilidade de equipamento não constitui motivo "
-          "para prorrogação de prazo.") if icamento_contratada else
-         ("Os guindastes de grande porte (acima de 150 t) serão disponibilizados pela CONTRATANTE, mediante "
-          "programação com 15 dias de antecedência.")),
-        ("CLÁUSULA 7 - SUPRIMENTOS",
-         ("A estrutura metálica principal será fornecida pela CONTRATANTE. Atrasos na entrega desse material "
-          "dão direito à prorrogação de prazo na mesma proporção.") if estrutura_cliente else
-         ("Todos os materiais e equipamentos permanentes são de fornecimento da CONTRATADA. Atrasos de "
-          "fornecedores da CONTRATADA não justificam prorrogação de prazo.")),
-        ("CLÁUSULA 8 - ADITIVOS",
-         "Alterações de escopo solicitadas pela CONTRATANTE serão objeto de aditivo, que deve ser pleiteado "
-         "pela CONTRATADA em até 30 dias do fato gerador, sob pena de preclusão do direito ao reequilíbrio."),
-        ("CLÁUSULA 9 - REAJUSTE",
-         f"Os preços serão reajustados anualmente pelo índice {reajuste}, tendo como data-base o mês da proposta."),
-        ("CLÁUSULA 10 - BÔNUS POR ANTECIPAÇÃO",
-         ("A conclusão antecipada dará à CONTRATADA bônus de 0,05% do valor global por dia de antecipação, "
-          "limitado a 3%.") if bonus else "Não há bônus por antecipação neste contrato."),
-        ("CLÁUSULA 11 - RELATÓRIOS",
-         "A CONTRATADA entregará RDO diário e relatório semanal de avanço físico e financeiro (curva S), "
-         "com indicadores SPI e CPI, até a segunda-feira seguinte."),
+        ("CLÁUSULA 1 - OBJETO", f"Contratação de {objeto} para os projetos de clientes da CONTRATANTE."),
+        ("CLÁUSULA 2 - VALOR", f"O valor anual estimado do contrato é de {v}, faturado mensalmente conforme consumo "
+                               f"ou ordens de serviço aprovadas."),
+        ("CLÁUSULA 3 - VIGÊNCIA", f"Vigência de {br(inicio)} a {br(fim)}."),
+        ("CLÁUSULA 4 - RENOVAÇÃO E AVISO PRÉVIO",
+         (f"O contrato é renovado automaticamente por mais 12 meses, salvo manifestação contrária de qualquer das "
+          f"partes com antecedência mínima de {aviso} dias do fim da vigência.") if renova else
+         (f"O contrato não tem renovação automática. A intenção de renovar deve ser formalizada com {aviso} dias "
+          f"de antecedência, sob pena de interrupção dos serviços.")),
+        ("CLÁUSULA 5 - NÍVEL DE SERVIÇO (SLA)", f"A CONTRATADA se obriga a: {sla}."),
+        ("CLÁUSULA 6 - MULTA POR ATRASO",
+         (f"O atraso na entrega sujeita a CONTRATADA a multa de {str(multa).replace('.', ',')}% do valor da entrega "
+          f"atrasada por dia corrido, limitada a {teto}% do valor da entrega. A multa é descontada da fatura seguinte.")
+         if multa else
+         "Não há multa por atraso. O descumprimento do SLA gera apenas os créditos previstos na cláusula 5."),
+        ("CLÁUSULA 7 - REAJUSTE", f"Os preços são reajustados anualmente pelo índice {reajuste}."),
+        ("CLÁUSULA 8 - RESCISÃO", f"A rescisão sem justa causa exige aviso prévio de {aviso} dias e pagamento de "
+                                  f"{rng.choice([10, 15, 20])}% do valor remanescente do período contratado."),
+        ("CLÁUSULA 9 - CONFIDENCIALIDADE E LGPD", "A CONTRATADA trata os dados pessoais dos clientes da CONTRATANTE "
+                                                  "apenas para a execução do contrato, conforme a Lei 13.709/2018."),
     ]
-    blocos = [("titulo", f"CONTRATO EPC Nº ATL-{p['id']}-{p['inicio'].year}"),
-              ("subtitulo", f"CONTRATANTE: {p['cliente']}  ·  CONTRATADA: Construtora Atlas Engenharia S.A."),
-              ("espaco", "")]
+    blocos = [("titulo", f"CONTRATO DE PRESTAÇÃO DE SERVIÇOS Nº VRT-{slug(forn)[:10].upper()}-{inicio.year}"),
+              ("subtitulo", f"CONTRATANTE: Vértice Tecnologia S.A.  ·  CONTRATADA: {forn}"), ("espaco", "")]
     for titulo, texto in clausulas:
         blocos += [("subtitulo", titulo), ("normal", texto), ("espaco", "")]
-    blocos += [("normal", f"{p['municipio']}, {br(p['inicio'] - dt.timedelta(days=20))}."),
+    blocos += [("normal", f"São Paulo, {br(inicio - dt.timedelta(days=15))}."),
                ("normal", "Documento fictício gerado para a Imersão Jornada de Dados.")]
     return blocos
+
+
+MANUAL = [
+    ("1. STACK PADRÃO", "Back-end em Java 21 (Spring Boot) ou Python 3.12 (FastAPI). Front-end em React com TypeScript. "
+     "Mobile em Kotlin e Swift nativos; React Native só com aprovação da arquitetura. Banco relacional padrão: "
+     "PostgreSQL. Mensageria: Kafka. Toda stack fora deste padrão precisa de uma decisão de arquitetura (ADR) aprovada."),
+    ("2. AMBIENTES", "Todo projeto tem três ambientes: desenvolvimento, homologação e produção, todos na NuvemSul Cloud. "
+     "Homologação e produção nunca compartilham banco de dados. Ambiente parado por mais de 30 dias deve ser desligado "
+     "para não consumir créditos de cloud."),
+    ("3. POLÍTICA DE DEPLOY", "Deploy em produção só pela esteira da CodeVault, com testes de regressão aprovados. "
+     "Hotfix direto em produção é proibido, exceto em incidente SEV1 com aprovação do gestor de engenharia de plantão. "
+     "Deploys acontecem de terça a quinta, das 10h às 16h."),
+    ("4. CHANGE FREEZE DE VAREJO", "Clientes de varejo congelam mudanças em produção na temporada de Black Friday e de "
+     "fim de ano. De 1º de novembro a 10 de janeiro, nenhum deploy é feito em sistemas de e-commerce, checkout e "
+     "marketplace, exceto hotfix de incidente SEV1. Projetos de e-commerce devem planejar o go-live para antes de 31 "
+     "de outubro ou depois de 10 de janeiro. O freeze de 2026 começa em 1º de novembro de 2026."),
+    ("5. ALOCAÇÃO DE SRE", "Todo projeto nas fases de testes ou implantação precisa de pelo menos um SRE alocado: é o "
+     "SRE quem mantém a esteira de deploy e o ambiente de homologação. Projetos em discovery ou arquitetura não "
+     "precisam de SRE dedicado; o time de plataforma atende sob demanda. O PMO revisa a alocação de SRE toda segunda."),
+    ("6. SEVERIDADE DE INCIDENTES", "SEV1: sistema do cliente fora do ar ou perda de dados; resposta em 15 minutos, "
+     "24x7. SEV2: funcionalidade importante degradada; resposta em 1 hora. SEV3: problema com contorno; resposta no "
+     "próximo dia útil. Todo SEV1 e SEV2 gera postmortem."),
+    ("7. POSTMORTEM", "O postmortem é escrito em até 5 dias úteis, sem culpados, com resumo, linha do tempo, causa "
+     "raiz, impacto (usuários afetados e duração) e ações. As ações viram tarefas no backlog do projeto."),
+    ("8. STATUS SEMANAL E FAROL", "Todo gerente de projeto publica o status semanal até sexta às 18h, com avanço "
+     "físico, farol e bloqueios. Regra oficial do farol: verde com SPI igual ou acima de 0,95; amarelo entre 0,90 e "
+     "0,95; vermelho abaixo de 0,90. O farol segue o número, não a percepção do gerente."),
+    ("9. USO DE CONSULTORIAS", "Consultorias entram por ordem de serviço ligada a um contrato-quadro vigente. O gerente "
+     "do projeto acompanha o banco de horas e pede aditivo com 30 dias de antecedência: aprovar horas novas leva, em "
+     "média, 30 dias. Entrega atrasada de consultoria gera multa conforme o contrato; o gerente deve registrar o "
+     "atraso para que o financeiro desconte na fatura."),
+    ("10. SEGURANÇA E LGPD", "Dado pessoal de cliente nunca sai do ambiente de produção. Cópias para homologação são "
+     "mascaradas. Todo sistema novo passa por pentest antes do go-live."),
+]
+
+
+def manual_pdf():
+    blocos = [("titulo", "Vértice Tecnologia - Manual de Tecnologias e Práticas de Engenharia"),
+              ("subtitulo", "Versão 4.2 · aprovado pelo comitê de arquitetura em 01/09/2026"), ("espaco", "")]
+    for titulo, texto in MANUAL:
+        blocos += [("subtitulo", titulo), ("normal", texto), ("espaco", "")]
+    blocos += [("normal", "Documento fictício gerado para a Imersão Jornada de Dados.")]
+    return blocos
+
+
+# ----------------------------------------------------------------- orquestração
+
+def gerar(saida: pathlib.Path, seed: int) -> dict:
+    def r(nome):                       # um gerador por assunto: mexer num não muda os outros
+        return random.Random(f"{seed}:{nome}")
+
+    projetos = gerar_projetos(r("projetos"))
+    tarefas = gerar_tarefas(projetos, r("tarefas"))
+    hist = simular(projetos, tarefas, r("simulacao"))
+    custos = gerar_custos(projetos, hist, r("custos"))
+    colaboradores, alocacoes, apontamentos = gerar_pessoas(projetos, hist, r("pessoas"))
+    entregas, atrasos, usa = gerar_fornecedores(projetos, tarefas, hist, r("fornecedores"))
+    contratos_cap, consumo = gerar_capacidade(projetos, tarefas, hist, usa, r("capacidade"))
+    status = gerar_status(projetos, tarefas, hist, atrasos, r("status"))
+    postmortems = gerar_postmortems(projetos, hist, r("postmortems"))
+
+    # responsável de cada tarefa: alguém do squad
+    rr = r("responsaveis")
+    nome_de = {c["id"]: c["nome"] for c in colaboradores}
+    squad = {}
+    for cid, pid, *_ in alocacoes:
+        squad.setdefault(pid, []).append(nome_de[cid])
+    for p in projetos:
+        for t in tarefas[p["id"]]:
+            t["resp"] = rr.choice(squad.get(p["id"], [p["gerente"]]))
+
+    # ---- arquivos por ferramenta + cadastro do PMO -------------------------------
+    rs = r("sujeira")
+    linhas_proj = []
+    n_tarefas = 0
+    sem_codigo = {"excel": None, "clickup": None}
+    for p in projetos:
+        f = p["ferramenta"]
+        if f == "excel":
+            codigo = f"Cronograma {p['id']}.xlsx" if rs.random() > 0.25 else f"{p['id']} - {p['nome'][:28].strip()} v{rs.randint(2, 7)} FINAL.xlsx"
+            escrever_excel(saida, p, tarefas[p["id"]], r(f"excel:{p['id']}"), codigo)
+        elif f == "clickup":
+            list_id = str(901_200_000_000 + int(p["id"][4:]) * 7919)
+            codigo = list_id
+            escrever_clickup(saida, p, tarefas[p["id"]], r(f"clickup:{p['id']}"), f"lista_{list_id}.json", list_id)
+        else:
+            codigo = f"{p['id']}_{slug(p['tipo'])[:30]}.xml"
+            escrever_msproject(saida, p, tarefas[p["id"]], codigo)
+        n_tarefas += len(tarefas[p["id"]])
+        codigo_txt = codigo
+        if f in sem_codigo and sem_codigo[f] is None and p["id"] not in ("PRJ-011", "PRJ-007") and rs.random() < 0.2:
+            sem_codigo[f] = p["id"]                         # sujeira: o PMO esqueceu de preencher o código
+            codigo_txt = ""
+        nome_ferr = {"excel": ["Excel", "excel", "Planilha"], "clickup": ["ClickUp", "Clickup", "click up"],
+                     "msproject": ["MS Project", "Project", "msproject"]}[f]
+        ferr_txt = nome_ferr[0] if rs.random() < 0.7 else rs.choice(nome_ferr[1:])
+        data_ini = br(p["inicio"]) if rs.random() < 0.3 else iso(p["inicio"])   # sujeira: 2 formatos
+        status_p = "concluido" if p["concluido"] else "em_andamento"
+        linhas_proj.append([p["id"], p["nome"], p["cliente"], p["segmento"], p["tipo"], ferr_txt, codigo_txt,
+                            f"{p['valor']:.2f}", f"{p['orcamento']:.2f}", data_ini, iso(p["fim_baseline"]),
+                            status_p, p["gerente"]])
+    escrever_csv(saida / "pmo/projetos.csv",
+                 ["projeto_id", "nome_projeto", "cliente", "segmento", "tipo_projeto", "ferramenta", "codigo_ferramenta",
+                  "valor_contrato", "orcamento_custo", "data_inicio", "data_fim_baseline", "status", "gerente_projeto"],
+                 linhas_proj)
+    escrever_csv(saida / "pmo/status_semanal.csv",
+                 ["projeto_id", "data_status", "gerente", "farol", "pct_concluido", "texto_status"], status)
+
+    linhas_col = []
+    for c in colaboradores:
+        linhas_col.append([c["id"], c["nome"], c["papel"], c["senioridade"], f"{c['custo']:.2f}", iso(c["admissao"]),
+                           iso(c["desligamento"])])
+    for cid in ("COL0102", "COL0257", "COL0433"):          # sujeira: pessoa duplicada no cadastro do RH
+        o = next(x for x in linhas_col if x[0] == cid)
+        linhas_col.append([o[0], o[1].upper(), o[2].upper(), o[3], o[4], o[5], o[6]])
+    escrever_csv(saida / "rh/colaboradores.csv",
+                 ["colaborador_id", "nome", "papel", "senioridade", "custo_hora", "data_admissao", "data_desligamento"],
+                 linhas_col)
+    escrever_csv(saida / "rh/alocacoes.csv",
+                 ["colaborador_id", "projeto_id", "data_inicio", "data_fim", "pct_alocacao"],
+                 [[a[0], a[1], iso(a[2]), iso(a[3]), a[4]] for a in alocacoes])
+    escrever_csv(saida / "timesheet/apontamentos.csv",
+                 ["colaborador_id", "projeto_id", "semana_inicio", "horas_disponiveis", "horas_apontadas"], apontamentos)
+    escrever_csv(saida / "financeiro/custos.csv",
+                 ["lancamento_id", "projeto_id", "data", "categoria", "descricao", "valor", "centro_custo"], custos)
+    escrever_csv(saida / "compras/entregas_fornecedor.csv",
+                 ["entrega_id", "projeto_id", "fornecedor", "item", "valor", "data_pedido", "data_prometida",
+                  "data_entrega", "prazo_contratado_dias", "status"], entregas)
+    escrever_csv(saida / "compras/contratos_capacidade.csv",
+                 ["contrato_id", "projeto_id", "fornecedor", "tipo", "unidade", "quantidade_contratada", "data_inicio",
+                  "data_fim_vigencia", "valor_contrato"], contratos_cap)
+    escrever_csv(saida / "compras/consumo_capacidade.csv",
+                 ["contrato_id", "data", "consumido_semana", "saldo", "consumo_previsto_dia"], consumo)
+    escrever_csv(saida / "incidentes/postmortems.csv",
+                 ["incidente_id", "projeto_id", "data", "severidade", "texto_postmortem"], postmortems)
+
+    rd = r("documentos")
+    for c in CONTRATOS:
+        escrever_pdf(saida / f"documentos/contratos/contrato_{slug(c[0])}.pdf", contrato_pdf(c, rd))
+    escrever_pdf(saida / "documentos/manual/manual_de_tecnologias.pdf", manual_pdf())
+
+    return dict(projetos=len(projetos), tarefas=n_tarefas, status_semanal=len(status), custos=len(custos),
+                colaboradores=len(linhas_col), alocacoes=len(alocacoes), apontamentos=len(apontamentos),
+                entregas_fornecedor=len(entregas), contratos_capacidade=len(contratos_cap),
+                consumo_capacidade=len(consumo), postmortems=len(postmortems), pdf_contratos=len(CONTRATOS),
+                arquivos_excel=FERRAMENTAS["excel"], arquivos_clickup=FERRAMENTAS["clickup"],
+                arquivos_msproject=FERRAMENTAS["msproject"])
 
 
 def main() -> int:
@@ -720,13 +1035,13 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
     saida = pathlib.Path(args.saida)
-    for pasta in PASTAS_GERADAS:                    # recomeça do zero, sem sobra de execução anterior
-        if (saida / pasta).exists():
+    for pasta in PASTAS_GERADAS + ["erp", "cronograma", "ponto", "frota", "almoxarifado", "rdo"]:
+        if (saida / pasta).exists():                       # recomeça do zero (inclui pastas do case antigo)
             shutil.rmtree(saida / pasta)
     contagens = gerar(saida, args.seed)
-    print(f"Dataset da Atlas Engenharia gerado em {saida}/ (seed {args.seed}, hoje = {HOJE.isoformat()})")
+    print(f"Dataset da Vértice Tecnologia gerado em {saida}/ (seed {args.seed}, hoje = {HOJE.isoformat()})")
     for k, v in contagens.items():
-        print(f"  {k:<18} {v:>9,}".replace(",", "."))
+        print(f"  {k:<20} {v:>9,}".replace(",", "."))
     return 0
 
 

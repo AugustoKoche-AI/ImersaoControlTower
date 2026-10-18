@@ -5,7 +5,7 @@
 -- MAGIC Pergunta de negócio: quais são os maiores contratos e quanto vale a carteira?
 -- MAGIC Conexão: na bronze tudo é texto. Sem CAST, ORDER BY ordena como palavra.
 -- MAGIC
--- MAGIC 1. A armadilha: ordenar texto. '9.000.000' vem antes de '62.000.000'?
+-- MAGIC 1. A armadilha: ordenar texto. '9000000.00' vem antes de '12000000.00'?
 
 -- COMMAND ----------
 
@@ -25,7 +25,7 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 3. A carteira inteira
+-- MAGIC 3. A carteira inteira, e só o que está em andamento
 
 -- COMMAND ----------
 
@@ -35,13 +35,19 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 4. DISTINCT: em quais setores e UFs a Atlas atua?
--- MAGIC    Repare na UF: 'MG', 'mg' e ' MG ' são a mesma coisa. É a primeira sujeira do dia.
+-- MAGIC 4. DISTINCT: para quais segmentos a Vértice trabalha?
 
 -- COMMAND ----------
 
 -- escreva aqui a sua query
 
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 5. E em quais ferramentas os projetos vivem?
+-- MAGIC    Repare: 'Excel', 'excel' e 'Planilha' são a mesma coisa. É a primeira sujeira do dia,
+-- MAGIC    e é o retrato do problema do CTO: cada um registra do seu jeito.
 
 -- COMMAND ----------
 

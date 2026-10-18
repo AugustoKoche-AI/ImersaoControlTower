@@ -1,7 +1,16 @@
 # CLAUDE.md
 
 Material e código da **Imersão Databricks + Claude Code** (Jornada de Dados, 19 a 22/10/2026): construir
-ao vivo, em 4 noites de 1h30, a **Torre de Controle de Projetos** da Construtora Atlas Engenharia (EPC fictícia).
+ao vivo, em 4 noites de 1h30, o **Projeto Farol**, a Torre de Controle de Projetos da **Vértice Tecnologia** (empresa
+de tecnologia fictícia, 520 pessoas, 60 projetos de clientes). A narrativa: você era engenheiro de dados, foi promovido a
+CTO, e o dono faz 4 perguntas (quais projetos atrasam e de quais clientes; quanto custa; tenho gente parada enquanto
+outro pede gente; o que vai dar errado no próximo mês). O problema central: os projetos vivem em **Excel (20), ClickUp
+(25) e MS Project (15)**, sem centralização. Noite 1 mostra o Databricks inteiro e junta à mão; noite 2 é a integração.
+
+> **Migração em andamento (18/10/2026):** o case mudou da Construtora Atlas (obras EPC) para a Vértice. A versão
+> Atlas completa está na tag `atlas-out26` (catálogo `lakehouse_atlas`, intocado no workspace). Já migrados: gerador,
+> validador e noite 1. Noites 2 a 4 ainda descrevem a Atlas até serem migradas.
+
 Todo o conteúdo é em português e escrito para ser acompanhado ao vivo por um público misto: cerca de metade
 nunca programou ou só fez exercícios.
 
@@ -30,7 +39,14 @@ conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 script
 - **Nunca escolha um profile sozinho.** O profile de desenvolvimento desta imersão é `imersao-out26`
   (workspace `dbc-84cd5511-fa25`, o mesmo de agosto, que também tem `lakehouse_rotaperfume`).
 - Ambiente-alvo: **Free Edition, serverless**. Warehouse `Serverless Starter Warehouse` (`666be37e3fededf2`).
-- Catálogo **`lakehouse_atlas`**. `CREATE CATALOG` só via SQL: a API do UC recusa no Free Edition.
+- Catálogo **`lakehouse_vertice`** (o da Atlas, `lakehouse_atlas`, fica como reserva). `CREATE CATALOG` só via SQL:
+  a API do UC recusa no Free Edition.
+- Skills oficiais do Databricks instaladas no projeto (`.claude/skills/`, 32 com as experimentais) via
+  `databricks aitools install --agents claude-code --scope project --skills-only --experimental`.
+- ✅ `read_files` lê Excel (`format => 'excel'`, `headerRows => 1`), XML (`rowTag => 'Task'`) e JSON (`multiLine`).
+  No Excel use `inferColumnTypes => false` (tudo texto; `_metadata.file_name` vem codificado: `url_decode`). No XML e no
+  JSON **deixe inferir**: com `false` as estruturas aninhadas viram texto.
+- Volume não aceita escrita fora de ordem: o `.xlsx` é montado em memória (`material/xlsx_simples.py`).
 
 ### O que funciona no Free Edition (medido em 18/10/2026)
 
@@ -60,40 +76,45 @@ conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 script
   os GRANTs vêm antes do segundo `apps deploy`. Nenhum arquivo `*.geniespace.json` dentro da pasta do app.
 - O primeiro acesso ao app pede consentimento OAuth ("Authorize"), feito por uma pessoa. Testes automáticos
   usam `Authorization: Bearer $(databricks auth token)`.
-- Nomes de Genie são únicos por título no `scripts/genie.py`: "Noite 1 (bronze, sem curadoria)", "Diretoria"
-  (noite 2, do bundle) e "Diretoria + Contratos" (noite 4).
+- Nomes de Genie e dashboard são únicos por título nos scripts: os da Vértice começam com "Farol · " / "Projeto Farol · "
+  para não sobrescrever os da Atlas ("Farol · Noite 1 (bronze, sem curadoria)", dashboard "Projeto Farol · Noite 1 (bronze)").
 
 Aprendizados detalhados de cada noite: `aulas/<noite>/APRENDIZADOS.md`.
 
 ## Dataset
 
-`python3 material/gerar_dataset.py --saida ./dados --seed 42` (só stdlib, cerca de 1,6 s, 12 MB) e
-`python3 material/validar_padroes.py --dados ./dados` (sai com 1 se um padrão sumir).
+`python3 material/gerar_dataset.py --saida ./dados --seed 42` (só stdlib, < 1 s, 7 MB) e
+`python3 material/validar_padroes.py --dados ./dados` (sai com 1 se um padrão sumir; é o gabarito da centralização:
+lê as 3 ferramentas em Python). Um `random.Random` por assunto (`f"{seed}:{nome}"`): mexer num bloco não muda os outros.
 
 - **"Hoje" = 2026-10-16.** Nunca `current_date()`.
 - **A sujeira é conteúdo, não bug.** Nunca conserte o gerador para limpar dado. A limpeza é na silver (noite 2).
 - **Seed fixa.** Mudou o gerador? Rode o validador, regere, recarregue a bronze e atualize os números esperados
   em `aulas/aula-01-analista/99-verificacao.sql`, nos READMEs e nos slides, nessa ordem.
-- Padrões que os KPIs precisam mostrar: CPI caindo a partir do 9º mês em `P002 P005 P009 P014 P018 P021 P027 P033`;
-  chuva no Pará em `P003 P011 P024`; Metalúrgica Norte Aço com lead time ×1,41 e escrita de 4 jeitos;
-  guindastes `EQ0017`/`EQ0018` ociosos na `P007` (MG) enquanto a `P011` (PA) reclama de guindaste no RDO;
-  equipe fraca em `P016 P030`.
-- Ruptura prevista = cobertura (saldo ÷ consumo previsto/dia) < dias até a próxima entrega prometida
-  (promessa já vencida ou sem pedido em aberto: lead time contratado). Dá **97** hoje, igual em
-  `gold.cobertura_estoque` e no `validar_padroes.py`. A fórmula ingênua do PRD (cobertura < lead time) dá 181.
+- Fontes: `pmo/` (projetos, status_semanal com texto livre e farol), `excel/` (20 .xlsx), `clickup/` (25 .json),
+  `msproject/` (15 .xml MSPDI), `rh/`, `timesheet/`, `financeiro/`, `compras/` (entregas de fornecedor, contratos e
+  consumo de capacidade), `incidentes/postmortems.csv`, `documentos/` (8 contratos de fornecedor/SaaS e o manual de
+  tecnologias em PDF).
+- Padrões que os KPIs precisam mostrar: CPI caindo a partir do 6º mês em `PRJ-002 005 009 014 018 021 027 033`
+  (escopo sem aditivo); change freeze da Black Friday (01/11 a 10/01) em `PRJ-003 011 024` (e-commerce);
+  consultoria CodeForge com prazo ×1,41 e escrita de 4 jeitos; SREs `COL0017`/`COL0018` a 2–9% no `PRJ-007`
+  (ainda no discovery) enquanto o `PRJ-011` pede SRE nos status; squads com rotatividade em `PRJ-016 030`.
+  Bônus: 4 projetos "melancia" (farol verde, SPI < 0,9): `PRJ-012 028 034 042`.
+- Ruptura de capacidade = saldo ÷ consumo previsto/dia < 30 dias (prazo de aditivo). Dá **15** hoje.
 
 ## Números de referência
 
-Noite 2 (gold): estouro R$ 42,36 mi (a noite 1 dá R$ 41,9 mi porque corta % > 100 com `LEAST`, o que é ponto de aula) ·
+Noites 2 a 4 (ainda Atlas, a remedir na Vértice) · Noite 2 (gold): estouro R$ 42,36 mi (a noite 1 dá R$ 41,9 mi porque corta % > 100 com `LEAST`, o que é ponto de aula) ·
 SPI/CPI da carteira 0,95/0,94 · 97 rupturas · 27 pedidos em atraso · Genie 20/20.
 Noite 3: AUC 0,973 (regra atual 0,50; folga 0,966) · 6 de 7 estouros no top 5, 45 dias antes · P034 "ok" com prob 0,40.
 Noite 4: 88 cláusulas · multa P011 R$ 1,88 mi · simulador EQ0017 → P011: 7,8 dias e R$ 82,6 mil · ROI ≈ R$ 12,9 mi.
 
-### Noite 1
+### Noite 1 (Vértice)
 
-40 obras (36 em andamento) · carteira R$ 903,0 mi (R$ 794,8 mi em andamento) · custo real R$ 572,85 mi
-(R$ 556,09 mi com `try_cast`, ou seja, 540 lançamentos perdidos) · 13 obras em risco, 7 críticas · estouro previsto
-R$ 41,9 mi (soma só dos positivos) · P011 com +178 dias de atraso projetado.
+60 projetos (41 em andamento) · carteira R$ 305,2 mi (R$ 208,6 mi em andamento) · custo real R$ 193,35 mi
+(R$ 187,94 mi com `try_cast`: 671 lançamentos perdidos) · 17 projetos em risco, 7 críticos · estouro previsto
+R$ 6,47 mi · piores SPI PRJ-016 0,63, PRJ-030 0,69, PRJ-039 0,75, PRJ-011 0,77 · 32 faróis verdes, 4 melancias.
+Genie sem curadoria erra as 4 perguntas do dono (ensaio 18/10).
 
 ## Comandos
 
@@ -118,7 +139,7 @@ Todo número do slide sai de uma query rodada; cite a fonte no README da noite.
 ## Convenções
 
 - Código e comentários para quem assiste ao vivo pela primeira vez: SQL legível, não esperto.
-- Tabelas e colunas em snake_case e português. Referência completa `lakehouse_atlas.<schema>.<tabela>` nos `.sql`;
+- Tabelas e colunas em snake_case e português. Referência completa `lakehouse_vertice.<schema>.<tabela>` nos `.sql`;
   nome sem catálogo **dentro** do JSON do dashboard (catálogo e schema entram no deploy).
 - Sempre `--profile`. Nada de `mode: development` no bundle (prefixa os schemas). Use `presets.trigger_pause_status`.
 - Responda em português, curto e direto.
