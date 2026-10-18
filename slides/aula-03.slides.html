@@ -1,0 +1,131 @@
+<!-- titulo: Imersão Databricks + Claude Code · Noite 3 · Cientista de Dados -->
+
+<section class="slide hero">
+  <div class="kicker">Imersão Databricks + Claude Code · Noite 3 de 4 · 21/10, 19h30</div>
+  <h1>Quem vai<br><span class="grad">estourar?</span></h1>
+  <p class="sub" style="margin-top:36px;">Hoje você é o <b>Cientista de Dados</b>: a Torre já diz quem estourou. Agora ela vai dizer quem vai estourar nos próximos 30 dias, com o motivo, antes da regra de corte perceber.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">O problema da regra de corte</div>
+  <h2>"Abaixo de 0,9" acende quando <span class="grad">já aconteceu</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">Hoje</div><div class="lbl" style="color:#fff; font-size:28px;">A Atlas olha SPI e CPI e espera cruzar 0,9. Quando cruza, o aditivo já passou do prazo e a multa já está correndo.</div></div>
+    <div class="card hl"><div class="tag">O que a diretoria precisa</div><div class="lbl" style="color:#fff; font-size:28px;">Saber <b>30 dias antes</b>. O contrato dá 30 dias para pleitear aditivo; depois, o direito preclui.</div></div>
+  </div>
+  <p class="sub" style="margin-top:40px;">A pergunta da noite não é "qual é o melhor algoritmo". É: <b>o que exatamente estamos prevendo?</b></p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O rótulo · a decisão mais importante da noite</div>
+  <h2>Cada sexta-feira de cada obra é uma foto</h2>
+  <pre class="code"><span class="c">-- numa sexta-feira t, para uma obra que AINDA está "ok" (SPI e CPI >= 0,9):</span>
+
+estoura_30d = <span class="s">1</span>   se o pior índice (menor entre SPI e CPI) nas 4 semanas seguintes
+                  fica abaixo de 0,9
+estoura_30d = <span class="s">0</span>   senão</pre>
+  <div class="grid g3" style="gap:22px; margin-top:26px;">
+    <div class="card"><div class="num md">2.874</div><div class="lbl">obras × semana: com 40 obras não existe ML; com 2.874 fotos, existe</div></div>
+    <div class="card"><div class="num md">1.535</div><div class="lbl">linhas de treino elegíveis (obra ainda "ok", 12+ semanas de vida)</div></div>
+    <div class="card hl"><div class="num md">8,4%</div><div class="lbl">taxa base: em 1 de cada 12 fotos, a obra cruza o corte no mês seguinte</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">ML é camada, não projeto</div>
+  <h2>Mais três tarefas no mesmo job</h2>
+  <pre class="code">conferencia_bronze → medalhao ─┬→ testes_de_qualidade ─┐
+                               └→ rdo_com_ia ──────────┴→ metricas_governadas
+                                                                 │
+                    <span class="k">noite 3</span> ─────────────────────────────────────┘
+                    <span class="k">ml_features</span> ──► <span class="k">ml_modelo</span> ──────────► <span class="k">ml_score</span>
+                    obra×semana     baseline, treino,      a lista de hoje,
+                    + rótulo        4 testes, MLflow,      com motivo
+                                    Unity Catalog @prod    → gold.score_estouro_30d</pre>
+  <div class="grid g3" style="gap:22px; margin-top:26px;">
+    <div class="card"><div class="tag">Prompt 1 · features</div><div class="lbl">o que descreve uma obra que vai estourar · 8 a 20 s</div></div>
+    <div class="card hl"><div class="tag">Prompt 2 · modelo</div><div class="lbl">o baseline primeiro, depois o modelo, com 4 testes · ~55 s</div></div>
+    <div class="card"><div class="tag">Prompt 3 · score</div><div class="lbl">a lista de segunda-feira, com motivo em português · ~45 s</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 2 · o baseline antes do modelo</div>
+  <h2>O modelo precisa ganhar de quem, exatamente?</h2>
+  <table class="t">
+    <tr><th>Régua</th><th class="r">AUC</th><th>Leitura</th></tr>
+    <tr><td>Regra de corte atual (&lt; 0,9)</td><td class="r bad">0,50</td><td>não avisa nada antes: é uma moeda</td></tr>
+    <tr><td>Tendência das últimas 4 semanas</td><td class="r bad">0,47</td><td>pior que a moeda</td></tr>
+    <tr><td>Só o CPI</td><td class="r warn">0,81</td><td>já ajuda</td></tr>
+    <tr><td>Classificador sim/não</td><td class="r">0,947</td><td>perde para uma regra simples…</td></tr>
+    <tr><td>Folga até o corte (regra)</td><td class="r">0,966</td><td>o baseline honesto</td></tr>
+    <tr class="cur"><td>Modelo: prevê o pior índice das próximas 4 semanas</td><td class="r ok">0,973</td><td>ganha da regra nos 3 cortes testados</td></tr>
+  </table>
+  <p class="note" style="margin-top:24px;">Um <b>assert</b> quebra a tarefa se o modelo perder da regra. Modelo que não ganha do baseline não vai para produção.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O vazamento de dado · a demonstração</div>
+  <h2>AUC alta demais é <span class="grad">sintoma</span>, não troféu</h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card hl"><div class="tag">Corte no tempo</div><div class="num md">0,974</div><div class="lbl">treino até 06/03/2026, teste a partir de 03/04/2026. O jeito certo.</div></div>
+    <div class="card"><div class="tag">Divisão aleatória</div><div class="num md">0,984</div><div class="lbl">o modelo "vê" semanas futuras da mesma obra no treino</div></div>
+    <div class="card"><div class="tag">Índice futuro como feature</div><div class="num md bad">0,997</div><div class="lbl">a resposta dentro da pergunta. O teste do prompt 2 barra isso.</div></div>
+  </div>
+  <p class="sub" style="margin-top:36px;">Em produção, o modelo de 0,997 erra. O de 0,974 continua acertando.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">A métrica que não é AUC</div>
+  <h2>A frase para a diretoria</h2>
+  <div class="card hl" style="padding:44px 50px;"><div class="lbl" style="color:#fff; font-size:38px; line-height:1.4; font-weight:600;">"Das 7 obras que estouraram depois de abril, a Torre teria colocado <b>6</b> na lista das 5 mais arriscadas da semana, em média <b>45 dias antes</b>. A regra que usamos hoje avisou <b>zero</b> antes."</div></div>
+  <div class="grid g3" style="gap:22px; margin-top:26px;">
+    <div class="card"><div class="num md">6 de 7</div><div class="lbl">estouros avisados no top 5</div></div>
+    <div class="card"><div class="num md">45 dias</div><div class="lbl">de antecedência média</div></div>
+    <div class="card"><div class="num md">R$ 8,4 mi</div><div class="lbl">de estouro previsto nessas 6 obras hoje</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 3 · a lista de segunda-feira</div>
+  <h2>gold.score_estouro_30d, com o motivo</h2>
+  <table class="t tight" style="font-size:21px;">
+    <tr><th>#</th><th>Obra</th><th class="r">Prob.</th><th>Faixa</th><th>Por quê</th></tr>
+    <tr><td>1</td><td>P030</td><td class="r">1,00</td><td class="bad">alto</td><td>SPI 0,78; mão de obra em 15% dos RDOs; 17% das horas paradas</td></tr>
+    <tr><td>2</td><td>P011</td><td class="r">1,00</td><td class="bad">alto</td><td>SPI 0,78; falta de equipamento em 70% dos RDOs; 28% das horas paradas</td></tr>
+    <tr><td>3</td><td>P018</td><td class="r">1,00</td><td class="bad">alto</td><td>CPI 0,79, caindo 4 semanas seguidas; R$ 1 gasto entregou R$ 0,66 no mês</td></tr>
+    <tr><td>4</td><td>P021</td><td class="r">1,00</td><td class="bad">alto</td><td>CPI 0,79, caindo 4 semanas seguidas; R$ 0,66 no mês</td></tr>
+    <tr><td>8</td><td>P003</td><td class="r">1,00</td><td class="bad">alto</td><td>SPI 0,80; falta de material em 50% dos RDOs</td></tr>
+    <tr class="cur"><td>14</td><td><b>P034</b></td><td class="r"><b>0,40</b></td><td class="warn">médio</td><td><b>"ok" para a regra</b> (SPI 0,91, CPI 0,98), e o modelo vê o risco chegando</td></tr>
+  </table>
+  <p class="small" style="margin-top:14px;">36 obras · 13 alto · 1 médio · 22 baixo · a feature mais importante é a ociosidade das últimas 4 semanas.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Free Edition · o que aprendemos no ensaio</div>
+  <h2>As armadilhas, já resolvidas</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>Armadilha</th><th>Solução no repositório</th></tr>
+    <tr><td>registrar modelo no Unity Catalog dá <b>s3:PutObject explicit deny</b></td><td>%pip install -U "mlflow-skinny[databricks]&gt;=2.21,&lt;3" + restartPython()</td></tr>
+    <tr><td>não existe endpoint de modelo próprio</td><td>score em lote, gravado na gold, todo dia</td></tr>
+    <tr><td>spark_udf não roda no serverless</td><td>load_model + pandas</td></tr>
+    <tr><td>DECIMAL não serializa no registro</td><td>.cast("double") nas features</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide hero">
+  <div class="kicker">Amanhã · noite 4 · Engenheiro de IA · 19h30</div>
+  <h2 style="font-size:84px;">E o diretor que<br><span class="grad">não escreve SQL?</span></h2>
+  <p class="sub">O app da Torre com aprovação gravada no Lakebase, o agente que lê os contratos e o pitch de 3 minutos com ROI em reais.</p>
+  <div style="margin-top:40px;"><span class="pill on">Lição de casa</span><span class="pill">rode o 99-verificacao.sql (15 ok)</span><span class="pill">ache a sua P034</span></div>
+  [[RODAPE]]
+</section>
