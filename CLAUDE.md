@@ -65,7 +65,8 @@ Aprendizados de cada noite ficam também em `aulas/<noite>/APRENDIZADOS.md`, qua
   guindastes `EQ0017`/`EQ0018` ociosos na `P007` (MG) enquanto a `P011` (PA) reclama de guindaste no RDO;
   equipe fraca em `P016 P030`.
 - Ruptura prevista = cobertura (saldo ÷ consumo previsto/dia) < dias até a próxima entrega prometida
-  (sem pedido em aberto: lead time contratado). A fórmula ingênua do PRD (cobertura < lead time) dá 180 falsos alarmes.
+  (promessa já vencida ou sem pedido em aberto: lead time contratado). Dá **97** hoje, igual em
+  `gold.cobertura_estoque` e no `validar_padroes.py`. A fórmula ingênua do PRD (cobertura < lead time) dá 181.
 
 ## Números de referência da noite 1
 

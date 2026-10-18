@@ -143,7 +143,7 @@ def main() -> int:
                and data(r["data"]) >= corte]
     checar(len(falta_g) >= 15, f"RDOs da P011 citando guindaste nas últimas 12 semanas: {len(falta_g)}")
 
-    print("\nPergunta 3 · rupturas previstas hoje (cobertura < dias até a próxima entrega prometida)")
+    print("\nPergunta 3 · rupturas previstas hoje (cobertura < dias até a próxima entrega prometida; vencida = lead time)")
     mat = {m["material_id"]: m for m in ler(base, "erp/materiais.csv")}
     hoje_est = {(e["projeto_id"], e["material_id"]): e for e in ler(base, "almoxarifado/estoque.csv")
                 if e["data"] == HOJE.isoformat()}
@@ -155,16 +155,19 @@ def main() -> int:
     rupt = []
     for k, e in hoje_est.items():
         cons = float(e["consumo_previsto_dia"])
-        if cons <= 0:
+        if cons <= 0 or proj[k[0]]["status"] != "em_andamento":
             continue
-        cob = float(e["saldo"]) / cons
-        dias = (max(0, (dt.date.fromisoformat(proxima[k]) - HOJE).days) if k in proxima
-                else int(mat[k[1]]["lead_time_contratado_dias"]))
+        cob = max(0.0, float(e["saldo"])) / cons          # saldo negativo é erro de inventário: vira 0
+        lead = int(mat[k[1]]["lead_time_contratado_dias"])
+        # promessa ainda no futuro: vale a promessa; já venceu (ou não há pedido): vale o lead time
+        dias = (dt.date.fromisoformat(proxima[k]) - HOJE).days if k in proxima else -1
+        if dias < 0:
+            dias = lead
         if cob < dias:
             rupt.append((k[0], k[1], cob))
     por_disc = collections.Counter(mat[m]["disciplina"] for _, m, _ in rupt)
     print(f"    {len(rupt)} rupturas previstas · por disciplina: {dict(por_disc)}")
-    checar(20 <= len(rupt) <= 90, "quantidade de rupturas previstas plausível (20 a 90)")
+    checar(len(rupt) == 97, "97 rupturas previstas (mesma regra da gold.cobertura_estoque)")
 
     print("\nPergunta 2 · horas ociosas por obra (últimas 8 semanas)")
     ap_ = ler(base, "ponto/apontamentos.csv")

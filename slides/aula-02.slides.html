@@ -1,0 +1,201 @@
+<!-- titulo: Imersão Databricks + Claude Code · Noite 2 · Engenheiro de Dados -->
+
+<section class="slide hero">
+  <div class="kicker">Imersão Databricks + Claude Code · Noite 2 de 4 · 20/10, 19h30</div>
+  <h1>A Torre roda<br><span class="grad">sozinha</span></h1>
+  <p class="sub" style="margin-top:36px;">Hoje você é o <b>Engenheiro de Dados</b>: transforma as queries de ontem num pipeline que limpa, testa, lê os RDOs com IA e define cada KPI uma vez só. Com seis prompts no Claude Code.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">Onde paramos ontem</div>
+  <h2>A query certa, uma vez. E na terceira, alguém esquece.</h2>
+  <div class="grid g3" style="gap:24px;">
+    <div class="card"><div class="tag">A limpeza morava na query</div><div class="lbl" style="color:#fff; font-size:26px;">replace, upper(trim()), LEAST(…, 100), try_to_date em cada SELECT</div></div>
+    <div class="card"><div class="tag">O custo do esquecimento</div><div class="num md">R$ 16,8 mi</div><div class="lbl">somem com um try_cast no lugar errado</div></div>
+    <div class="card hl"><div class="tag">E o Genie</div><div class="num md">CPI 7,01</div><div class="lbl">e "não sei por que a P011 atrasou"</div></div>
+  </div>
+  <p class="sub" style="margin-top:40px;">Hoje a limpeza vira <b>pipeline</b>, o KPI vira <b>métrica governada</b> e o RDO vira <b>coluna</b>.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O que existe no fim da noite</div>
+  <h2>Um job, todo dia às 6h, serverless</h2>
+  <div class="flow">
+    <div class="card"><div class="tag">1 · conferência</div><div class="lbl" style="color:#fff;">as 12 tabelas da bronze chegaram? senão, para</div></div>
+    <div class="arr">→</div>
+    <div class="card"><div class="tag">2 · medalhão</div><div class="lbl" style="color:#fff;">Lakeflow: 12 silver + 8 gold, com EXPECT</div></div>
+    <div class="arr">→</div>
+    <div class="card"><div class="tag">3 · RDO com IA</div><div class="lbl" style="color:#fff;">regra + ai_classify + palavra-chave, MERGE incremental</div></div>
+    <div class="arr">→</div>
+    <div class="card"><div class="tag">4 · testes</div><div class="lbl" style="color:#fff;">8 testes que quebram o job antes do dashboard</div></div>
+    <div class="arr">→</div>
+    <div class="card hl"><div class="tag">5 · métricas</div><div class="lbl" style="color:#fff;">5 metric views, 12 KPIs</div></div>
+  </div>
+  <div class="grid g2" style="gap:24px; margin-top:28px;">
+    <img class="shot" style="height:380px;" src="[[IMG:docs/img/noite2-job.jpg]]" alt="Job atlas_torre verde">
+    <img class="shot" style="height:380px;" src="[[IMG:docs/img/noite2-pipeline.jpg]]" alt="Pipeline atlas_medalhao">
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Os 6 prompts · cada um termina com um deploy</div>
+  <h2>Do bundle vazio ao Genie que acerta</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>#</th><th>Prompt</th><th>O que nasce</th><th>A lição</th><th class="r">Tempo</th></tr>
+    <tr><td>1</td><td>Bundle</td><td>projeto como código, job e conferência da bronze</td><td>deploy em segundos, não em cliques</td><td class="r">~40 s</td></tr>
+    <tr><td>2</td><td>Silver</td><td>pipeline declarativo, 12 tabelas</td><td><b>a limpeza é o conteúdo</b>; EXPECT é contrato</td><td class="r">~2 min</td></tr>
+    <tr><td>3</td><td>Gold</td><td>fato obra × semana, 7 marts, 8 testes</td><td>o grão; PV, EV, AC acumulados</td><td class="r">~3 min 30</td></tr>
+    <tr class="cur"><td>4</td><td>RDO com IA</td><td>rdo_estruturado</td><td>IA custa por linha: regra, IA e palavra-chave</td><td class="r">~3 min</td></tr>
+    <tr><td>5</td><td>Métricas</td><td>5 metric views, 12 KPIs</td><td>a fórmula mora num lugar só</td><td class="r">~20 s</td></tr>
+    <tr><td>6</td><td>Dashboard e Genie</td><td>3 páginas + Genie + benchmark</td><td>benchmark é teste</td><td class="r">~6 min</td></tr>
+  </table>
+  <p class="note" style="margin-top:22px;">Os prompts estão em <b>PROMPTS.md</b>, prontos para colar. Antes do primeiro: <b>databricks auth login</b> e o Claude Code aberto na raiz do repositório.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 2 · o teste de uma boa limpeza</div>
+  <h2>Tudo muda, e o custo total <span class="grad">não muda um centavo</span></h2>
+  <div class="grid g4" style="gap:20px;">
+    <div class="card"><div class="num md">4 → 1</div><div class="lbl">grafias da Norte Aço viram um fornecedor</div></div>
+    <div class="card"><div class="num md">540</div><div class="lbl">valores com vírgula voltam para a soma</div></div>
+    <div class="card"><div class="num md">123 → 120</div><div class="lbl">equipes: as duplicadas somem</div></div>
+    <div class="card"><div class="num md">52</div><div class="lbl">tarefas acima de 100% buscam o % medido no boletim</div></div>
+  </div>
+  <div class="grid g2" style="gap:24px; margin-top:26px;">
+    <pre class="code"><span class="k">CREATE OR REFRESH MATERIALIZED VIEW</span> custos (
+  <span class="k">CONSTRAINT</span> valor_numerico
+    <span class="k">EXPECT</span> (valor_real <span class="k">IS NOT NULL</span>)
+    <span class="k">ON VIOLATION FAIL UPDATE</span>
+) <span class="k">AS SELECT</span> …</pre>
+    <div class="card hl"><div class="tag">Custo real, bronze = silver</div><div class="num">R$ 572,85 mi</div><div class="lbl">Se o total mudasse, a limpeza teria jogado dado fora.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ponto de aula · por que o estouro mudou?</div>
+  <h2>R$ 41,9 mi ontem, <span class="grad">R$ 42,36 mi</span> hoje</h2>
+  <div class="grid g2" style="gap:28px;">
+    <div class="card"><div class="tag">Ontem · o atalho</div><div class="lbl" style="color:#fff; font-size:28px;">LEAST(pct_concluido, 100): a tarefa de 117% vira 100%. Parece plausível.</div></div>
+    <div class="card hl"><div class="tag">Hoje · a fonte</div><div class="lbl" style="color:#fff; font-size:28px;">A silver busca o <b>% medido de verdade</b> no boletim semanal. Várias dessas tarefas não estavam concluídas.</div></div>
+  </div>
+  <p class="sub" style="margin-top:40px;">Limpar com um valor plausível escondeu <b>R$ 0,46 mi</b>. Limpar certo é ir buscar quem mede, não inventar o número que parece bom.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 4 · o RDO vira coluna</div>
+  <h2>"Por que a P011 atrasou?" agora tem resposta</h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card"><div class="tag">Regra</div><div class="num md">8.878</div><div class="lbl">RDOs "sem ocorrência": não precisa de IA</div></div>
+    <div class="card hl"><div class="tag">IA · ai_classify</div><div class="num md">977</div><div class="lbl">últimos 90 dias com ocorrência. ~3 min na 1ª vez, <b>6,5 s</b> depois (MERGE)</div></div>
+    <div class="card"><div class="tag">Palavra-chave</div><div class="num md">3.875</div><div class="lbl">histórico: barato e bom o bastante</div></div>
+  </div>
+  <div class="card" style="margin-top:26px;"><div class="tag">P011 · últimos 90 dias</div><div class="lbl" style="color:#fff; font-size:30px;"><b>Falta de equipamento</b>: 37 RDOs, 23,5 dias de impacto. Enquanto isso, <b>EQ0017 e EQ0018</b>, guindastes de 90 t, rodam a ~6% na P007, em Minas.</div></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 5 · a fórmula mora num lugar só</div>
+  <h2>12 KPIs governados no Unity Catalog</h2>
+  <div class="grid g2" style="gap:28px;">
+    <pre class="code"><span class="c">-- metric view: definida uma vez</span>
+measures:
+  - name: spi
+    expr: SUM(ev) / SUM(pv)
+  - name: cpi
+    expr: SUM(ev) / SUM(ac)
+  - name: estouro_previsto
+    expr: SUM(orcamento / cpi - orcamento)
+
+<span class="c">-- usada em qualquer lugar</span>
+<span class="k">SELECT</span> uf, <span class="k">MEASURE</span>(cpi)
+<span class="k">FROM</span> gold.mv_obras <span class="k">GROUP BY</span> uf</pre>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card"><div class="lbl" style="color:#fff; font-size:24px;">SPI · CPI · EAC · margem projetada · desvio de prazo · estouro previsto</div></div>
+      <div class="card"><div class="lbl" style="color:#fff; font-size:24px;">utilização de equipe e de equipamento · horas ociosas</div></div>
+      <div class="card"><div class="lbl" style="color:#fff; font-size:24px;">cobertura de estoque · rupturas previstas · pedidos em atraso</div></div>
+      <div class="note">O CPI do dashboard, do SQL e do Genie é <b>o mesmo número</b>, porque é a mesma definição.</div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Prompt 6 · as portas para a diretoria</div>
+  <h2 style="margin-bottom:22px;">O dashboard de portfólio, sobre a gold</h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite2-dashboard-portfolio.jpg]]" alt="Portfólio">
+    <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite2-dashboard-graficos.jpg]]" alt="SPI e CPI semana a semana">
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">As perguntas 2 e 3, respondidas</div>
+  <h2 style="margin-bottom:22px;">Gente e máquina parada · material que vai faltar</h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite2-dashboard-recursos.jpg]]" alt="Recursos">
+    <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite2-dashboard-suprimentos.jpg]]" alt="Suprimentos">
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O que a gold responde hoje</div>
+  <h2>Os números da Torre, já governados</h2>
+  <div class="grid g4" style="gap:20px;">
+    <div class="card hl"><div class="tag">Estouro previsto</div><div class="num md">R$ 42,36 mi</div><div class="lbl">obras em andamento</div></div>
+    <div class="card"><div class="tag">Obras</div><div class="num md">7 · 6</div><div class="lbl">críticas · em atenção, de 36</div></div>
+    <div class="card"><div class="tag">Carteira</div><div class="num md">0,95 · 0,94</div><div class="lbl">SPI · CPI · margem projetada 12,5%</div></div>
+    <div class="card"><div class="tag">Rupturas previstas</div><div class="num md">97</div><div class="lbl">de 851 itens material × obra</div></div>
+    <div class="card"><div class="tag">Pedidos em atraso</div><div class="num md">27</div><div class="lbl">17 deles da Norte Aço</div></div>
+    <div class="card"><div class="tag">Norte Aço</div><div class="num md">×1,41</div><div class="lbl">lead time real ÷ prometido · 0% no prazo</div></div>
+    <div class="card"><div class="tag">Guindastes parados</div><div class="num md">~6%</div><div class="lbl">de uso: EQ0017 e EQ0018 na P007 (MG)</div></div>
+    <div class="card"><div class="tag">Job do zero</div><div class="num md">5 min 31 s</div><div class="lbl">conferência → medalhão → IA → testes → métricas</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O Genie de ontem × o Genie de hoje</div>
+  <h2>De CPI 7,01 para <span class="grad">20 de 20</span></h2>
+  <div class="grid g2" style="gap:28px; grid-template-columns: 1.1fr 0.9fr;">
+    <table class="t tight" style="font-size:21px;">
+      <tr><th>Pergunta</th><th>Noite 1 (bronze)</th><th>Noite 2 (gold)</th></tr>
+      <tr><td>CPI de cada obra</td><td class="bad">2,10 a 7,01</td><td class="ok">0,79 a 1,05</td></tr>
+      <tr><td>Por que a P011 atrasou?</td><td class="bad">listou tarefas</td><td class="ok">falta de guindaste, 37 RDOs</td></tr>
+      <tr><td>Quais vão estourar?</td><td class="bad">sem definição</td><td class="ok">7 críticas, regra de 0,8</td></tr>
+      <tr><td>Que material vai faltar?</td><td class="bad">não sabe</td><td class="ok">97 rupturas, por obra</td></tr>
+    </table>
+    <img class="shot" style="height:520px;" src="[[IMG:docs/img/noite2-genie.jpg]]" alt="Genie da Torre">
+  </div>
+  <p class="note" style="margin-top:22px;">O que mudou não foi o Genie: foi o dado limpo, as metric views, as instruções e um <b>benchmark de 20 perguntas</b> que roda como teste.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Como vender a noite 2</div>
+  <h2>Engenharia de dados é o que torna o número confiável</h2>
+  <table class="t tight" style="font-size:23px;">
+    <tr><th>Sem pipeline</th><th>Com o pipeline da Torre</th></tr>
+    <tr><td>Cada analista limpa do seu jeito</td><td>a limpeza é uma só, testada (EXPECT + 8 testes)</td></tr>
+    <tr><td>O número muda conforme quem consulta</td><td>12 KPIs definidos uma vez, no Unity Catalog</td></tr>
+    <tr><td>O RDO é um PDF que ninguém lê</td><td>a causa do atraso vira coluna, todo dia</td></tr>
+    <tr><td>Relatório montado à mão no fim do mês</td><td>job às 6h; a diretoria abre o dashboard com o dado de hoje</td></tr>
+    <tr><td>"Confia em mim"</td><td>linhagem, testes e benchmark do Genie como prova</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide hero">
+  <div class="kicker">Amanhã · noite 3 · Cientista de Dados · 19h30</div>
+  <h2 style="font-size:84px;">Hoje a Torre diz quem <b>estourou</b>.<br><span class="grad">Amanhã, quem vai estourar.</span></h2>
+  <p class="sub">Um modelo que olha 30 dias à frente, registrado no Unity Catalog, e uma lista que a diretoria entende.</p>
+  <div style="margin-top:40px;"><span class="pill on">Lição de casa</span><span class="pill">rode o prd/99-verificacao.sql</span><span class="pill">pergunte 3 coisas ao Genie</span><span class="pill">poste o DAG verde</span></div>
+  [[RODAPE]]
+</section>

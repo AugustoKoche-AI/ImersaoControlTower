@@ -124,33 +124,33 @@ def montar() -> dict:
         texto("titulo", "# Torre de Controle · Portfólio\n\n**Quais obras vão estourar prazo ou orçamento?** "
               "Agora sobre a camada **gold** e as **métricas governadas** (`mv_obras`): o SPI do card é o mesmo "
               "SPI do Genie e do SQL. Hoje do dataset: 16/10/2026.", pos(0, 0, 12, 3)),
-        kpi("kpi-carteira", "carteira", "Carteira em andamento", BRL0, pos(0, 3, 2, 4)),
-        kpi("kpi-spi", "spi", "SPI da carteira", NUM2, pos(2, 3, 2, 4)),
-        kpi("kpi-cpi", "cpi", "CPI da carteira", NUM2, pos(4, 3, 2, 4)),
-        kpi("kpi-risco", "obras_em_risco", "Obras em risco (< 0,9)", {"type": "number-plain"}, pos(6, 3, 2, 4)),
-        kpi("kpi-criticas", "obras_criticas", "Obras críticas (< 0,8)", {"type": "number-plain"}, pos(8, 3, 2, 4)),
-        kpi("kpi-estouro", "estouro_previsto", "Estouro previsto", BRL0, pos(10, 3, 2, 4)),
+        kpi("kpi-carteira", "carteira", "Carteira em andamento", BRL0, pos(0, 3, 4, 4)),
+        kpi("kpi-spi", "spi", "SPI da carteira", NUM2, pos(4, 3, 4, 4)),
+        kpi("kpi-cpi", "cpi", "CPI da carteira", NUM2, pos(8, 3, 4, 4)),
+        kpi("kpi-risco", "obras_em_risco", "Obras em risco (< 0,9)", {"type": "number-plain"}, pos(0, 7, 4, 4)),
+        kpi("kpi-criticas", "obras_criticas", "Obras críticas (< 0,8)", {"type": "number-plain"}, pos(4, 7, 4, 4)),
+        kpi("kpi-estouro", "estouro_previsto", "Estouro previsto", BRL0, pos(8, 7, 4, 4)),
         barra_h("estouro-obra", "ds_obras", "obra", "sum(estouro_previsto)", "SUM(`estouro_previsto`)",
-                "Estouro previsto por obra", BRL, pos(0, 7, 7, 8), cor="situacao"),
+                "Estouro previsto por obra", BRL, pos(0, 11, 7, 8), cor="situacao"),
         w("spi-cpi", "ds_obras", [("spi", "`spi`"), ("cpi", "`cpi`"), ("situacao", "`situacao`"), ("obra", "`obra`")],
           {"version": 3, "widgetType": "scatter",
            "encodings": {"x": {"fieldName": "spi", "scale": {"type": "quantitative"}, "displayName": "SPI (prazo)"},
                          "y": {"fieldName": "cpi", "scale": {"type": "quantitative"}, "displayName": "CPI (custo)"},
                          "color": {"fieldName": "situacao", "scale": {"type": "categorical", "mappings": CORES_SITUACAO},
                                    "displayName": "Situação"}},
-           "frame": {"showTitle": True, "title": "Prazo × custo: cada ponto é uma obra"}}, pos(7, 7, 5, 8), True),
+           "frame": {"showTitle": True, "title": "Prazo × custo: cada ponto é uma obra"}}, pos(7, 11, 5, 8), True),
         w("evolucao", "ds_evolucao", [("semana", "`semana`"), ("spi", "`spi`"), ("cpi", "`cpi`")],
           {"version": 3, "widgetType": "line",
            "encodings": {"x": {"fieldName": "semana", "scale": {"type": "temporal"}, "displayName": "Semana"},
                          "y": {"scale": {"type": "quantitative"}, "fields": [
                              {"fieldName": "spi", "displayName": "SPI"}, {"fieldName": "cpi", "displayName": "CPI"}]}},
-           "frame": {"showTitle": True, "title": "SPI e CPI da carteira, semana a semana"}}, pos(0, 15, 12, 6), True),
+           "frame": {"showTitle": True, "title": "SPI e CPI da carteira, semana a semana"}}, pos(0, 19, 12, 6), True),
         tabela("tabela-obras", "ds_obras", [
             ("obra", "Obra"), ("cliente", "Cliente"), ("uf", "UF"), ("situacao", "Situação"),
             ("spi", "SPI", NUM2), ("cpi", "CPI", NUM2), ("estouro_previsto", "Estouro previsto", BRL),
             ("margem_projetada", "Margem projetada", PCT), ("atraso_projetado_dias", "Atraso projetado (dias)"),
             ("termino_projetado", "Término projetado"), ("rupturas_previstas", "Rupturas previstas")],
-               "Obras em andamento", pos(0, 21, 12, 8)),
+               "Obras em andamento", pos(0, 25, 12, 8)),
     ]
     recursos = [
         texto("titulo-recursos", "# Gente e máquina parada\n\n**Onde tenho equipamento ocioso enquanto outra obra está "
