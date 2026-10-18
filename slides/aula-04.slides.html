@@ -1,0 +1,164 @@
+<!-- titulo: Imersão Databricks + Claude Code · Noite 4 · Engenheiro de IA -->
+
+<section class="slide hero">
+  <div class="kicker">Imersão Databricks + Claude Code · Noite 4 de 4 · 22/10, 19h30</div>
+  <h1>E o diretor que<br><span class="grad">não escreve SQL?</span></h1>
+  <p class="sub" style="margin-top:36px;">Hoje você é o <b>Engenheiro de IA</b>: um agente que lê contrato, o app da Torre com login do workspace, um botão de aprovar que grava no Lakebase e o pitch de 3 minutos para a diretoria.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">A ideia da noite · acesso é entrega</div>
+  <h2>Dado que só o time de dados abre não existe para a empresa</h2>
+  <table class="t">
+    <tr><th>Noite</th><th>O que ficou de pé</th><th>O que era preciso saber</th></tr>
+    <tr><td>1</td><td>o dado no catálogo, SPI e CPI</td><td>SQL</td></tr>
+    <tr><td>2</td><td>pipeline, KPIs governados, dashboard, Genie</td><td>engenharia de dados</td></tr>
+    <tr><td>3</td><td>a probabilidade de estouro em 30 dias</td><td>ciência de dados</td></tr>
+    <tr class="cur"><td>4</td><td><b>o app, o agente de contratos e a aprovação</b></td><td><b>nada</b></td></tr>
+  </table>
+  <p class="note" style="margin-top:28px;">A noite 4 não cria análise nova. Ela pega a gold pronta e entrega <b>uma URL</b>, <b>um agente</b> e <b>o caminho de volta</b>: a decisão vira linha no banco.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">A arquitetura da noite</div>
+  <h2>Ler, responder e registrar</h2>
+  <pre class="code">contratos PDF ── <span class="k">ai_parse_document</span> ──▶ contratos_clausulas (88)
+                                  └─ <span class="k">ai_query</span> + JSON schema ──▶ contratos_resumo
+gold + rdo_estruturado + score ──────────────────────▶ contratos_exposicao (multa em R$)
+
+<span class="k">Genie Agent</span> "Diretoria + Contratos" ◀── 11 tabelas + mv_obras
+        ▲  aba Perguntar
+<span class="k">App da Torre</span> (Databricks App · AppKit · login SSO)
+   leitura  ── config/queries/*.sql ── SQL warehouse (gold)
+   escrita  ── POST /api/decisoes ──── <span class="k">Lakebase</span> Postgres · torre.decisoes</pre>
+  <div class="grid g3" style="gap:22px; margin-top:24px;">
+    <div class="card"><div class="tag">Prompt 1</div><div class="lbl" style="color:#fff;">o agente que lê contrato · Genie publicado</div></div>
+    <div class="card hl"><div class="tag">Prompt 2</div><div class="lbl" style="color:#fff;">o app da Torre · apps deploy</div></div>
+    <div class="card"><div class="tag">Prompt 3</div><div class="lbl" style="color:#fff;">a aprovação no Lakebase · apps deploy</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 1 · o PDF que ninguém lê vira resposta</div>
+  <h2>8 contratos, 88 cláusulas, cada uma uma linha</h2>
+  <div class="grid g2" style="gap:28px;">
+    <pre class="code"><span class="k">SELECT</span> path,
+  <span class="k">ai_parse_document</span>(content) <span class="k">AS</span> doc
+<span class="k">FROM</span> read_files(
+  <span class="s">'/Volumes/lakehouse_atlas/bronze/raw/
+    documentos/contratos/'</span>,
+  format => <span class="s">'binaryFile'</span>)</pre>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card"><div class="tag">O que a IA extrai de cada contrato</div><div class="lbl" style="color:#fff;">multa por dia e teto · chuva dá prorrogação? · quem fornece o guindaste · quem fornece a estrutura · prazo para aditivo · reajuste · bônus</div></div>
+      <div class="card"><div class="tag">Por que não Knowledge Assistant?</div><div class="lbl">No Free Edition ele virou "legacy". O agente é um Genie com as cláusulas numa tabela: ele <b>cita</b> a cláusula porque ela é uma linha, e o SQL é auditável.</div></div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:18px;">~25 a 30 s para os 8 contratos. Sem descrição em cada campo do JSON schema, a IA errou o prazo de aditivo em 4 de 8; com descrição, 8 de 8.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">A pergunta-âncora</div>
+  <h2>"Por que a P011 atrasou e o que o contrato diz?"</h2>
+  <div class="grid g2" style="gap:24px;">
+    <div class="card"><div class="tag">A causa · RDO</div><div class="lbl" style="color:#fff; font-size:27px;"><b>Falta de guindaste</b>: 37 RDOs nos últimos 90 dias, 23,5 dias de impacto. E chuva no período de dezembro a março.</div></div>
+    <div class="card"><div class="tag">O direito · contrato</div><div class="lbl" style="color:#fff; font-size:27px;"><b>Cláusula 6</b>: guindaste é responsabilidade da contratada, não dá prorrogação. <b>Cláusula 5</b>: dias de chuva acima da média podem ser pleiteados se registrados no RDO em 48 h.</div></div>
+  </div>
+  <div class="grid g3" style="gap:22px; margin-top:24px;">
+    <div class="card hl"><div class="tag">Multa estimada</div><div class="num md">R$ 1,88 mi</div><div class="lbl">178 dias × 0,05% ao dia, abaixo do teto de 10%</div></div>
+    <div class="card"><div class="tag">E a solução</div><div class="lbl" style="color:#fff; font-size:24px;">"Onde tenho guindaste parado?" → <b>EQ0017 e EQ0018</b>, 90 t, a ~6% de uso na P007 (MG)</div></div>
+    <div class="card"><div class="tag">Benchmark</div><div class="num md">10 / 10</div><div class="lbl">perguntas certas no Genie recriado do zero</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 2 · o app da Torre</div>
+  <h2>Uma URL, com o login do workspace</h2>
+  <div class="grid g4" style="gap:20px;">
+    <div class="card hl"><div class="tag">Obras</div><div class="lbl" style="color:#fff;">as obras em risco, com SPI, CPI, estouro e a probabilidade da noite 3</div></div>
+    <div class="card"><div class="tag">Simulador</div><div class="lbl" style="color:#fff;">escolha um recurso ocioso e a obra destino: horas recuperadas, dias e multa evitados</div></div>
+    <div class="card"><div class="tag">Decisões</div><div class="lbl" style="color:#fff;">aprovar ou recusar, com justificativa e histórico</div></div>
+    <div class="card"><div class="tag">Perguntar</div><div class="lbl" style="color:#fff;">o Genie de contratos dentro do app</div></div>
+  </div>
+  <div class="card" style="margin-top:26px;"><div class="tag">O simulador · EQ0017 da P007 para a P011</div>
+    <div class="grid g4" style="gap:18px; margin-top:8px;">
+      <div><div class="num sm">166 h</div><div class="lbl">de guindaste no mês</div></div>
+      <div><div class="num sm">R$ 157,6 mil</div><div class="lbl">de ociosidade recuperada</div></div>
+      <div><div class="num sm">7,8 dias</div><div class="lbl">de atraso evitados</div></div>
+      <div><div class="num sm">R$ 82,6 mil</div><div class="lbl">de multa evitada</div></div>
+    </div></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 3 · a aprovação no Lakebase</div>
+  <h2>A decisão que levava uma semana de WhatsApp</h2>
+  <pre class="code"><span class="c">-- torre.decisoes, no Lakebase (Postgres), lido direto do banco no ensaio de 18/10</span>
+ id | criado_em           | usuario                 | recurso | origem | destino | decisao  | ganho_r$
+----+---------------------+-------------------------+---------+--------+---------+----------+----------
+  1 | 2026-10-18 16:13:34 | lvgalvaofilho@gmail.com | EQ0017  | P007   | P011    | aprovada | 82571.17</pre>
+  <div class="grid g3" style="gap:22px; margin-top:26px;">
+    <div class="card"><div class="tag">Quem</div><div class="lbl" style="color:#fff;">o e-mail vem do SSO (header x-forwarded-email), não de um campo digitável</div></div>
+    <div class="card"><div class="tag">Quando</div><div class="lbl" style="color:#fff;">timestamp do banco, não do navegador</div></div>
+    <div class="card hl"><div class="tag">Novidade de outubro</div><div class="lbl" style="color:#fff;">o Lakebase funciona no Free Edition: projeto criado em 6,4 s. Em agosto não existia.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O pitch de 3 minutos · o segundo entregável</div>
+  <h2>O roteiro</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>Tempo</th><th>Bloco</th><th>A frase</th></tr>
+    <tr><td>0:00</td><td>O problema</td><td>"13 de 36 obras em risco. Se nada mudar, queimamos R$ 42 milhões de margem."</td></tr>
+    <tr><td>0:30</td><td>A solução</td><td>7 sistemas num lugar, KPIs definidos uma vez, IA lendo RDO e contrato, previsão de 30 dias</td></tr>
+    <tr class="cur"><td>1:15</td><td>A demo</td><td>uma pergunta ao vivo: "Por que a P011 atrasou e o que o contrato diz?" → simulador → Aprovar</td></tr>
+    <tr><td>2:15</td><td>O ROI</td><td>≈ R$ 12,9 mi no ano 1 contra R$ 0,6 mi de custo (premissas explícitas)</td></tr>
+    <tr><td>2:50</td><td>O pedido</td><td>"piloto de 90 dias nas 13 obras em risco; se não recuperarmos o primeiro aditivo, a gente desliga"</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O ROI · premissas explícitas, troque pelas da sua empresa</div>
+  <h2>≈ R$ 12,9 mi de ganho para R$ 0,6 mi de custo</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>Alavanca</th><th>Base na gold (16/10)</th><th>Premissa</th><th class="r">Ano 1</th></tr>
+    <tr><td>Aditivo pleiteado no prazo</td><td>estouro previsto de R$ 42,36 mi</td><td>recuperar 25%</td><td class="r"><b>R$ 10,6 mi</b></td></tr>
+    <tr><td>Multa contratual evitada</td><td>R$ 6,97 mi de multa estimada em 8 contratos</td><td>reduzir 20% do atraso</td><td class="r"><b>R$ 1,4 mi</b></td></tr>
+    <tr><td>Ociosidade de frota</td><td>R$ 951 mil parados em 12 semanas (EQ0017 e EQ0018)</td><td>realocar em vez de alugar, 1 trimestre</td><td class="r"><b>R$ 0,95 mi</b></td></tr>
+    <tr class="cur"><td>Total</td><td></td><td></td><td class="r"><b>≈ R$ 12,9 mi</b></td></tr>
+    <tr><td>Custo</td><td></td><td>plataforma + 2 engenheiros por 6 meses</td><td class="r">R$ 0,6 mi</td></tr>
+  </table>
+  <p class="note" style="margin-top:20px;">Sem contar as <b>97 rupturas</b> previstas e os <b>27 pedidos em atraso</b>. Diga "se recuperarmos 25%", nunca "vamos recuperar".</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O que você leva da semana</div>
+  <h2>Um projeto de ponta a ponta, publicado</h2>
+  <div class="grid g4" style="gap:20px;">
+    <div class="card"><div class="tag">Noite 1</div><div class="lbl" style="color:#fff;">bronze, SPI/CPI em SQL, dashboard</div></div>
+    <div class="card"><div class="tag">Noite 2</div><div class="lbl" style="color:#fff;">pipeline, IA no RDO, 12 KPIs, Genie 20/20</div></div>
+    <div class="card"><div class="tag">Noite 3</div><div class="lbl" style="color:#fff;">modelo com AUC 0,97, 45 dias de antecedência</div></div>
+    <div class="card hl"><div class="tag">Noite 4</div><div class="lbl" style="color:#fff;">app, Lakebase, agente de contratos, pitch</div></div>
+  </div>
+  <div class="card" style="margin-top:26px;"><div class="tag">Checklist de publicação</div>
+    <ul class="list check" style="margin-top:6px;">
+      <li>repositório no seu GitHub, com o README e o print do dashboard</li>
+      <li>vídeo do pitch de 3 minutos (tela do app + a pergunta ao vivo)</li>
+      <li>post no LinkedIn com o número: "R$ 42 mi de estouro, avisado 45 dias antes"</li>
+    </ul></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide hero">
+  <div class="kicker">Fim da imersão</div>
+  <h2 style="font-size:78px; line-height:1.15;">"A Torre avisa <span class="grad">45 dias antes</span>, mostra a causa, diz o que o contrato permite e <span class="grad">registra a decisão</span>."</h2>
+  <p class="sub" style="margin-top:30px;">github.com/lvgalvao/ImersaoControlTower</p>
+  [[RODAPE]]
+</section>

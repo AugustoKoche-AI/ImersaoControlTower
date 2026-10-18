@@ -41,8 +41,17 @@ Regra de corte: **SPI ou CPI < 0,9 = atenção · < 0,8 = crítico.**
 | Compras descobre a falta quando a frente para | ruptura prevista: cobertura × próxima entrega prometida | frente de serviço não trava |
 | Decisão de realocação por WhatsApp e e-mail | aprovação no app, gravada com usuário e horário | decisão rastreável e auditável |
 
-Na Atlas, a noite 1 já mostra **13 de 36 obras em risco** e **R$ 41,9 mi de estouro previsto**.
-Recuperar só 25% disso via aditivo pleiteado no prazo vale R$ 10,5 mi (premissa ilustrativa).
+Medido no dado da Atlas ao fim das 4 noites:
+
+| O que a Torre mostra | Valor |
+|---|---|
+| Obras em risco · críticas | **13 de 36 · 7** |
+| Estouro previsto se nada mudar | **R$ 42,36 mi** (gold; R$ 41,9 mi na conta "atalho" da noite 1) |
+| Antecedência do modelo de estouro | **6 de 7** estouros avisados, em média **45 dias** antes (a regra atual: zero) |
+| Genie em português | **20/20** (portfólio) e **10/10** (contratos) no benchmark |
+| Multa estimada da P011 pelo contrato | **R$ 1,88 mi** (178 dias × 0,05% ao dia) |
+| Rupturas de material previstas · pedidos em atraso | **97 · 27** (17 da mesma metalúrgica) |
+| ROI do pitch (premissas explícitas) | **≈ R$ 12,9 mi** no ano 1 contra R$ 0,6 mi de custo |
 
 **Para o aluno:** um projeto completo de ponta a ponta no GitHub, um dos tipos de entrega que empresas
 intensivas em capital (Petrobras, Vale e Gerdau já são clientes Databricks no Brasil) compram, e o pitch
@@ -76,9 +85,13 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
 | Noite | Data | Profissão | A pergunta | O que existe no fim | Como constrói | Pasta |
 |---|---|---|---|---|---|---|
 | **1** | seg 19/10 | Analista | Quais obras estão atrasadas e quanto custa? | bronze, SPI/CPI em SQL, R$ de estouro, 1º dashboard, Genie que erra | navegador (SQL Editor) | [`aula-01-analista`](aulas/aula-01-analista) |
-| **2** | ter 20/10 | Engenheiro de Dados | Como isso roda sozinho todo dia? | pipeline Lakeflow, silver com testes, IA nos RDOs, Metric Views, dashboard de portfólio, Genie curado | prompts no Claude Code | [`aula-02-engenheiro`](aulas/aula-02-engenheiro) |
-| **3** | qua 21/10 | Cientista de Dados | Quais vão estourar nos próximos 30 dias? | modelo no Unity Catalog, score de estouro por obra | prompts no Claude Code | [`aula-03-cientista`](aulas/aula-03-cientista) |
-| **4** | qui 22/10 | Engenheiro de IA | E o diretor que não escreve SQL? | app da Torre com aprovação no Lakebase, agente que lê contratos, pitch de 3 min | prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
+| **2** | ter 20/10 | Engenheiro de Dados | Como isso roda sozinho todo dia? | pipeline Lakeflow, silver com testes, IA nos RDOs, 12 KPIs em Metric Views, dashboard de 3 páginas, Genie 20/20 | 6 prompts no Claude Code | [`aula-02-engenheiro`](aulas/aula-02-engenheiro) |
+| **3** | qua 21/10 | Cientista de Dados | Quais vão estourar nos próximos 30 dias? | modelo no Unity Catalog (AUC 0,973), score por obra com motivo | 3 prompts no Claude Code | [`aula-03-cientista`](aulas/aula-03-cientista) |
+| **4** | qui 22/10 | Engenheiro de IA | E o diretor que não escreve SQL? | agente que lê contrato (Genie 10/10), app da Torre com aprovação no Lakebase, pitch de 3 min | 3 prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
+
+**Apresentações** (abra o `.html` no navegador; ← → navega, F tela cheia):
+[visão geral do case](slides/visao-geral.html) ·
+[noite 1](slides/aula-01.html) · [noite 2](slides/aula-02.html) · [noite 3](slides/aula-03.html) · [noite 4](slides/aula-04.html)
 
 ```
   noite 1             noite 2               noite 3                noite 4
@@ -189,7 +202,14 @@ docs/img/                      prints do workspace usados nos READMEs e slides
 | Padrões da história | `python3 material/validar_padroes.py --dados ./dados` | `TODOS OS PADRÕES OK` |
 | Noite 1 no workspace | `python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile P` | 18 × `ok` |
 | Genie da noite 1 | `python3 scripts/genie.py perguntar "Torre de Controle · Noite 1 (bronze, sem curadoria)" "Qual é o CPI de cada obra?" --profile P` | resposta errada, de propósito |
-| Noite 2 | `aulas/aula-02-engenheiro/README.md` → seção de verificação | job verde, expectations, benchmark do Genie |
+| Job completo (noites 2 e 3) | `cd aulas/aula-02-engenheiro/atlas && databricks bundle deploy --profile P && databricks bundle run atlas_torre --profile P` | 8 tarefas verdes, ~4 a 6 min |
+| Noite 2 | `python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile P` | 17 × `ok` |
+| Genie da noite 2 | `python3 scripts/genie.py benchmark "Torre de Controle · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile P` | 20/20 |
+| Noite 3 | `python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile P` | 15 × `ok` |
+| Noite 4 | `python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile P` | 11 × `ok` |
+| Genie de contratos | `python3 scripts/genie.py benchmark "Torre de Controle · Diretoria + Contratos" aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile P` | 10/10 |
+| App + Lakebase | `cd aulas/aula-04-engenheiro-ia/torre-app && npm test` e `python3 scripts/ver_decisoes.py` | 4 testes; a aprovação aparece no Postgres |
+| Do zero | `prd/00-reset.sh --apagar` (noite 2), `99-limpar-aula-03.sh`, `99-limpar-aula-04.sh --apagar` e rodar de novo | ensaiado em 18/10: as 4 noites reconstroem |
 
 ---
 
@@ -203,7 +223,10 @@ docs/img/                      prints do workspace usados nos READMEs e slides
 | Metric Views | ✅ | só pela API de statements: o `aitools query` achata a indentação do YAML |
 | AI/BI Dashboards, Genie Agents (com modo Agent) | ✅ | dashboard como JSON e Genie como JSON |
 | Databricks Apps | ✅ | app da Torre (noite 4) |
-| **Lakebase** (Postgres) | ✅ **novo**: em agosto não existia | tabela de decisões do app |
+| **Lakebase** (Postgres) | ✅ **novo**: em agosto não existia | `torre.decisoes`, gravada pelo app (projeto criado em 6,4 s) |
+| `ai_parse_document` em PDF | ✅ ~25 a 30 s para 8 contratos | as 88 cláusulas viram tabela |
+| Lakeflow Declarative Pipelines (SQL) com `EXPECT` | ✅ ~2 min 30 s | silver × 12 e gold × 8 |
+| Registro de modelo no Unity Catalog | ⚠️ falha com o MLflow do serverless (`s3:PutObject ... explicit deny`) | `%pip install -U "mlflow-skinny[databricks]>=2.21,<3"` + `restartPython()` |
 | Knowledge Assistant e Supervisor Agent | ❌ "legacy", não cria mais | agente de contratos com `ai_parse_document` + Genie |
 | Endpoint de modelo próprio (Model Serving) | ❌ só modelos de base | o score de estouro roda em lote e grava na gold |
 

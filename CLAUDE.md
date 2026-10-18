@@ -49,7 +49,21 @@ conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 script
   principal do app precisa de `GRANT USE CATALOG/USE SCHEMA/SELECT`; o warehouse devolve número como string.
 - URL de dashboard publicado: `https://<host>/dashboardsv3/<id>/published` (sem `/sql`).
 
-Aprendizados de cada noite ficam também em `aulas/<noite>/APRENDIZADOS.md`, quando existir.
+- ⚠️ Registro de modelo no UC falha com o MLflow 2.11 do serverless (`s3:PutObject explicit deny`):
+  `%pip install -U "mlflow-skinny[databricks]>=2.21,<3"` + `dbutils.library.restartPython()`.
+- Apagar o pipeline não apaga as materialized views: o `00-reset.sh` da noite 2 apaga uma a uma.
+- O Genie do bundle exige as tabelas: do zero, a ordem é deploy → run → deploy.
+- Editar dashboard ou Genie direto no workspace trava o `bundle deploy` ("modified remotely"):
+  leve a mudança para o JSON do repositório e use `--force` só depois disso.
+- Lakebase: apagar projeto é exclusão suave por 7 dias e prende o nome (use `delete-project --purge` no reset;
+  confira com `list-projects`, não com `get-project`). O build do app roda o typegen **como o service principal**:
+  os GRANTs vêm antes do segundo `apps deploy`. Nenhum arquivo `*.geniespace.json` dentro da pasta do app.
+- O primeiro acesso ao app pede consentimento OAuth ("Authorize"), feito por uma pessoa. Testes automáticos
+  usam `Authorization: Bearer $(databricks auth token)`.
+- Nomes de Genie são únicos por título no `scripts/genie.py`: "Noite 1 (bronze, sem curadoria)", "Diretoria"
+  (noite 2, do bundle) e "Diretoria + Contratos" (noite 4).
+
+Aprendizados detalhados de cada noite: `aulas/<noite>/APRENDIZADOS.md`.
 
 ## Dataset
 
@@ -68,7 +82,14 @@ Aprendizados de cada noite ficam também em `aulas/<noite>/APRENDIZADOS.md`, qua
   (promessa já vencida ou sem pedido em aberto: lead time contratado). Dá **97** hoje, igual em
   `gold.cobertura_estoque` e no `validar_padroes.py`. A fórmula ingênua do PRD (cobertura < lead time) dá 181.
 
-## Números de referência da noite 1
+## Números de referência
+
+Noite 2 (gold): estouro R$ 42,36 mi (a noite 1 dá R$ 41,9 mi porque corta % > 100 com `LEAST`, o que é ponto de aula) ·
+SPI/CPI da carteira 0,95/0,94 · 97 rupturas · 27 pedidos em atraso · Genie 20/20.
+Noite 3: AUC 0,973 (regra atual 0,50; folga 0,966) · 6 de 7 estouros no top 5, 45 dias antes · P034 "ok" com prob 0,40.
+Noite 4: 88 cláusulas · multa P011 R$ 1,88 mi · simulador EQ0017 → P011: 7,8 dias e R$ 82,6 mil · ROI ≈ R$ 12,9 mi.
+
+### Noite 1
 
 40 obras (36 em andamento) · carteira R$ 903,0 mi (R$ 794,8 mi em andamento) · custo real R$ 572,85 mi
 (R$ 556,09 mi com `try_cast`, ou seja, 540 lançamentos perdidos) · 13 obras em risco, 7 críticas · estouro previsto
