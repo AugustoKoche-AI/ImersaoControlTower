@@ -26,14 +26,12 @@ PROMPTS = [
     (2, "RDO com IA", "o texto livre vira coluna", f"{A2}/prompt-04-rdo-com-ia.md", "bundle deploy + run"),
     (2, "Métricas governadas", "o KPI definido uma vez só", f"{A2}/prompt-05-metricas.md", "bundle deploy + run"),
     (2, "Dashboard e Genie", "a diretoria pergunta em português", f"{A2}/prompt-06-dashboard-e-genie.md", "bundle deploy"),
-    # TODO noite 3 (cientista): features, modelo no UC, score em lote — preencha quando os arquivos existirem
     (3, "Features", "o que descreve uma obra que vai estourar", f"{A3}/prompt-01-features.md", "bundle deploy"),
     (3, "Modelo e MLflow", "o baseline primeiro", f"{A3}/prompt-02-modelo.md", "bundle deploy"),
     (3, "Score em lote", "a probabilidade de estouro em 30 dias", f"{A3}/prompt-03-score.md", "bundle deploy"),
-    # TODO noite 4 (engenheiro de IA): Genie da diretoria, app, agente de contratos
-    (4, "Genie da diretoria", "o produto que se pergunta", f"{A4}/prompt-01-genie.md", "bundle deploy"),
-    (4, "O app", "a Torre na tela do gestor", f"{A4}/prompt-02-app.md", "apps deploy"),
-    (4, "Agente de contratos", "o PDF que ninguém lê", f"{A4}/prompt-03-contratos.md", "apps deploy"),
+    (4, "O agente que lê contrato", "o PDF que ninguém lê vira resposta", f"{A4}/prompt-01-agente-de-contratos.md", "Genie publicado"),
+    (4, "O app da Torre", "a Torre na tela do gestor", f"{A4}/prompt-02-app.md", "apps deploy"),
+    (4, "A aprovação no Lakebase", "a decisão fica registrada", f"{A4}/prompt-03-aprovacao-lakebase.md", "apps deploy"),
 ]
 
 TITULOS = {2: "Noite 2 · o pipeline nasce", 3: "Noite 3 · o pipeline passa a prever",

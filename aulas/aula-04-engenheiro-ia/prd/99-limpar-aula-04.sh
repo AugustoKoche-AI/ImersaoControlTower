@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Apaga SÓ o que a noite 4 cria, para ensaiar de novo do zero:
+#   · o app (e o job torre_contratos) do bundle
+#   · o projeto Lakebase (com a tabela torre.decisoes)
+#   · as tabelas gold.contratos_* e a view gold.contratos_exposicao
+#   · o Genie "Torre de Controle · Diretoria + Contratos"
+# NÃO toca na bronze, silver, gold das noites 2 e 3, nem no Genie "Torre de Controle · Diretoria" (noite 2).
+#
+# Uso:
+#   bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase]           # simula
+#   bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase] --apagar  # apaga
+set -euo pipefail
+PERFIL="${1:?informe o profile}"
+RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
+APP_DIR="${2:-$RAIZ/aulas/aula-04-engenheiro-ia/torre-app}"
+LAKEBASE="${3:-torre-atlas}"
+APAGAR=false; [[ "${*: -1}" == "--apagar" ]] && APAGAR=true
+GENIE="Torre de Controle · Diretoria + Contratos"
+
+rodar() { if $APAGAR; then echo "→ $*"; "$@" || true; else echo "[simulação] $*"; fi; }
+
+# 1. app + job (bundle do app)
+rodar bash -c "cd '$APP_DIR' && databricks bundle destroy --auto-approve --profile '$PERFIL'"
+
+# 2. Lakebase
+# --purge: sem ele a exclusão é "suave" (7 dias) e o nome fica preso; create-project falha
+rodar databricks postgres delete-project "projects/$LAKEBASE" --purge --profile "$PERFIL"
+
+# 3. tabelas de contrato
+TMP=$(mktemp)
+cat > "$TMP" <<SQL
+DROP VIEW  IF EXISTS lakehouse_atlas.gold.contratos_exposicao;
+DROP TABLE IF EXISTS lakehouse_atlas.gold.contratos_resumo;
+DROP TABLE IF EXISTS lakehouse_atlas.gold.contratos_clausulas;
+DROP TABLE IF EXISTS lakehouse_atlas.gold.contratos_texto
+SQL
+rodar python3 "$RAIZ/scripts/run_sql.py" "$TMP" --profile "$PERFIL" --quiet
+
+# 4. Genie da noite 4 (pelo título exato; o da noite 2 tem outro título)
+SID=$(databricks api get "/api/2.0/genie/spaces?page_size=100" --profile "$PERFIL" \
+      | python3 -c "import json,sys; print(next((s['space_id'] for s in json.load(sys.stdin).get('spaces', []) if s['title'] == '$GENIE'), ''))")
+if [[ -n "$SID" ]]; then rodar databricks api delete "/api/2.0/genie/spaces/$SID" --profile "$PERFIL"; else echo "Genie '$GENIE' não existe"; fi
+rm -f "$TMP"
+$APAGAR || echo -e "\nNada foi apagado. Rode de novo com --apagar."

@@ -1,0 +1,22 @@
+[
+  {"pergunta": "Qual a multa estimada da obra P011?",
+   "sql_referencia": "SELECT multa_estimada FROM lakehouse_atlas.gold.contratos_exposicao WHERE projeto_id = 'P011'"},
+  {"pergunta": "Em quais contratos a chuva dá direito a prorrogação de prazo?",
+   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_resumo WHERE chuva_da_prorrogacao"},
+  {"pergunta": "Em qual obra os guindastes são responsabilidade do cliente?",
+   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_resumo WHERE icamento_responsavel = 'contratante'"},
+  {"pergunta": "Qual a multa por dia de atraso e o teto da multa no contrato da P005?",
+   "sql_referencia": "SELECT multa_dia_pct, teto_multa_pct FROM lakehouse_atlas.gold.contratos_resumo WHERE projeto_id = 'P005'"},
+  {"pergunta": "Quais contratos têm bônus por conclusão antecipada?",
+   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_resumo WHERE bonus_antecipacao"},
+  {"pergunta": "Qual obra com contrato já está com a multa estimada no teto?",
+   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_exposicao WHERE multa_no_teto"},
+  {"pergunta": "Qual o total de multas estimadas nas obras com contrato digitalizado?",
+   "sql_referencia": "SELECT SUM(multa_estimada) FROM lakehouse_atlas.gold.contratos_exposicao"},
+  {"pergunta": "Quais guindastes tiveram utilização média abaixo de 20% nas últimas 12 semanas?",
+   "sql_referencia": "SELECT equipamento_id FROM lakehouse_atlas.gold.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' GROUP BY equipamento_id HAVING AVG(utilizacao) < 0.2"},
+  {"pergunta": "Qual foi a causa de atraso mais frequente nos RDOs da obra P011 nos últimos 90 dias?",
+   "sql_referencia": "SELECT causa_atraso FROM lakehouse_atlas.gold.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso NOT IN ('sem_ocorrencia', 'nao_reportado') GROUP BY causa_atraso ORDER BY COUNT(*) DESC LIMIT 1"},
+  {"pergunta": "Quantas obras em andamento estão em atenção ou críticas?",
+   "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE status = 'em_andamento' AND situacao IN ('crítico', 'atenção')"}
+]

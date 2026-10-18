@@ -1,0 +1,138 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "e1000000000000000000000000000001",
+        "question": [
+          "Por que a obra P011 atrasou e o que o contrato diz sobre isso?"
+        ]
+      },
+      {
+        "id": "e1000000000000000000000000000002",
+        "question": [
+          "Qual a multa estimada de cada obra com contrato?"
+        ]
+      },
+      {
+        "id": "e1000000000000000000000000000003",
+        "question": [
+          "Onde tenho guindaste parado que poderia ir para a P011?"
+        ]
+      },
+      {
+        "id": "e1000000000000000000000000000004",
+        "question": [
+          "Quais obras críticas estão expostas a multa?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "lakehouse_atlas.gold.cobertura_estoque"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.contratos_clausulas"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.contratos_exposicao"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.contratos_resumo"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.desempenho_fornecedor"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.obra_situacao_atual"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.pedidos_em_atraso"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.rdo_estruturado"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.score_estouro_30d"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.utilizacao_equipamento_semana"
+      },
+      {
+        "identifier": "lakehouse_atlas.gold.utilizacao_equipe_semana"
+      }
+    ],
+    "metric_views": [
+      {
+        "identifier": "lakehouse_atlas.gold.mv_obras"
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "e2000000000000000000000000000001",
+        "content": [
+          "Você é o assessor da DIRETORIA da Construtora Atlas Engenharia (EPC, 40 obras). A ATLAS É A CONTRATADA em todos os contratos; o cliente é a CONTRATANTE. Multa por atraso é CUSTO DA ATLAS, e prorrogação é um direito que a Atlas pleiteia ao cliente. Nunca recomende 'cobrar a contratada'. Responda em português, curto, com números em reais (R$) e índices com 2 casas. Termine com uma recomendação de uma linha quando a pergunta pedir decisão.\n",
+          "HOJE é 16/10/2026. Nunca use current_date(). 'Últimos 90 dias' = data >= DATE'2026-07-18'; 'últimas 12 semanas' = semana > DATE'2026-07-24'.\n",
+          "KPIs: SPI = EV/PV (< 1 é atraso), CPI = EV/AC (< 1 é estouro). Atenção: SPI ou CPI < 0,9; crítico: < 0,8. Fotografia de hoje: obra_situacao_atual (ou mv_obras com MEASURE()). Obras concluídas não entram em risco. 'Em risco' = atenção + crítico SOMADOS num número só (hoje são 13), a menos que peçam a quebra por situação.\n",
+          "Causa do atraso: rdo_estruturado (causa_atraso, dias_impacto), contando os últimos 90 dias e ignorando 'sem_ocorrencia' e 'nao_reportado'.\n",
+          "CONTRATOS: só 8 obras têm contrato digitalizado (P002, P005, P007, P011, P014, P018, P024, P033). contratos_resumo tem os campos estruturados (multa_dia_pct, teto_multa_pct, chuva_da_prorrogacao, icamento_responsavel, estrutura_fornecida_por, prazo_aditivo_dias, reajuste, bonus_antecipacao). contratos_clausulas tem o texto de cada cláusula: SEMPRE cite o número da cláusula e um trecho curto do texto quando responder o que o contrato diz. contratos_exposicao já calcula a multa estimada em R$ (valor do contrato × min(atraso projetado × multa diária, teto)).\n",
+          "Regras de leitura do contrato: se chuva_da_prorrogacao = true, os dias de chuva registrados no RDO (comunicados em 48 h) podem ser excluídos do atraso: diga quantos RDOs e dias de chuva a Atlas pode pleitear e quanto isso reduz a multa; se false, chuva não afasta multa. Se icamento_responsavel = 'contratada', falta de guindaste é risco da Atlas e NÃO dá prorrogação. Aditivo de escopo precisa ser pleiteado em prazo_aditivo_dias dias do fato gerador, senão o direito se perde.\n",
+          "Para 'onde tenho guindaste/equipamento parado', use utilizacao_equipamento_semana nas últimas 12 semanas: utilização média abaixo de 20% = ocioso. Para gente parada, utilizacao_equipe_semana (horas_ociosas).\n",
+          "Quando citar uma obra, use projeto_id e nome (ex.: P011 · Pátio de estocagem de minério Canaã dos Carajás).\n",
+          "Probabilidade de estouro nos próximos 30 dias: score_estouro_30d (prob_estouro_30d de 0 a 1, ranking, faixa_risco, principais_fatores), modelo treinado na noite 3. Use a data_referencia mais recente.\n"
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "e3000000000000000000000000000001",
+        "question": [
+          "Por que a obra P011 atrasou e o que o contrato diz sobre isso?"
+        ],
+        "sql": [
+          "WITH causa AS (SELECT causa_atraso, COUNT(*) AS rdos, SUM(coalesce(dias_impacto, 0)) AS dias_impacto FROM lakehouse_atlas.gold.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso NOT IN ('sem_ocorrencia', 'nao_reportado') GROUP BY causa_atraso) SELECT c.causa_atraso, c.rdos, c.dias_impacto, cl.clausula_numero, cl.titulo, cl.texto, e.atraso_projetado_dias, e.multa_estimada FROM causa c CROSS JOIN lakehouse_atlas.gold.contratos_exposicao e LEFT JOIN lakehouse_atlas.gold.contratos_clausulas cl ON cl.projeto_id = 'P011' AND cl.clausula_numero = CASE c.causa_atraso WHEN 'chuva' THEN 5 WHEN 'falta_equipamento' THEN 6 WHEN 'falta_material' THEN 7 ELSE 4 END WHERE e.projeto_id = 'P011' ORDER BY c.rdos DESC"
+        ]
+      },
+      {
+        "id": "e3000000000000000000000000000002",
+        "question": [
+          "Qual a multa estimada de cada obra com contrato?"
+        ],
+        "sql": [
+          "SELECT projeto_id, obra, situacao, atraso_projetado_dias, multa_dia_pct, teto_multa_pct, multa_estimada, multa_no_teto FROM lakehouse_atlas.gold.contratos_exposicao ORDER BY multa_estimada DESC"
+        ]
+      },
+      {
+        "id": "e3000000000000000000000000000003",
+        "question": [
+          "Onde tenho guindaste parado que poderia ir para a P011?"
+        ],
+        "sql": [
+          "SELECT equipamento_id, modelo, projeto_id, obra, uf, ROUND(AVG(utilizacao), 3) AS utilizacao_media, SUM(horas_paradas) AS horas_paradas, SUM(custo_ocioso) AS custo_ocioso FROM lakehouse_atlas.gold.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' GROUP BY ALL HAVING AVG(utilizacao) < 0.2 ORDER BY utilizacao_media"
+        ]
+      },
+      {
+        "id": "e3000000000000000000000000000004",
+        "question": [
+          "Quantas obras estão em risco?"
+        ],
+        "sql": [
+          "SELECT COUNT(*) AS obras_em_risco FROM lakehouse_atlas.gold.obra_situacao_atual WHERE status = 'em_andamento' AND situacao IN ('crítico', 'atenção')"
+        ]
+      },
+      {
+        "id": "e3000000000000000000000000000005",
+        "question": [
+          "Em quais contratos a chuva dá direito a prorrogação?"
+        ],
+        "sql": [
+          "SELECT r.projeto_id, o.obra, r.chuva_da_prorrogacao, cl.texto AS clausula_5 FROM lakehouse_atlas.gold.contratos_resumo r JOIN lakehouse_atlas.gold.obra_situacao_atual o USING (projeto_id) JOIN lakehouse_atlas.gold.contratos_clausulas cl ON cl.projeto_id = r.projeto_id AND cl.clausula_numero = 5 ORDER BY r.projeto_id"
+        ]
+      }
+    ]
+  }
+}

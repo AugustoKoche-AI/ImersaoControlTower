@@ -1,0 +1,13 @@
+# O agente que lê contrato, como job: PDF → texto → cláusulas → colunas.
+# Roda no SQL warehouse serverless (~30 s para os 8 contratos).
+resources:
+  jobs:
+    torre_contratos:
+      name: torre_contratos
+      description: "Noite 4 · ai_parse_document + ai_query nos contratos EPC → gold.contratos_*"
+      tasks:
+        - task_key: contratos
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ../agente/01-contratos.sql

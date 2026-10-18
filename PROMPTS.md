@@ -428,6 +428,318 @@ Se estes números não baterem, não adianta seguir: a noite 3 treina em cima de
 
 ---
 
+## Noite 3 · o pipeline passa a prever
+
+### Prompt 7 · Features
+
+*o que descreve uma obra que vai estourar* · noite 3 · deploy nº 7 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
+
+```
+Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
+em aulas/aula-02-engenheiro/meu-atlas/: ML é mais uma camada do pipeline,
+não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
+
+Crie src/ml/01-features.sql (sql_task) que recria a tabela
+lakehouse_atlas.gold.features_obra_semana: uma linha por obra e semana
+(sexta-feira), a partir de gold.fato_projeto_semana + gold.dim_projeto.
+COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
+
+- spi, cpi, indice_min = least(spi, cpi)
+- d_spi_4s, d_cpi_4s, d_cpi_8s (variação em 4 e 8 semanas, com lag())
+- d_indice_min_4s
+- semanas_cpi_caindo: em quantas das últimas 4 semanas o CPI caiu
+- cpi_ultimas_4s = (ev - ev de 4 semanas atrás) / (ac - ac de 4 semanas atrás)
+- spi_ultimas_4s = o mesmo com pv
+- pct_fisico = ev / orcamento; pct_prazo = dias desde o início / duração baseline
+- ociosidade_4s = horas ociosas / horas disponíveis das últimas 4 semanas
+- rupturas_previstas da semana
+- pct_subcontrato_4s e pct_mao_de_obra_4s: participação no custo das
+  últimas 4 semanas (silver.custos, pela coluna semana)
+- rdo_chuva_4s, rdo_falta_material_4s, rdo_falta_equipamento_4s,
+  rdo_mao_de_obra_4s, rdo_com_ocorrencia_4s: fração dos RDOs dos últimos
+  28 dias com cada causa (gold.rdo_estruturado)
+
+Os dois alvos, do FUTURO, que nunca entram como feature:
+- alvo_pior_indice_30d: o menor least(spi, cpi) nas 4 semanas SEGUINTES
+  (MIN ... ROWS BETWEEN 1 FOLLOWING AND 4 FOLLOWING)
+- estoura_30d: 1 se esse pior índice < 0,9, senão 0
+Os dois NULL quando ainda não há 4 semanas de futuro (é o caso de hoje).
+
+elegivel = 1 se SPI e CPI >= 0,9, a obra tem 84+ dias, ev < 98% do
+orçamento e (status = em_andamento ou a semana é anterior a hoje).
+
+ARMADILHA MEDIDA: o Spark não aceita estender uma janela nomeada com frame
+(OVER (w ROWS BETWEEN ...) dá PARSE_SYNTAX_ERROR). Escreva o PARTITION BY
+e o ORDER BY por extenso nas janelas com ROWS BETWEEN.
+
+No fim do arquivo, uma query de conferência: linhas, linhas de treino
+(elegível com rótulo), taxa base e linhas de hoje.
+
+Acrescente ao job atlas_torre a tarefa ml_features (sql_task), depois de
+metricas_governadas. Rode e me mostre a saída:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run atlas_torre --only ml_features --profile <perfil>
+```
+
+### Prompt 8 · Modelo e MLflow
+
+*o baseline primeiro* · noite 3 · deploy nº 8 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-02-modelo.md)
+
+```
+Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Crie o notebook
+src/ml/02-modelo.py (# Databricks notebook source, widget catalog) e a
+tarefa ml_modelo (notebook_task, depois de ml_features).
+
+ARMADILHAS MEDIDAS NO FREE EDITION (siga todas):
+- O serverless vem com MLflow 2.11, e registrar modelo no Unity Catalog
+  falha com "s3:PutObject ... explicit deny". Primeira célula:
+  %pip install -q -U "mlflow-skinny[databricks]>=2.21,<3"
+  e dbutils.library.restartPython() na seguinte.
+- XGBoost treina e não carrega de volta: use HistGradientBoosting do sklearn.
+- DECIMAL vira Decimal no pandas e quebra o registro: .astype(float).
+- mlflow.set_experiment não cria a pasta pai: WorkspaceClient().workspace
+  .mkdirs("/Users/<eu>/atlas") antes.
+- MLflow 2.x: log_model(..., artifact_path="modelo"), nunca name=.
+
+O notebook, nesta ordem:
+1. Lê gold.features_obra_semana. Teste = elegíveis com rótulo e semana >=
+   2026-04-03. Treino = rotulados com semana <= 2026-03-06 e pct_prazo > 0,15
+   (inclui obras já abaixo de 0,9: elas ensinam como uma obra afunda).
+2. BASELINES no teste, impressos antes de qualquer treino: regra de corte
+   atual (0,5), folga até o corte (-indice_min), só o CPI, tendência
+   (-d_indice_min_4s).
+3. Modelo: HistGradientBoostingRegressor(random_state=42, max_depth=3,
+   learning_rate=0.05, max_iter=300, min_samples_leaf=20) prevendo
+   alvo_pior_indice_30d - indice_min. pior_previsto = indice_min + previsão.
+   sigma = desvio do erro no teste. prob = P(pior < 0,9) com erro normal
+   (math.erf). Compare com um HistGradientBoostingClassifier sim/não.
+4. Métrica da diretoria: um estouro é a primeira semana em que uma obra
+   que estava >= 0,9 antes do teste cruza para baixo. Avisado = esteve no
+   top 5 da semana (rank por prob) em alguma das 8 semanas anteriores.
+   Imprima avisados/estouros, antecedência média em dias e o estouro
+   previsto hoje (gold.obra_situacao_atual) dessas obras.
+5. Importância por permutação.
+6. Testes com assert, ANTES de registrar: AUC >= 0,75; AUC < 0,995 (acima
+   disso é vazamento); AUC >= a folga até o corte (senão, use a regra);
+   avisados >= 70% dos estouros.
+7. Retreine com TODOS os rotulados, registre em
+   lakehouse_atlas.gold.modelo_estouro_30d com input_example, alias @prod.
+8. Grave gold.modelo_metricas (uma linha: versão, auc, baselines, sigma,
+   estouros, avisados, antecedência, estouro avisado, feature principal).
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run atlas_torre --only ml_modelo --profile <perfil>
+```
+
+### Prompt 9 · Score em lote
+
+*a probabilidade de estouro em 30 dias* · noite 3 · deploy nº 9 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-03-score.md)
+
+```
+Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Crie o notebook
+src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
+ml_score (notebook_task, depois de ml_modelo).
+
+1. Carregue o modelo com mlflow.sklearn.load_model("models:/lakehouse_atlas
+   .gold.modelo_estouro_30d@prod") — NÃO use spark_udf: no serverless ele
+   quebra com InvalidVersion. O sigma vem de gold.modelo_metricas.
+2. Pontue as obras com status em_andamento na semana 2026-10-16 de
+   gold.features_obra_semana: pior_previsto = indice_min + previsão;
+   prob = P(pior < 0,9) com erro normal; quem tem indice_min < 0,9 → 1,0.
+3. ranking por prob desc (desempate: indice_min asc); faixa_risco alto se
+   >= 0,5, medio se >= 0,2, senão baixo.
+4. principais_fatores: os 2 ou 3 sinais mais graves em português, com
+   números no padrão brasileiro (vírgula decimal). Sinais: já abaixo do corte
+   (sempre primeiro), folga < 0,05 até o corte, CPI caindo nas últimas
+   semanas, cpi_ultimas_4s < 0,85 ("cada R$ 1 gasto no último mês entregou
+   R$ X"), spi_ultimas_4s < 0,85, falta de equipamento >= 10% dos RDOs,
+   chuva >= 20%, falta de material >= 40%, mão de obra >= 15%, ociosidade
+   >= 15%, 3+ rupturas previstas. Sem sinal: "sem sinal de piora".
+5. Grave lakehouse_atlas.gold.score_estouro_30d com EXATAMENTE as colunas
+   projeto_id STRING, data_referencia DATE, prob_estouro_30d DOUBLE,
+   ranking INT, faixa_risco STRING, principais_fatores STRING (overwrite).
+   COMMENT na tabela e nas colunas: a noite 4 lê daqui.
+6. Testes com assert: uma linha por obra em andamento, prob entre 0 e 1,
+   ranking único, nenhum motivo vazio.
+
+Rode o job inteiro e me mostre o top 10:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run atlas_torre --profile <perfil>
+```
+---
+
+## Fim da noite 3 · confira antes de seguir
+
+```bash
+python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile <perfil>
+# 15 linhas, todas "ok"
+```
+
+```sql
+SELECT faixa_risco, COUNT(*) FROM lakehouse_atlas.gold.score_estouro_30d GROUP BY 1;
+-- alto 13 · medio 1 · baixo 22
+SELECT projeto_id, prob_estouro_30d FROM lakehouse_atlas.gold.score_estouro_30d WHERE projeto_id = 'P034';
+-- P034 · 0,40  (a obra "ok" que o modelo vê chegando)
+```
+
+O job `atlas_torre` agora tem **8 tarefas** e roda verde em ~4 min 20 s. A noite 4 lê
+`gold.score_estouro_30d`: se ela não existir, o app mostra "—" na coluna de risco.
+
+---
+## Noite 4 · o projeto ganha uma URL
+
+### Prompt 10 · O agente que lê contrato
+
+*o PDF que ninguém lê vira resposta* · noite 4 · deploy nº 10 (Genie publicado) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-01-agente-de-contratos.md)
+
+```
+Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar.
+
+Crie a pasta aulas/aula-04-engenheiro-ia/meu-agente/ com o agente que lê os
+contratos da Atlas. Perfil: <perfil> (sempre --profile).
+
+1. meu-agente/01-contratos.sql, executável com
+   python3 scripts/run_sql.py meu-agente/01-contratos.sql --profile <perfil>
+   (use a API de statements, não o aitools query). Quatro objetos na gold,
+   com COMMENT em todos (é o que o Genie lê):
+   a) gold.contratos_texto: read_files dos PDFs em
+      /Volumes/lakehouse_atlas/bronze/raw/documentos/contratos/ (binaryFile),
+      ai_parse_document(content), texto = concat_ws dos elementos;
+      projeto_id extraído do nome do arquivo (contrato_P011.pdf → P011).
+   b) gold.contratos_clausulas: uma linha por cláusula (projeto_id,
+      clausula_numero INT, titulo, texto). Normalize os espaços (o PDF quebra
+      linha no meio da frase) e corte em "CLÁUSULA N - ".
+   c) gold.contratos_resumo: ai_query('databricks-meta-llama-3-3-70b-instruct',
+      ..., responseFormat => JSON schema strict) com os campos multa_dia_pct
+      (number), teto_multa_pct (number), chuva_da_prorrogacao (boolean),
+      icamento_responsavel e estrutura_fornecida_por (enum contratada|contratante),
+      prazo_aditivo_dias (integer), reajuste (string), bonus_antecipacao
+      (boolean). Descreva cada campo no schema. Lembre: a Atlas é a CONTRATADA.
+   d) gold.contratos_exposicao (view): junta obra_situacao_atual, contratos_resumo
+      e a contagem de RDOs de chuva e de falta_equipamento; multa_estimada =
+      valor_contrato × min(atraso_projetado_dias × multa_dia_pct, teto) / 100 e
+      multa_no_teto.
+
+2. meu-agente/gerar_genie.py gera meu-agente/diretoria-contratos-genie.json
+   (serialized_space v2, ids de 32 caracteres em ordem) com: contratos_*,
+   obra_situacao_atual, rdo_estruturado, utilizacao_equipamento_semana,
+   utilizacao_equipe_semana, cobertura_estoque, pedidos_em_atraso,
+   desempenho_fornecedor, mv_obras, e score_estouro_30d SÓ se existir.
+   Instruções: HOJE = 2026-10-16; a Atlas é a CONTRATADA (nunca "cobrar a
+   contratada"); sempre citar número e trecho da cláusula; regras de leitura
+   (chuva_da_prorrogacao, içamento da contratada não dá prorrogação, prazo do
+   aditivo); "em risco" = atenção + crítico somados. Exemplos de SQL para:
+   "Por que a obra P011 atrasou e o que o contrato diz sobre isso?",
+   "Qual a multa estimada de cada obra com contrato?",
+   "Onde tenho guindaste parado que poderia ir para a P011?".
+
+3. Rode e me mostre:
+   python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/meu-agente/01-contratos.sql --profile <perfil>
+   SELECT * EXCEPT(arquivo) FROM lakehouse_atlas.gold.contratos_resumo ORDER BY 1
+   python3 aulas/aula-04-engenheiro-ia/meu-agente/gerar_genie.py --profile <perfil>
+   python3 scripts/genie.py publicar aulas/aula-04-engenheiro-ia/meu-agente/diretoria-contratos-genie.json \
+     --titulo "Torre de Controle · Diretoria + Contratos" --profile <perfil>
+   python3 scripts/genie.py perguntar "Torre de Controle · Diretoria + Contratos" \
+     "Por que a obra P011 atrasou e o que o contrato diz sobre isso?" --profile <perfil>
+   python3 scripts/genie.py benchmark "Torre de Controle · Diretoria + Contratos" \
+     aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile <perfil>
+NÃO use o título "Torre de Controle · Diretoria": é o Genie da noite 2.
+```
+
+### Prompt 11 · O app da Torre
+
+*a Torre na tela do gestor* · noite 4 · deploy nº 11 (apps deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-02-app.md)
+
+```
+Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
+databricks-app-design.
+
+1. Mova aulas/aula-04-engenheiro-ia/meu-agente/ para dentro do app (passo 2,
+   como minha-torre/agente/) e crie o app:
+   cd aulas/aula-04-engenheiro-ia && databricks apps init --name minha-torre \
+     --features analytics,genie \
+     --set analytics.sql-warehouse.id=<warehouse> \
+     --set genie.genie-space.id=<id do Genie "Torre de Controle · Diretoria + Contratos"> \
+     --set "genie.genie-space.name=Torre de Controle · Diretoria + Contratos" \
+     --run none --profile <perfil>
+   Inclua no databricks.yml um job torre_contratos (sql_task com
+   agente/01-contratos.sql) em resources/contratos.job.yml.
+
+2. config/queries (apague os exemplos do template):
+   - kpis.sql: obras em andamento, em risco (atenção+crítico), críticas,
+     estouro previsto, carteira e rupturas previstas (obra_situacao_atual).
+   - obras_risco.sql: obras em andamento da pior para a melhor, com SPI, CPI,
+     estouro, atraso projetado, a causa mais frequente no RDO dos últimos 90
+     dias, dias de impacto por falta_equipamento e por mao_de_obra, e
+     multa_dia_pct / multa_estimada de contratos_exposicao (LEFT JOIN).
+   - recursos_ociosos.sql: equipamentos com utilização média < 20% nas
+     últimas 12 semanas e as 15 equipes com mais horas ociosas, com horas
+     paradas e custo ocioso MÉDIOS por semana (custo da equipe vem de
+     silver.equipes.custo_hora).
+   A probabilidade de estouro (gold.score_estouro_30d, da noite 3) NÃO vai em
+   config/queries: a tabela pode não existir e quebraria o build. Faça uma
+   rota GET /api/score-estouro no servidor que responde {disponivel, linhas}.
+
+3. Telas (português, R$, índices com 2 casas, Number() em tudo que vem do warehouse):
+   - Obras em risco: 4 KPIs + tabela (situação com cor: crítico vermelho,
+     atenção âmbar), coluna P(estouro) com "—" quando o modelo não existe.
+   - Simulador: escolher recurso ocioso e obra destino (só atenção/crítico);
+     mostrar horas recuperadas no mês (× 4 semanas), ociosidade que deixa de
+     ser paga, dias de atraso evitados (dias de impacto da causa nos últimos
+     90 dias ÷ 90 × 30), multa evitada (dias × multa diária × valor do
+     contrato) e saldo com custo de mobilização editável. Explique a conta
+     num <details>.
+   - Perguntar: <GenieChat alias="default" />.
+   Sem cache no createApp. Atualize o título do app.
+
+4. npm run typecheck, npm run lint, npm test, databricks apps validate.
+   Depois: databricks apps deploy --profile <perfil>. O primeiro deploy VAI
+   falhar no build por falta de permissão: crie scripts/conceder-acesso.sh
+   (lê o service_principal_client_id com apps get e dá USE CATALOG, USE
+   SCHEMA + SELECT na gold, USE SCHEMA na silver e SELECT em silver.equipes),
+   rode e faça o deploy de novo. Me mostre a URL.
+```
+
+### Prompt 12 · A aprovação no Lakebase
+
+*a decisão fica registrada* · noite 4 · deploy nº 12 (apps deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-03-aprovacao-lakebase.md)
+
+```
+Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
+databricks-lakebase. O app minha-torre já está no ar (prompt 2).
+
+1. Lakebase:
+   databricks postgres create-project minha-torre --profile <perfil>
+   e descubra branch e database (list-branches, list-databases).
+   Adicione ao databricks.yml as variáveis postgres_branch e postgres_database e
+   o recurso do app `postgres` (CAN_CONNECT_AND_CREATE); no app.yaml a env
+   LAKEBASE_ENDPOINT (valueFrom: postgres); no server o plugin lakebase().
+
+2. server/routes/decisoes.ts, registrado em onPluginsReady:
+   - cria o schema torre e a tabela torre.decisoes (id serial, projeto_origem,
+     projeto_destino, recurso_id, tipo equipamento|equipe, decisao
+     aprovada|recusada, justificativa, horas_recuperadas_mes, economia_mes,
+     multa_evitada, usuario, criado_em timestamptz default now()).
+   - GET /api/quem-sou, GET /api/decisoes (200 mais recentes),
+     POST /api/decisoes com zod (exporte o schema): projeto no padrão
+     ^P\d{3}$, origem ≠ destino, justificativa de 10 a 1000 caracteres,
+     números com z.coerce. Grave o usuário do header x-forwarded-email.
+   - server/decisoes.test.ts (vitest) testando o schema: aceita válida,
+     recusa justificativa curta, código fora do padrão e decisão inválida.
+
+3. Cliente: no simulador, textarea de justificativa + botões Aprovar e
+   Recusar (desabilitados com menos de 10 caracteres) que fazem POST e mostram
+   "Decisão nº X aprovada e registrada por <e-mail>". Nova tela Decisões com o
+   histórico (nº, quando, recurso origem → destino, decisão, justificativa,
+   multa evitada, por quem).
+
+4. typecheck, lint, test, apps validate, apps deploy --profile <perfil>.
+   Prove a gravação: crie scripts/ver_decisoes.py que lê torre.decisoes direto
+   no Postgres (psycopg, senha = token de
+   `databricks postgres generate-database-credential <endpoint>`) e rode com
+   uv run --no-project --with "psycopg[binary]" python ... --profile <perfil>
+```
 ---
 
 ## Para refazer do zero
