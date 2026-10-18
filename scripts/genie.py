@@ -11,8 +11,8 @@ mesmo título ATUALIZA o espaço, não cria outro.
 
 O benchmark é uma lista [{"pergunta": "...", "sql_referencia": "..."}]: o
 script roda a pergunta no Genie, roda o SQL de referência no warehouse e
-compara os dois resultados (mesmos valores, ignorando ordem de linhas e
-nome de coluna).
+compara os dois resultados: mesmas linhas, ignorando ordem, nome de coluna e
+colunas extras que o Genie traga junto (valores com 2 casas decimais).
 """
 from __future__ import annotations
 
@@ -27,10 +27,15 @@ def api(metodo: str, caminho: str, profile: str, corpo: dict | None = None) -> d
     cmd = ["databricks", "api", metodo, caminho, "--profile", profile]
     if corpo is not None:
         cmd += ["--json", json.dumps(corpo)]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        raise RuntimeError(r.stderr.strip() or r.stdout.strip())
-    return json.loads(r.stdout or "{}")
+    for tentativa in range(4):          # rede e limite de taxa do Free Edition: tenta de novo
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode == 0:
+            return json.loads(r.stdout or "{}")
+        erro = r.stderr.strip() or r.stdout.strip()
+        if not any(x in erro for x in ("EOF", "429", "503", "502", "timeout", "RESOURCE_EXHAUSTED", "TEMPORARILY")):
+            break
+        time.sleep(5 * (tentativa + 1))
+    raise RuntimeError(erro)
 
 
 def warehouse(profile: str) -> str:
@@ -102,13 +107,30 @@ def rodar_sql(sql: str, profile: str) -> list[list]:
     return r.get("result", {}).get("data_array") or []
 
 
-def normalizar(linhas: list[list]) -> list[tuple]:
-    def v(x):
-        try:
-            return round(float(x), 2)
-        except (TypeError, ValueError):
-            return (x or "").strip().lower()
-    return sorted(tuple(sorted(map(str, map(v, l)))) for l in linhas)
+def _valor(x):
+    try:
+        return f"{round(float(x), 2):g}"
+    except (TypeError, ValueError):
+        return (x or "").strip().lower()
+
+
+def bate(genie: list[list], referencia: list[list]) -> bool:
+    """O Genie acertou se devolveu as mesmas linhas da referência.
+
+    Colunas extras na resposta do Genie são aceitas (ele costuma trazer o nome
+    da obra junto do código): cada linha da referência precisa estar CONTIDA
+    numa linha diferente do Genie, e o número de linhas tem que ser o mesmo.
+    """
+    if not genie or len(genie) != len(referencia):
+        return False
+    resto = [set(map(_valor, l)) for l in genie]
+    for linha in referencia:
+        alvo = set(map(_valor, linha))
+        achou = next((i for i, g in enumerate(resto) if alvo <= g), None)
+        if achou is None:
+            return False
+        resto.pop(achou)
+    return True
 
 
 def mostrar(p: str, r: dict) -> None:
@@ -144,9 +166,12 @@ def main() -> int:
     casos = json.load(open(a.resto[0], encoding="utf-8"))
     certos = 0
     for n, c in enumerate(casos, 1):
-        r = perguntar(sid, c["pergunta"], a.profile)
         try:
-            ok = bool(r["linhas"]) and normalizar(r["linhas"]) == normalizar(rodar_sql(c["sql_referencia"], a.profile))
+            r = perguntar(sid, c["pergunta"], a.profile)
+        except RuntimeError as e:
+            r = {"status": "ERRO", "texto": str(e), "sql": "", "colunas": [], "linhas": []}
+        try:
+            ok = bate(r["linhas"], rodar_sql(c["sql_referencia"], a.profile))
         except RuntimeError as e:
             ok = False
             r["texto"] += f" [referência falhou: {e}]"
