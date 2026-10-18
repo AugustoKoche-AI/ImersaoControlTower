@@ -49,7 +49,8 @@ SELECT projeto_id, nome_projeto, cliente,
        ROUND((orcamento / cpi - orcamento) / 1e6, 1)               AS estouro_milhoes,
        ROUND(100 * (valor_contrato - orcamento / cpi) / valor_contrato, 1) AS margem_projetada_pct,
        ROUND(duracao_dias / spi - duracao_dias)                    AS atraso_projetado_dias,
-       ROUND(SUM(orcamento / cpi - orcamento) OVER () / 1e6, 1)    AS estouro_total_carteira_milhoes
+       -- só soma quem estoura: obra com CPI > 1 não "compensa" a que queima margem
+       ROUND(SUM(GREATEST(0, orcamento / cpi - orcamento)) OVER () / 1e6, 1) AS estouro_total_carteira_milhoes
 FROM obra
 ORDER BY estouro_milhoes DESC
 LIMIT 15;

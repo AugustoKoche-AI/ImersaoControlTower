@@ -84,6 +84,8 @@ def widget(nome, dataset, campos, spec, pos, desagregado=False):
 
 BRL = {"type": "number-currency", "currencyCode": "BRL", "abbreviation": "compact",
        "decimalPlaces": {"type": "max", "places": 1}}
+BRL_KPI = {"type": "number-currency", "currencyCode": "BRL", "abbreviation": "compact",
+           "decimalPlaces": {"type": "max", "places": 0}}
 
 
 def contador(nome, campo, expr, titulo, fmt, pos):
@@ -98,23 +100,23 @@ def montar() -> dict:
         texto("titulo", "# Torre de Controle · Construtora Atlas Engenharia\n\n"
               "**Quais obras estão atrasadas e quanto isso custa?** Tudo aqui lê a camada **bronze**, "
               "o dado como veio dos sistemas. Repare no SQL dos datasets: `CAST`, `replace` e `try_to_date` "
-              "em toda coluna. Hoje do dataset: 16/10/2026.", (0, 0, 12, 2)),
-        contador("kpi-carteira", "sum(valor_contrato)", "SUM(`valor_contrato`)", "Carteira em andamento", BRL, (0, 2, 3, 4)),
+              "em toda coluna. Hoje do dataset: 16/10/2026.", (0, 0, 12, 3)),
+        contador("kpi-carteira", "sum(valor_contrato)", "SUM(`valor_contrato`)", "Carteira em andamento", BRL_KPI, (0, 3, 3, 4)),
         contador("kpi-risco", "sum(em_risco)", "SUM(`em_risco`)", "Obras com SPI ou CPI < 0,9",
-                 {"type": "number-plain"}, (3, 2, 3, 4)),
+                 {"type": "number-plain"}, (3, 3, 3, 4)),
         contador("kpi-criticas", "sum(critica)", "SUM(`critica`)", "Obras críticas (< 0,8)",
-                 {"type": "number-plain"}, (6, 2, 3, 4)),
+                 {"type": "number-plain"}, (6, 3, 3, 4)),
         contador("kpi-estouro", "sum(estouro_previsto)", "SUM(`estouro_previsto`)", "Estouro previsto (EAC − orçamento)",
-                 BRL, (9, 2, 3, 4)),
+                 BRL_KPI, (9, 3, 3, 4)),
         texto("secao-risco", "## Onde está o problema\n\nSPI < 1 é atraso; CPI < 1 é cada real gastando mais do que entrega. "
-              "Clique numa barra para filtrar a tabela.", (0, 6, 12, 1)),
+              "Clique numa barra para filtrar a tabela.", (0, 7, 12, 2)),
         widget("estouro-obra", "ds_obras", [("obra", "`obra`"), ("sum(estouro_previsto)", "SUM(`estouro_previsto`)")],
                {"version": 3, "widgetType": "bar",
                 "encodings": {"y": {"fieldName": "obra", "scale": {"type": "categorical",
                                     "sort": {"by": "x-reversed"}}, "displayName": "Obra"},
                               "x": {"fieldName": "sum(estouro_previsto)", "scale": {"type": "quantitative"},
                                     "displayName": "Estouro previsto", "format": BRL}},
-                "frame": {"showTitle": True, "title": "Estouro de custo previsto por obra"}}, (0, 7, 7, 7)),
+                "frame": {"showTitle": True, "title": "Estouro de custo previsto por obra"}}, (0, 9, 7, 7)),
         widget("situacao", "ds_obras", [("situacao", "`situacao`"), ("count(projeto_id)", "COUNT(`projeto_id`)")],
                {"version": 3, "widgetType": "pie",
                 "encodings": {"angle": {"fieldName": "count(projeto_id)", "scale": {"type": "quantitative"},
@@ -122,9 +124,9 @@ def montar() -> dict:
                               "color": {"fieldName": "situacao", "scale": {"type": "categorical", "mappings": [
                                   {"value": "crítico", "color": "#FF5F46"}, {"value": "atenção", "color": "#F6C344"},
                                   {"value": "ok", "color": "#22C2F4"}]}, "displayName": "Situação"}},
-                "frame": {"showTitle": True, "title": "Obras em andamento por situação"}}, (7, 7, 5, 7)),
+                "frame": {"showTitle": True, "title": "Obras em andamento por situação"}}, (7, 9, 5, 7)),
         texto("secao-custo", "## Para onde vai o dinheiro\n\nCusto real por mês e categoria. Sem trocar a vírgula "
-              "decimal por ponto, 540 lançamentos somem do total em silêncio.", (0, 14, 12, 1)),
+              "decimal por ponto, 540 lançamentos somem do total em silêncio.", (0, 16, 12, 2)),
         widget("custo-mes", "ds_custos", [("monthly(mes)", "DATE_TRUNC(\"MONTH\", `mes`)"), ("categoria", "`categoria`"),
                                          ("sum(valor)", "SUM(`valor`)")],
                {"version": 3, "widgetType": "bar",
@@ -133,9 +135,9 @@ def montar() -> dict:
                                     "displayName": "Custo real", "format": BRL},
                               "color": {"fieldName": "categoria", "scale": {"type": "categorical"},
                                         "displayName": "Categoria"}},
-                "frame": {"showTitle": True, "title": "Custo real por mês"}}, (0, 15, 12, 6)),
+                "frame": {"showTitle": True, "title": "Custo real por mês"}}, (0, 18, 12, 6)),
         texto("secao-tabela", "## Todas as obras em andamento\n\nOrdenadas da pior para a melhor. "
-              "⚠️ UF ainda vem suja na origem (mg, ' MG '): aqui foi corrigida com `upper(trim())`.", (0, 21, 12, 1)),
+              "⚠️ UF ainda vem suja na origem (mg, ' MG '): aqui foi corrigida com `upper(trim())`.", (0, 24, 12, 2)),
         widget("tabela-obras", "ds_obras",
                [(c, f"`{c}`") for c in ("obra", "cliente", "uf", "spi", "cpi", "situacao",
                                          "estouro_previsto", "margem_projetada", "atraso_projetado_dias")],
@@ -153,7 +155,7 @@ def montar() -> dict:
                     {"fieldName": "margem_projetada", "displayName": "Margem projetada",
                      "format": {"type": "number-percent", "decimalPlaces": {"type": "max", "places": 1}}},
                     {"fieldName": "atraso_projetado_dias", "displayName": "Atraso projetado (dias)"}]},
-                "frame": {"showTitle": True, "title": "Obras em andamento"}}, (0, 22, 12, 8), desagregado=True),
+                "frame": {"showTitle": True, "title": "Obras em andamento"}}, (0, 26, 12, 8), desagregado=True),
     ]
     return {
         "datasets": [ds("ds_obras", "Obras em andamento (bronze)", SQL_OBRAS),
@@ -207,7 +209,7 @@ def main() -> None:
     host = subprocess.run(["databricks", "auth", "env", "--profile", a.profile, "-o", "json"],
                           capture_output=True, text=True).stdout
     host = json.loads(host)["env"]["DATABRICKS_HOST"].rstrip("/")
-    print(f"publicado: {host}/sql/dashboardsv3/{did}/published")
+    print(f"publicado: {host}/dashboardsv3/{did}/published")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,280 @@
+<!-- titulo: Imersão Databricks + Claude Code · Noite 1 · Analista -->
+
+<!-- 1 · CAPA -->
+<section class="slide hero">
+  <div class="kicker">Imersão Databricks + Claude Code · Noite 1 de 4 · 19/10, 19h30</div>
+  <h1>Torre de Controle<br><span class="grad">de Projetos</span></h1>
+  <p class="sub" style="margin-top:36px;">Hoje você é o <b>Analista</b>: sobe o dado de uma construtora para o Databricks e responde, em SQL, <b>quais obras estão atrasadas e quanto isso custa</b>.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<!-- 2 · O PROBLEMA -->
+<section class="slide">
+  <div class="kicker">O problema</div>
+  <h2>A diretoria só descobre que a obra estourou<br>quando <span class="grad">já estourou</span></h2>
+  <div class="grid g2" style="gap:28px;">
+    <div class="card"><div class="tag">Na voz da diretoria</div>
+      <ul class="list">
+        <li>"Cada gerente de obra tem a sua planilha. Quando consolido, o número já mudou."</li>
+        <li>"Descubro o estouro de custo na medição mensal, quando não dá mais para corrigir."</li>
+        <li>"Tenho guindaste parado em Minas e obra atrasada por falta de guindaste no Pará."</li>
+        <li>"O RDO é um PDF que ninguém lê. A causa do atraso está lá."</li>
+        <li>"Compra chega atrasada ou sobra. Estoque não conversa com cronograma."</li>
+      </ul>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:22px;">
+      <div class="card hl"><div class="tag">O mercado</div><div class="num md">R$ 4 tri</div><div class="lbl">em investimentos em energia e mineração projetados pelo MME até 2035. Projeto intensivo em capital atrasa, e atraso custa caro.</div></div>
+      <div class="card"><div class="tag">Quem já usa Databricks no Brasil</div><div class="lbl" style="font-size:26px; color:#fff;">Petrobras, Vale, Gerdau</div><div class="lbl">O projeto desta semana é o tipo de entrega que essas empresas compram.</div></div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 3 · A EMPRESA -->
+<section class="slide">
+  <div class="kicker">O cenário · empresa fictícia, dado realista</div>
+  <h2>Construtora Atlas Engenharia</h2>
+  <div class="grid g4" style="gap:22px;">
+    <div class="card hl"><div class="tag">Carteira</div><div class="num">R$ 903 mi</div><div class="lbl">contratados em 40 obras EPC</div></div>
+    <div class="card"><div class="tag">Em andamento</div><div class="num">36</div><div class="lbl">obras rodando hoje (16/10/2026)</div></div>
+    <div class="card"><div class="tag">Setores</div><div class="num md">3</div><div class="lbl">mineração, óleo e gás, agroindústria</div></div>
+    <div class="card"><div class="tag">Estados</div><div class="num md">9</div><div class="lbl">de MG e PA ao MT e RJ</div></div>
+  </div>
+  <div class="grid g3" style="gap:22px; margin-top:26px;">
+    <div class="card"><div class="tag">7 sistemas que não conversam</div><div class="lbl">ERP (contratos, custos, compras), cronograma, ponto, frota, almoxarifado, RDO e contratos em PDF</div></div>
+    <div class="card"><div class="tag">12 tabelas · 290 mil linhas</div><div class="lbl">8 mil tarefas, 19 mil lançamentos de custo, 41 mil apontamentos, 13,7 mil RDOs</div></div>
+    <div class="card"><div class="tag">Seed fixa</div><div class="lbl">o seu dado é <b>idêntico</b> ao meu. Se o número divergir, o erro está na query.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 4 · AS 3 PERGUNTAS -->
+<section class="slide">
+  <div class="kicker">O que a Torre responde</div>
+  <h2>Três perguntas, em português, em tempo real</h2>
+  <div class="grid g3" style="gap:26px;">
+    <div class="card hl"><div class="tag">Pergunta 1 · prazo e custo</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">Quais obras vão estourar prazo ou orçamento nos próximos 30 dias?</div><div class="lbl" style="margin-top:20px;">SPI, CPI, EAC, margem projetada, probabilidade de estouro</div></div>
+    <div class="card"><div class="tag">Pergunta 2 · recursos</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">Onde tenho gente e equipamento parado enquanto outra obra atrasa?</div><div class="lbl" style="margin-top:20px;">utilização de equipe e equipamento, horas ociosas</div></div>
+    <div class="card"><div class="tag">Pergunta 3 · suprimentos</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">Que material vai faltar antes de travar uma frente de serviço?</div><div class="lbl" style="margin-top:20px;">cobertura de estoque, ruptura prevista, pedido em atraso</div></div>
+  </div>
+  <p class="note" style="margin-top:34px;">Regra de corte usada em toda a Torre: <b>SPI ou CPI abaixo de 0,9 = atenção</b>; <b>abaixo de 0,8 = crítico</b>.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 5 · ARQUITETURA -->
+<section class="slide">
+  <div class="kicker">A arquitetura · um fluxo só, da fonte à decisão</div>
+  <h2>O que existe no fim da semana</h2>
+  <div class="flow">
+    <div class="card"><div class="tag">Fontes</div><ul class="list"><li>ERP · custos · compras</li><li>Cronograma</li><li>Ponto e frota</li><li>Almoxarifado</li><li>RDO e contratos (PDF)</li></ul></div>
+    <div class="arr">→</div>
+    <div class="card" style="flex:1.2;"><div class="tag">Lakehouse · Unity Catalog</div>
+      <div class="med b">● Bronze · como veio <span class="small">noite 1</span></div>
+      <div class="med s">● Silver · limpo e testado <span class="small">noite 2</span></div>
+      <div class="med g">● Gold · KPIs governados <span class="small">noite 2</span></div>
+      <div class="lbl">Lakeflow · ai_extract nos RDOs · Metric Views</div></div>
+    <div class="arr">→</div>
+    <div class="card"><div class="tag">Inteligência</div><ul class="list"><li>Modelo de estouro em 30 dias <span class="small">noite 3</span></li><li>MLflow e Unity Catalog</li></ul></div>
+    <div class="arr">→</div>
+    <div class="card"><div class="tag">Consumo</div><ul class="list"><li>Dashboard AI/BI</li><li>Genie Agent</li><li>App da Torre + Lakebase</li><li>Agente que lê contrato <span class="small">noite 4</span></li></ul></div>
+  </div>
+  <p class="small" style="margin-top:26px;">Tudo no <b>Databricks Free Edition</b>: serverless, sem cartão, na sua conta.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 6 · AS 4 NOITES -->
+<section class="slide">
+  <div class="kicker">4 noites · 4 profissões · 1 projeto</div>
+  <h2>Cada noite termina com algo rodando na sua conta</h2>
+  <table class="t">
+    <tr><th>Noite</th><th>Profissão</th><th>A pergunta</th><th>O entregável</th></tr>
+    <tr class="cur"><td>1 · 19/10</td><td>Analista</td><td>Quais obras estão atrasadas e quanto custa?</td><td>Bronze, SPI/CPI em SQL, 1º dashboard</td></tr>
+    <tr><td>2 · 20/10</td><td>Engenheiro de Dados</td><td>Como isso roda sozinho todo dia?</td><td>Pipeline com Claude Code, KPIs governados, Genie</td></tr>
+    <tr><td>3 · 21/10</td><td>Cientista de Dados</td><td>Quais vão estourar em 30 dias?</td><td>Modelo de previsão no Unity Catalog</td></tr>
+    <tr><td>4 · 22/10</td><td>Engenheiro de IA</td><td>E o diretor que não escreve SQL?</td><td>App da Torre, agente de contratos, pitch</td></tr>
+  </table>
+  <p class="note" style="margin-top:30px;">Perdeu uma noite? Cada pasta do repositório é autocontida e tem o <b>checkpoint</b> para recomeçar dali.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 7 · ROTEIRO DE HOJE -->
+<section class="slide">
+  <div class="kicker">Noite 1 · roteiro</div>
+  <h2>75 minutos, do zero à primeira resposta</h2>
+  <div class="grid g4" style="gap:22px;">
+    <div class="card"><div class="tag">10 min</div><div class="lbl" style="color:#fff; font-size:28px; font-weight:700;">Conta e repositório</div><div class="lbl">Free Edition + Git folder com o repo</div></div>
+    <div class="card"><div class="tag">10 min</div><div class="lbl" style="color:#fff; font-size:28px; font-weight:700;">Dado no catálogo</div><div class="lbl">notebook 00 gera tudo · SQL 01 cria a bronze</div></div>
+    <div class="card hl"><div class="tag">40 min</div><div class="lbl" style="color:#fff; font-size:28px; font-weight:700;">SQL de verdade</div><div class="lbl">6 exemplos: da 1ª linha ao SPI, CPI e R$ de estouro</div></div>
+    <div class="card"><div class="tag">15 min</div><div class="lbl" style="color:#fff; font-size:28px; font-weight:700;">Dashboard e Genie</div><div class="lbl">a resposta vira tela · e o Genie erra</div></div>
+  </div>
+  <div class="card" style="margin-top:28px;"><div class="tag">Link do repositório</div><div class="num sm c">github.com/lvgalvao/ImersaoControlTower</div></div>
+  [[RODAPE]]
+</section>
+
+<!-- 8 · SETUP -->
+<section class="slide">
+  <div class="kicker">Passo a passo · setup sem instalar nada</div>
+  <h2>Três cliques e o dado está no seu catálogo</h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 0.9fr 1.1fr;">
+    <ul class="list" style="gap:22px;">
+      <li><b>1.</b> Crie a conta em <b>databricks.com/learn/free-edition</b></li>
+      <li><b>2.</b> Workspace → <b>Create → Git folder</b> → cole o link do repositório</li>
+      <li><b>3.</b> Abra <b>aulas/aula-01-analista/00-carregar-dados</b> e clique <b>Run all</b>: cria o catálogo e gera os arquivos no volume</li>
+      <li><b>4.</b> Abra <b>01-ingestao-bronze.sql</b> no SQL Editor e rode tudo: 12 tabelas</li>
+      <li><b>5.</b> Confira com <b>99-verificacao.sql</b>: 18 linhas "ok"</li>
+    </ul>
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite1-volume-raw.jpg]]" alt="Volume raw com as pastas dos sistemas">
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 9 · BRONZE -->
+<section class="slide">
+  <div class="kicker">Bronze · o dado como veio</div>
+  <h2>Por que toda coluna entra como texto?</h2>
+  <div class="grid g2" style="gap:30px;">
+    <pre class="code"><span class="k">CREATE OR REPLACE TABLE</span> lakehouse_atlas.bronze.custos <span class="k">AS</span>
+<span class="k">SELECT</span> * <span class="k">EXCEPT</span> (_rescued_data),
+       current_timestamp() <span class="k">AS</span> _ingerido_em,
+       _metadata.file_path  <span class="k">AS</span> _arquivo_origem
+<span class="k">FROM</span> read_files(
+  <span class="s">'/Volumes/lakehouse_atlas/bronze/raw/erp/custos.csv'</span>,
+  format => <span class="s">'csv'</span>, header => true,
+  inferColumnTypes => <span class="k">false</span>);  <span class="c">-- tudo texto</span></pre>
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <div class="card"><div class="tag">A regra</div><div class="lbl" style="color:#fff; font-size:26px;">A bronze <b>preserva</b> o problema. Se o Databricks adivinhasse o tipo, a data em dois formatos e a vírgula decimal sumiriam antes de você ver.</div></div>
+      <div class="card"><div class="tag">As colunas técnicas</div><div class="lbl"><b>_ingerido_em</b> e <b>_arquivo_origem</b> respondem as duas primeiras perguntas de qualquer investigação: quando entrou e de onde veio.</div></div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 10 · A SUJEIRA -->
+<section class="slide">
+  <div class="kicker">Exemplo 03 · o mais importante da noite</div>
+  <h2>Dado sujo não dá erro. Dá <span class="grad">número errado</span>, em silêncio.</h2>
+  <div class="grid g4" style="gap:20px;">
+    <div class="card"><div class="num md">11</div><div class="lbl">obras com data de início em <b>dd/mm/aaaa</b> no meio de datas ISO</div></div>
+    <div class="card"><div class="num md">20 → 9</div><div class="lbl">grafias de UF para 9 estados reais: "MG", "mg", " MG "</div></div>
+    <div class="card"><div class="num md">52</div><div class="lbl">tarefas com <b>mais de 100%</b> concluído</div></div>
+    <div class="card hl"><div class="num md">540</div><div class="lbl">custos com <b>vírgula decimal</b>: R$ 16,8 mi que somem com try_cast</div></div>
+    <div class="card"><div class="num md">275</div><div class="lbl">estornos negativos: <b>não é erro</b>, é lançamento revertido</div></div>
+    <div class="card"><div class="num md">4</div><div class="lbl">jeitos de escrever o mesmo fornecedor (Norte Aço)</div></div>
+    <div class="card"><div class="num md">3</div><div class="lbl">equipes duplicadas no cadastro do RH</div></div>
+    <div class="card"><div class="num md">80</div><div class="lbl">RDOs vazios, "N/A" ou "ver RDO físico"</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Tudo que o exemplo 03 acha é o que a <b>silver</b> conserta amanhã.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 11 · A QUERY QUE QUEBRA -->
+<section class="slide">
+  <div class="kicker">Exemplo 04 · a query que falha de propósito</div>
+  <h2>Três jeitos de somar o custo, dois estão errados</h2>
+  <table class="t">
+    <tr><th>Query</th><th>O que acontece</th><th class="r">Custo total</th></tr>
+    <tr><td>CAST(valor_real AS DECIMAL)</td><td><span class="bad">quebra</span>: '31262,81' não é número</td><td class="r">erro</td></tr>
+    <tr><td>try_cast(valor_real AS DECIMAL)</td><td><span class="warn">não quebra</span>… e joga 540 linhas fora sem avisar</td><td class="r">R$ 556,1 mi</td></tr>
+    <tr class="cur"><td>CAST(replace(valor_real, ',', '.') …)</td><td><span class="ok">certo</span>: corrige antes de converter</td><td class="r"><b>R$ 572,8 mi</b></td></tr>
+  </table>
+  <p class="sub" style="margin-top:36px;">A diferença é <b>R$ 16,8 milhões</b>. Ninguém vê, porque a query <i>funcionou</i>.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 12 · EARNED VALUE -->
+<section class="slide">
+  <div class="kicker">Exemplo 05 · como gestão de projetos mede atraso</div>
+  <h2>Três números contam a saúde de qualquer obra</h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card"><div class="tag">PV · valor planejado</div><div class="lbl" style="color:#fff; font-size:26px;">quanto <b>devia</b> estar pronto até hoje, pelo cronograma</div></div>
+    <div class="card"><div class="tag">EV · valor agregado</div><div class="lbl" style="color:#fff; font-size:26px;">quanto <b>está</b> pronto, em R$ do orçamento</div></div>
+    <div class="card"><div class="tag">AC · custo real</div><div class="lbl" style="color:#fff; font-size:26px;">quanto já <b>gastamos</b></div></div>
+  </div>
+  <div class="grid g2" style="gap:22px; margin-top:24px;">
+    <div class="card hl"><div class="num md">SPI = EV ÷ PV</div><div class="lbl">0,80 = a obra andou 80% do que devia. <b>Abaixo de 1 é atraso.</b></div></div>
+    <div class="card hl"><div class="num md">CPI = EV ÷ AC</div><div class="lbl">0,80 = cada R$ 1 gasto entregou R$ 0,80. <b>Abaixo de 1 é estouro.</b></div></div>
+  </div>
+  <p class="note" style="margin-top:24px;">"Hoje" é sempre <b>DATE'2026-10-16'</b>, nunca current_date(): senão o seu número muda todo dia e não bate com o de ninguém.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 13 · RESPOSTA -->
+<section class="slide">
+  <div class="kicker">A resposta da noite · exemplo 05</div>
+  <h2>13 de 36 obras em risco, 7 críticas</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>Obra</th><th>UF</th><th class="r">SPI</th><th class="r">CPI</th><th>Situação</th><th>O que está por trás</th></tr>
+    <tr><td>P030 · Usina de pelotização Paracatu</td><td>MG</td><td class="r bad">0,78</td><td class="r">0,95</td><td class="bad">crítico</td><td>equipe fraca, horas ociosas</td></tr>
+    <tr><td>P011 · Pátio de minério Canaã dos Carajás</td><td>PA</td><td class="r bad">0,78</td><td class="r">0,99</td><td class="bad">crítico</td><td>chuva e falta de guindaste</td></tr>
+    <tr><td>P018 · Terminal de GNL Macaé</td><td>RJ</td><td class="r">0,93</td><td class="r bad">0,79</td><td class="bad">crítico</td><td>CPI caindo desde o 9º mês</td></tr>
+    <tr><td>P021 · Esferas de GLP Ribeirão Preto</td><td>SP</td><td class="r">0,99</td><td class="r bad">0,79</td><td class="bad">crítico</td><td>CPI caindo desde o 9º mês</td></tr>
+    <tr><td>P005 · Base de apoio offshore Macaé</td><td>RJ</td><td class="r">0,91</td><td class="r bad">0,79</td><td class="bad">crítico</td><td>CPI caindo desde o 9º mês</td></tr>
+    <tr><td>P002 · Usina de pelotização Congonhas</td><td>MG</td><td class="r">0,99</td><td class="r bad">0,80</td><td class="bad">crítico</td><td>CPI caindo desde o 9º mês</td></tr>
+    <tr><td>P033 · Pátio de minério Jacobina</td><td>BA</td><td class="r">0,98</td><td class="r bad">0,80</td><td class="bad">crítico</td><td>CPI caindo desde o 9º mês</td></tr>
+  </table>
+  <p class="small" style="margin-top:14px;">+ 6 em atenção: P003 e P016 (prazo), P014, P027 e P009 (custo), P025 (prazo).</p>
+  [[RODAPE]]
+</section>
+
+<!-- 14 · QUANTO CUSTA -->
+<section class="slide">
+  <div class="kicker">Exemplo 06 · o número que a diretoria entende</div>
+  <h2>Se nada mudar, a Atlas queima <span class="grad">R$ 41,9 milhões</span></h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card hl"><div class="tag">Estouro previsto</div><div class="num">R$ 41,9 mi</div><div class="lbl">soma de EAC − orçamento das obras que estouram (EAC = orçamento ÷ CPI)</div></div>
+    <div class="card"><div class="tag">Maior estouro</div><div class="num md">R$ 6,3 mi</div><div class="lbl">P002 e P021, cada uma. A P002 sai de margem positiva para <b>−3,7%</b></div></div>
+    <div class="card"><div class="tag">Pior prazo</div><div class="num md">+178 dias</div><div class="lbl">atraso projetado da P011 no Pará (duração ÷ SPI − duração)</div></div>
+  </div>
+  <p class="sub" style="margin-top:34px;">SPI e CPI são o meio. <b>O fim é dinheiro e prazo.</b> É esse slide que você leva para a diretoria.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 15 · DASHBOARD -->
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">A resposta vira tela · AI/BI Dashboard</div>
+  <h2 style="margin-bottom:22px;">O dashboard da noite 1 é um JSON no Git</h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite1-dashboard-kpis.jpg]]" alt="KPIs do dashboard">
+    <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite1-dashboard-graficos.jpg]]" alt="Gráficos do dashboard">
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 16 · GENIE ERRA -->
+<section class="slide">
+  <div class="kicker">E o Genie? Direto na bronze, sem curadoria</div>
+  <h2>Ele responde em português. E erra com confiança.</h2>
+  <table class="t">
+    <tr><th>Pergunta</th><th>O Genie respondeu</th><th>Certo?</th></tr>
+    <tr><td>Quanto gastamos no total?</td><td>R$ 572.849.442,19 (tratou a vírgula sozinho)</td><td class="ok">certo</td></tr>
+    <tr><td>Qual é o CPI de cada obra?</td><td>"CPI varia entre 2,10 e <b>7,01</b>" — JOIN multiplicou linhas e a fórmula foi inventada</td><td class="bad">errado</td></tr>
+    <tr><td>Por que a obra P011 atrasou?</td><td>listou tarefas que terminaram depois do previsto. A causa (chuva e falta de guindaste) está no texto do RDO, e ele não leu</td><td class="bad">não sabe</td></tr>
+  </table>
+  <p class="note" style="margin-top:30px;">O Genie só acerta quando o dado está limpo e o KPI está <b>definido uma vez</b>. É exatamente o que a noite 2 constrói.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 17 · VALOR PARA O NEGÓCIO -->
+<section class="slide">
+  <div class="kicker">Como vender isso para a diretoria</div>
+  <h2>O que a Torre muda no negócio</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>Hoje (sem a Torre)</th><th>Com a Torre</th><th>Ganho</th></tr>
+    <tr><td>Estouro aparece na medição mensal</td><td>SPI e CPI de toda obra, todo dia</td><td>antecipar o desvio em até 30 dias</td></tr>
+    <tr><td>2 a 3 dias consolidando planilhas para "por que atrasou?"</td><td>Genie responde em português, com a causa do RDO</td><td>de dias para menos de 1 minuto</td></tr>
+    <tr><td>Aditivo de escopo pleiteado tarde (contrato dá 30 dias)</td><td>alerta de CPI caindo na semana em que começa</td><td>margem recuperada antes da preclusão</td></tr>
+    <tr><td>Guindaste parado em MG, falta no PA</td><td>ociosidade de equipe e equipamento por obra</td><td>realocar em vez de alugar</td></tr>
+    <tr><td>Compra descobre a falta quando a frente para</td><td>ruptura prevista: cobertura × próxima entrega</td><td>frente de serviço não trava</td></tr>
+  </table>
+  <p class="small" style="margin-top:16px;">Conta de bolso (premissa ilustrativa): recuperar 25% do estouro previsto de R$ 41,9 mi = <b>R$ 10,5 mi</b>, numa carteira de R$ 903 mi. O pitch completo, com ROI, é a entrega da noite 4.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 18 · AMANHÃ -->
+<section class="slide hero">
+  <div class="kicker">Amanhã · noite 2 · Engenheiro de Dados · 19h30</div>
+  <h2 style="font-size:84px;">Tudo que você fez hoje à mão<br><span class="grad">vai rodar sozinho</span></h2>
+  <p class="sub">Pipeline Lakeflow escrito com Claude Code, a silver que limpa as 8 sujeiras, a IA lendo 13 mil RDOs, os KPIs definidos uma vez e o Genie que acerta.</p>
+  <div style="margin-top:40px;"><span class="pill on">Lição de casa</span><span class="pill">rode o 99-verificacao.sql</span><span class="pill">instale o Claude Code e a CLI do Databricks</span><span class="pill">poste o print do seu dashboard</span></div>
+  [[RODAPE]]
+</section>
