@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {"id": "a1000000000000000000000000000001", "question": ["Quais obras estão atrasadas?"]},
+      {"id": "a1000000000000000000000000000002", "question": ["Qual é o CPI de cada obra?"]},
+      {"id": "a1000000000000000000000000000003", "question": ["Quanto gastamos por mês?"]},
+      {"id": "a1000000000000000000000000000004", "question": ["Por que a obra P011 atrasou?"]}
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {"identifier": "lakehouse_atlas.bronze.custos"},
+      {"identifier": "lakehouse_atlas.bronze.projetos"},
+      {"identifier": "lakehouse_atlas.bronze.rdo"},
+      {"identifier": "lakehouse_atlas.bronze.tarefas"}
+    ]
+  }
+}

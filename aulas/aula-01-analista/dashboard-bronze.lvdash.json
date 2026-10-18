@@ -1,0 +1,657 @@
+{
+  "datasets": [
+    {
+      "name": "ds_obras",
+      "displayName": "Obras em andamento (bronze)",
+      "queryLines": [
+        "-- Tudo na bronze é texto: todo acesso começa com CAST, replace e coalesce de data.\n",
+        "-- É o imposto que a camada silver vai eliminar na noite 2.\n",
+        "WITH t AS (\n",
+        "  SELECT projeto_id,\n",
+        "         CAST(valor_planejado AS DECIMAL(18,2)) AS vp,\n",
+        "         LEAST(CAST(pct_concluido AS DOUBLE), 100) / 100 AS pct,\n",
+        "         GREATEST(0, LEAST(1, datediff(DATE'2026-10-16', CAST(inicio_baseline AS DATE))\n",
+        "                  / datediff(CAST(fim_baseline AS DATE), CAST(inicio_baseline AS DATE)))) AS pct_plan\n",
+        "  FROM tarefas\n",
+        "),\n",
+        "v AS (SELECT projeto_id, SUM(vp * pct_plan) AS pv, SUM(vp * pct) AS ev FROM t GROUP BY projeto_id),\n",
+        "c AS (SELECT projeto_id, SUM(CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2))) AS ac FROM custos GROUP BY projeto_id),\n",
+        "o AS (\n",
+        "  SELECT p.projeto_id, concat(p.projeto_id, ' · ', p.nome_projeto) AS obra, p.cliente, p.setor,\n",
+        "         upper(trim(p.uf)) AS uf,\n",
+        "         CAST(p.valor_contrato AS DECIMAL(18,2)) AS valor_contrato,\n",
+        "         CAST(p.orcamento_custo AS DECIMAL(18,2)) AS orcamento,\n",
+        "         datediff(CAST(p.data_fim_baseline AS DATE),\n",
+        "                  coalesce(try_to_date(p.data_inicio, 'yyyy-MM-dd'), try_to_date(p.data_inicio, 'dd/MM/yyyy'))) AS duracao,\n",
+        "         v.pv, v.ev, c.ac\n",
+        "  FROM projetos p JOIN v USING (projeto_id) JOIN c USING (projeto_id)\n",
+        "  WHERE p.status = 'em_andamento'\n",
+        ")\n",
+        "SELECT projeto_id, obra, cliente, setor, uf, valor_contrato, orcamento,\n",
+        "       ROUND(ev / pv, 2) AS spi,\n",
+        "       ROUND(ev / ac, 2) AS cpi,\n",
+        "       CASE WHEN ev / pv < 0.8 OR ev / ac < 0.8 THEN 'crítico'\n",
+        "            WHEN ev / pv < 0.9 OR ev / ac < 0.9 THEN 'atenção' ELSE 'ok' END AS situacao,\n",
+        "       CASE WHEN ev / pv < 0.8 OR ev / ac < 0.8 THEN 1 ELSE 0 END AS critica,\n",
+        "       CASE WHEN ev / pv < 0.9 OR ev / ac < 0.9 THEN 1 ELSE 0 END AS em_risco,\n",
+        "       GREATEST(0, orcamento / (ev / ac) - orcamento) AS estouro_previsto,\n",
+        "       (valor_contrato - orcamento / (ev / ac)) / valor_contrato AS margem_projetada,\n",
+        "       ROUND(duracao / (ev / pv) - duracao) AS atraso_projetado_dias\n",
+        "FROM o\n",
+        "ORDER BY LEAST(ev / pv, ev / ac)\n"
+      ]
+    },
+    {
+      "name": "ds_custos",
+      "displayName": "Custos (bronze)",
+      "queryLines": [
+        "SELECT date_trunc('MONTH', CAST(data AS DATE)) AS mes,\n",
+        "       categoria,\n",
+        "       CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2)) AS valor\n",
+        "FROM custos\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "noite1",
+      "displayName": "Noite 1",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo",
+            "textbox_spec": "# Torre de Controle · Construtora Atlas Engenharia\n\n**Quais obras estão atrasadas e quanto isso custa?** Tudo aqui lê a camada **bronze**, o dado como veio dos sistemas. Repare no SQL dos datasets: `CAST`, `replace` e `try_to_date` em toda coluna. Hoje do dataset: 16/10/2026."
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-carteira",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "sum(valor_contrato)",
+                      "expression": "SUM(`valor_contrato`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(valor_contrato)",
+                  "displayName": "Carteira em andamento",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "BRL",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Carteira em andamento"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-risco",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "sum(em_risco)",
+                      "expression": "SUM(`em_risco`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(em_risco)",
+                  "displayName": "Obras com SPI ou CPI < 0,9",
+                  "format": {
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Obras com SPI ou CPI < 0,9"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-criticas",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "sum(critica)",
+                      "expression": "SUM(`critica`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(critica)",
+                  "displayName": "Obras críticas (< 0,8)",
+                  "format": {
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Obras críticas (< 0,8)"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-estouro",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "sum(estouro_previsto)",
+                      "expression": "SUM(`estouro_previsto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(estouro_previsto)",
+                  "displayName": "Estouro previsto (EAC − orçamento)",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "BRL",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Estouro previsto (EAC − orçamento)"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "secao-risco",
+            "textbox_spec": "## Onde está o problema\n\nSPI < 1 é atraso; CPI < 1 é cada real gastando mais do que entrega. Clique numa barra para filtrar a tabela."
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "estouro-obra",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "obra",
+                      "expression": "`obra`"
+                    },
+                    {
+                      "name": "sum(estouro_previsto)",
+                      "expression": "SUM(`estouro_previsto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "y": {
+                  "fieldName": "obra",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Obra"
+                },
+                "x": {
+                  "fieldName": "sum(estouro_previsto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Estouro previsto",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "BRL",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Estouro de custo previsto por obra"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 7,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "situacao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "situacao",
+                      "expression": "`situacao`"
+                    },
+                    {
+                      "name": "count(projeto_id)",
+                      "expression": "COUNT(`projeto_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "count(projeto_id)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Obras"
+                },
+                "color": {
+                  "fieldName": "situacao",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": "crítico",
+                        "color": "#FF5F46"
+                      },
+                      {
+                        "value": "atenção",
+                        "color": "#F6C344"
+                      },
+                      {
+                        "value": "ok",
+                        "color": "#22C2F4"
+                      }
+                    ]
+                  },
+                  "displayName": "Situação"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Obras em andamento por situação"
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 7,
+            "width": 5,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "secao-custo",
+            "textbox_spec": "## Para onde vai o dinheiro\n\nCusto real por mês e categoria. Sem trocar a vírgula decimal por ponto, 540 lançamentos somem do total em silêncio."
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "custo-mes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_custos",
+                  "fields": [
+                    {
+                      "name": "monthly(mes)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `mes`)"
+                    },
+                    {
+                      "name": "categoria",
+                      "expression": "`categoria`"
+                    },
+                    {
+                      "name": "sum(valor)",
+                      "expression": "SUM(`valor`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(mes)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês"
+                },
+                "y": {
+                  "fieldName": "sum(valor)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Custo real",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "BRL",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 1
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "categoria",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Categoria"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Custo real por mês"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "secao-tabela",
+            "textbox_spec": "## Todas as obras em andamento\n\nOrdenadas da pior para a melhor. ⚠️ UF ainda vem suja na origem (mg, ' MG '): aqui foi corrigida com `upper(trim())`."
+          },
+          "position": {
+            "x": 0,
+            "y": 21,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "tabela-obras",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_obras",
+                  "fields": [
+                    {
+                      "name": "obra",
+                      "expression": "`obra`"
+                    },
+                    {
+                      "name": "cliente",
+                      "expression": "`cliente`"
+                    },
+                    {
+                      "name": "uf",
+                      "expression": "`uf`"
+                    },
+                    {
+                      "name": "spi",
+                      "expression": "`spi`"
+                    },
+                    {
+                      "name": "cpi",
+                      "expression": "`cpi`"
+                    },
+                    {
+                      "name": "situacao",
+                      "expression": "`situacao`"
+                    },
+                    {
+                      "name": "estouro_previsto",
+                      "expression": "`estouro_previsto`"
+                    },
+                    {
+                      "name": "margem_projetada",
+                      "expression": "`margem_projetada`"
+                    },
+                    {
+                      "name": "atraso_projetado_dias",
+                      "expression": "`atraso_projetado_dias`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "obra",
+                    "displayName": "Obra"
+                  },
+                  {
+                    "fieldName": "cliente",
+                    "displayName": "Cliente"
+                  },
+                  {
+                    "fieldName": "uf",
+                    "displayName": "UF"
+                  },
+                  {
+                    "fieldName": "spi",
+                    "displayName": "SPI"
+                  },
+                  {
+                    "fieldName": "cpi",
+                    "displayName": "CPI"
+                  },
+                  {
+                    "fieldName": "situacao",
+                    "displayName": "Situação"
+                  },
+                  {
+                    "fieldName": "estouro_previsto",
+                    "displayName": "Estouro previsto",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "BRL",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 0
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "margem_projetada",
+                    "displayName": "Margem projetada",
+                    "format": {
+                      "type": "number-percent",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    }
+                  },
+                  {
+                    "fieldName": "atraso_projetado_dias",
+                    "displayName": "Atraso projetado (dias)"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Obras em andamento"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 12,
+            "height": 8
+          }
+        }
+      ]
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#F5F6FC",
+        "dark": "#14141A"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#1E1E24"
+      },
+      "fontColor": {
+        "light": "#14141A",
+        "dark": "#F5F6FC"
+      },
+      "selectionColor": {
+        "light": "#0059DB",
+        "dark": "#22C2F4"
+      },
+      "visualizationColors": [
+        "#0059DB",
+        "#22C2F4",
+        "#F6C344",
+        "#FF8A4C",
+        "#9B6BDB",
+        "#3ECF8E",
+        "#6E7180"
+      ],
+      "widgetHeaderAlignment": "LEFT",
+      "widgetCornerRadius": 12
+    }
+  }
+}
