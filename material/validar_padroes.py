@@ -28,8 +28,6 @@ HOJE = dt.date(2026, 10, 16)
 CPI_CAINDO = ["PRJ-002", "PRJ-005", "PRJ-009", "PRJ-014", "PRJ-018", "PRJ-021", "PRJ-027", "PRJ-033"]
 ECOMMERCE_FREEZE = ["PRJ-003", "PRJ-011", "PRJ-024"]
 SQUAD_ROTATIVIDADE = ["PRJ-016", "PRJ-030"]
-PRAZO_ADITIVO_DIAS = 30
-RUPTURAS_ESPERADAS = 15     # mesma regra da gold.cobertura_capacidade
 CORTE_ATENCAO, CORTE_CRITICO = 0.9, 0.8
 
 
@@ -256,12 +254,12 @@ def main() -> int:
 
     # ---- padrão 5 ----------------------------------------------------------------
     print("\nPadrão 5 · squads com rotatividade alta")
-    aloc = ler(base, "rh/alocacoes.csv")
+    # quem passou pelo squad = quem apontou hora no projeto (o timesheet substitui a planilha de alocação)
     for pid in SQUAD_ROTATIVIDADE + ["(outros)"]:
         if pid == "(outros)":
-            ids = {a["colaborador_id"] for a in aloc if a["projeto_id"] not in SQUAD_ROTATIVIDADE}
+            ids = {a["colaborador_id"] for a in apont if a["projeto_id"] not in SQUAD_ROTATIVIDADE}
         else:
-            ids = {a["colaborador_id"] for a in aloc if a["projeto_id"] == pid}
+            ids = {a["colaborador_id"] for a in apont if a["projeto_id"] == pid}
         saidas = [c for c in ids if col[c]["data_desligamento"]
                   and data(col[c]["data_desligamento"]) >= HOJE - dt.timedelta(days=270)]
         taxa = len(saidas) / len(ids)
@@ -272,28 +270,6 @@ def main() -> int:
     checar(all(p in [x[0] for x in piores] for p in SQUAD_ROTATIVIDADE),
            f"squads com rotatividade entre os 6 piores SPI: {[x[0] for x in piores]}")
 
-    # ---- pergunta 3: ruptura de capacidade ----------------------------------------
-    print(f"\nPergunta 3 · ruptura de capacidade hoje (saldo ÷ consumo previsto/dia < {PRAZO_ADITIVO_DIAS} dias)")
-    contratos = {c["contrato_id"]: c for c in ler(base, "compras/contratos_capacidade.csv")}
-    ult = {}
-    for c in ler(base, "compras/consumo_capacidade.csv"):
-        if c["data"] == HOJE.isoformat():
-            ult[c["contrato_id"]] = c
-    rupt = []
-    for cid, c in ult.items():
-        ct = contratos[cid]
-        cons = float(c["consumo_previsto_dia"])
-        if cons <= 0 or proj[ct["projeto_id"]]["status"] != "em_andamento":
-            continue
-        cob = max(0.0, float(c["saldo"])) / cons          # saldo negativo é erro de lançamento: vira 0
-        if cob < PRAZO_ADITIVO_DIAS:
-            rupt.append((ct["projeto_id"], ct["tipo"], cob))
-    print(f"    {len(rupt)} contratos com ruptura prevista · "
-          f"{dict(collections.Counter(t for _, t, _ in rupt))}")
-    print("    " + ", ".join(sorted({p for p, _, _ in rupt})))
-    if RUPTURAS_ESPERADAS is not None:
-        checar(len(rupt) == RUPTURAS_ESPERADAS, f"{RUPTURAS_ESPERADAS} rupturas previstas")
-
     # ---- farol melancia --------------------------------------------------------------
     print("\nFarol do gerente × número (regra oficial do manual: verde só com SPI ≥ 0,95)")
     ult_farol = {}
@@ -303,7 +279,7 @@ def main() -> int:
     print(f"    {len(melancia)} projetos com farol verde e SPI < 0,90: {', '.join(melancia)}")
 
     # ---- pergunta 2: horas ociosas -------------------------------------------------
-    print("\nPergunta 2 · horas ociosas por projeto (últimas 8 semanas)")
+    print("\nPergunta 3 · horas ociosas por projeto (últimas 8 semanas)")
     corte8 = HOJE - dt.timedelta(weeks=8)
     ocio = collections.Counter()
     for a in apont:

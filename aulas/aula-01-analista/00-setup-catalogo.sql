@@ -15,8 +15,8 @@ CREATE SCHEMA IF NOT EXISTS lakehouse_vertice.bronze
 CREATE SCHEMA IF NOT EXISTS lakehouse_vertice.silver
   COMMENT 'Limpo, deduplicado, tipado e centralizado: as três ferramentas num modelo só. Preenchido na noite 2.';
 CREATE SCHEMA IF NOT EXISTS lakehouse_vertice.gold
-  COMMENT 'KPIs da carteira de projetos (SPI, CPI, EAC, ociosidade, ruptura de capacidade), prontos para consumo. Noite 2.';
+  COMMENT 'KPIs da carteira de projetos (SPI, CPI, estouro previsto, ociosidade), prontos para consumo. Noite 2.';
 
 -- O volume guarda ARQUIVO, não tabela: planilhas, exports do ClickUp e do Project, CSVs e PDFs.
 CREATE VOLUME IF NOT EXISTS lakehouse_vertice.bronze.raw
-  COMMENT 'Arquivos originais: planilhas Excel, JSON do ClickUp, XML do MS Project, CSVs de PMO, RH, timesheet, financeiro e compras, postmortems e PDFs.';
+  COMMENT 'Arquivos originais: planilhas Excel, JSON do ClickUp, XML do MS Project, CSVs de PMO, RH, timesheet, financeiro e compras, e os contratos em PDF.';

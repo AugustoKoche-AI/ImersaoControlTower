@@ -9,7 +9,7 @@
 # MAGIC
 # MAGIC 1. cria o catálogo `lakehouse_vertice`, os schemas `bronze`, `silver`, `gold` e o volume `bronze.raw`
 # MAGIC 2. gera os arquivos **direto no volume**: 20 planilhas Excel, 25 exports do ClickUp, 15 arquivos do MS Project,
-# MAGIC    os CSVs do PMO, RH, timesheet, financeiro e compras, os postmortems e os PDFs
+# MAGIC    os CSVs do PMO, RH, timesheet, financeiro e compras, e os contratos em PDF
 # MAGIC 3. confere que os 5 padrões da história estão lá
 # MAGIC
 # MAGIC Nada para baixar nem subir: o gerador está neste repositório (`material/gerar_dataset.py`) e a seed é fixa,
@@ -82,4 +82,4 @@ assert r.returncode == 0, r.stderr or "algum padrão falhou"
 
 # MAGIC %md
 # MAGIC ## Pronto
-# MAGIC Agora abra o **`01-ingestao-bronze.sql`** no SQL Editor e rode tudo: os arquivos viram as 13 tabelas da bronze.
+# MAGIC Agora abra o **`01-ingestao-bronze.sql`** no SQL Editor e rode tudo: os arquivos viram as 9 tabelas da bronze.

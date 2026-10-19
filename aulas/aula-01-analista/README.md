@@ -35,7 +35,7 @@ Ninguém sabe responder. Cada gerente controla o projeto num lugar diferente:
 | # | Objetivo | Como você sabe que chegou lá |
 |---|---|---|
 | 1 | Montar o ambiente no Databricks Free Edition | catálogo `lakehouse_vertice` com `bronze`, `silver`, `gold` e o volume `raw` |
-| 2 | Ler Excel, JSON e XML com o mesmo comando | 13 tabelas na bronze, contagens iguais às do `99-verificacao.sql` |
+| 2 | Ler Excel, JSON e XML com o mesmo comando | 9 tabelas na bronze, contagens iguais às do `99-verificacao.sql` |
 | 3 | Encontrar a sujeira antes que ela vire decisão | os 12 achados do exemplo 03 |
 | 4 | Juntar as três ferramentas e responder o dono | SPI dos 41 projetos em andamento (exemplo 05) |
 | 5 | Traduzir o atraso em dinheiro, e desconfiar do farol | R$ 6,47 mi de estouro previsto e 4 projetos "melancia" (exemplo 06) |
@@ -111,12 +111,12 @@ não é tabela. É exatamente o que cada gerente mandaria por e-mail.*
 ### 4. Transforme os arquivos em tabelas: a bronze (2 min)
 
 Abra [`01-ingestao-bronze.sql`](01-ingestao-bronze.sql) no **SQL Editor**, selecione tudo e rode.
-O mesmo comando (`read_files`) lê CSV, Excel, JSON e XML. A última query mostra as 13 tabelas e as linhas de cada uma.
+O mesmo comando (`read_files`) lê CSV, Excel, JSON e XML. A última query mostra as 9 tabelas e as linhas de cada uma.
 
 ![As tabelas da bronze no Catalog Explorer](../../docs/img/noite1-catalogo-bronze.jpg)
 
 *Repare na lista de tabelas: `excel_tarefas`, `clickup_tarefas`, `msproject_tarefas` e as outras. No print aparecem
-14 porque ele foi tirado depois do exemplo 05, que cria a view `rascunho_tarefas`. Logo depois do passo 4 você vê 13.*
+10 porque ele foi tirado depois do exemplo 05, que cria a view `rascunho_tarefas`. Logo depois do passo 4 você vê 9.*
 
 ### 5. Olhe o dado antes de fazer conta
 
@@ -198,11 +198,10 @@ Volume /Volumes/lakehouse_vertice/bronze/raw
 ├── excel/        20 planilhas .xlsx               (uma por projeto, cada gerente do seu jeito)
 ├── clickup/      25 exports .json da API          (uma lista por projeto, tarefas dentro)
 ├── msproject/    15 arquivos .xml                 (uma <Task> por tarefa, com fases e baseline)
-├── rh/           colaboradores · alocacoes
+├── rh/           colaboradores                    (as 520 pessoas: papel, custo/hora, admissão, saída)
 ├── timesheet/    apontamentos                     (horas disponíveis × apontadas, por pessoa e semana)
 ├── financeiro/   custos
-├── compras/      entregas_fornecedor · contratos_capacidade · consumo_capacidade
-├── incidentes/   postmortems                      (texto livre)
+├── compras/      entregas_fornecedor              (o que cada consultoria prometeu × entregou)
 └── documentos/   contratos/*.pdf (8) · manual/manual_de_tecnologias.pdf
 ```
 
@@ -214,13 +213,9 @@ Volume /Volumes/lakehouse_vertice/bronze/raw
 | `clickup_tarefas` | 2.119 | as 25 listas do ClickUp | datas em milissegundos; status escrito de 12 jeitos; % dentro de uma lista de campos |
 | `msproject_tarefas` | 1.260 | os 15 cronogramas do Project | horas em `PT40H0M0S`; 105 tarefas-resumo que somam as de baixo |
 | `colaboradores` | 523 | as 520 pessoas | 3 pessoas duplicadas |
-| `alocacoes` | 517 | quem está em qual projeto, e quando | |
 | `apontamentos` | 30.883 | horas disponíveis × apontadas por semana | hora extra (> 100%) é legítima |
 | `custos` | 23.640 | lançamentos de custo real | 671 com vírgula decimal; estornos negativos |
 | `entregas_fornecedor` | 640 | entregas das consultorias: prometido × entregue | a CodeForge escrita de 4 jeitos |
-| `contratos_capacidade` | 93 | banco de horas de consultoria e créditos de cloud | |
-| `consumo_capacidade` | 6.070 | saldo semanal de cada contrato | saldos negativos (erro de lançamento) |
-| `postmortems` | 101 | relato de cada incidente em produção | texto livre |
 
 > **Por que CSV e Excel entram como texto?** Se o Databricks adivinhasse os tipos, `14/03/2025` virava nulo,
 > `12345,67` virava erro e o número de série do Excel virava um número qualquer. A bronze guarda o problema
@@ -385,7 +380,7 @@ Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 |---|---|
 | `00-carregar-dados.py` | notebook: catálogo + gera os dados no volume + confere os padrões |
 | `00-setup-catalogo.sql` | catálogo, schemas e volume (também roda no SQL Editor) |
-| `01-ingestao-bronze.sql` | CSV, Excel, JSON e XML viram 13 tabelas Delta |
+| `01-ingestao-bronze.sql` | CSV, Excel, JSON e XML viram 9 tabelas Delta |
 | `exemplo-01..06-*.sql` | os 6 exemplos da noite |
 | `99-verificacao.sql` | esperado × obtido, 22 checagens |
 | `notebooks/` | os exemplos em notebook, resolvidos e em branco |
@@ -402,7 +397,7 @@ Hoje você juntou as três ferramentas **dentro de uma view**, com `CASE`, `repl
 milissegundos do ClickUp. Funciona uma vez. Na terceira query, alguém esquece a linha de TOTAL, e o número muda.
 
 Amanhã é a noite da **integração**: as três ferramentas viram um modelo só, num pipeline escrito com Claude Code,
-testado e agendado. Os KPIs são definidos uma vez só, e a IA lê os status semanais e os postmortems para achar
+testado e agendado. Os KPIs são definidos uma vez só, e a IA lê os status semanais para achar
 a causa do atraso. → [aula-02](../aula-02-engenheiro)
 
 **Lição de casa:** instale a [CLI do Databricks](https://docs.databricks.com/dev-tools/cli/install.html)

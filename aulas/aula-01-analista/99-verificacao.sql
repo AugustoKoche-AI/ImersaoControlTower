@@ -15,13 +15,9 @@ WITH contagens AS (
     SELECT 'linhas em clickup_tarefas',             2119,  (SELECT COUNT(*) FROM lakehouse_vertice.bronze.clickup_tarefas)      UNION ALL
     SELECT 'linhas em msproject_tarefas',           1260,  (SELECT COUNT(*) FROM lakehouse_vertice.bronze.msproject_tarefas)    UNION ALL
     SELECT 'linhas em colaboradores',               523,   (SELECT COUNT(*) FROM lakehouse_vertice.bronze.colaboradores)        UNION ALL
-    SELECT 'linhas em alocacoes',                   517,   (SELECT COUNT(*) FROM lakehouse_vertice.bronze.alocacoes)            UNION ALL
     SELECT 'linhas em apontamentos',                30883, (SELECT COUNT(*) FROM lakehouse_vertice.bronze.apontamentos)         UNION ALL
     SELECT 'linhas em custos',                      23640, (SELECT COUNT(*) FROM lakehouse_vertice.bronze.custos)               UNION ALL
     SELECT 'linhas em entregas_fornecedor',         640,   (SELECT COUNT(*) FROM lakehouse_vertice.bronze.entregas_fornecedor)  UNION ALL
-    SELECT 'linhas em contratos_capacidade',        93,    (SELECT COUNT(*) FROM lakehouse_vertice.bronze.contratos_capacidade) UNION ALL
-    SELECT 'linhas em consumo_capacidade',          6070,  (SELECT COUNT(*) FROM lakehouse_vertice.bronze.consumo_capacidade)   UNION ALL
-    SELECT 'linhas em postmortems',                 101,   (SELECT COUNT(*) FROM lakehouse_vertice.bronze.postmortems)          UNION ALL
     SELECT 'custos com vírgula decimal',            671,   (SELECT COUNT(*) FROM lakehouse_vertice.bronze.custos WHERE valor LIKE '%,%') UNION ALL
     SELECT 'carteira (R$ mi, arredondado)',         305,   (SELECT CAST(ROUND(SUM(CAST(valor_contrato AS DECIMAL(18,2))) / 1e6) AS INT) FROM lakehouse_vertice.bronze.projetos) UNION ALL
     SELECT 'custo real total (R$ mi)',              193,   (SELECT CAST(ROUND(SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) / 1e6) AS INT) FROM lakehouse_vertice.bronze.custos) UNION ALL

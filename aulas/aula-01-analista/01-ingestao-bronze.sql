@@ -21,6 +21,13 @@
 -- As colunas técnicas no fim (_ingerido_em, _arquivo_origem) respondem
 -- "quando isso entrou?" e "de qual arquivo veio?".
 --
+-- São 9 tabelas, uma pergunta do dono por trás de cada uma:
+--   projetos, status_semanal                          o cadastro do PMO e o farol de toda sexta
+--   excel_tarefas, clickup_tarefas, msproject_tarefas as 3 ferramentas (pergunta 1: quem atrasa)
+--   custos                                            o financeiro (pergunta 2: quanto custa)
+--   colaboradores, apontamentos                       RH e timesheet (pergunta 3: gente parada)
+--   entregas_fornecedor                               compras (a consultoria que atrasa)
+--
 -- Antes de rodar, os arquivos precisam estar no volume (notebook 00-carregar-dados):
 --   /Volumes/lakehouse_vertice/bronze/raw/<sistema>/...
 --
@@ -92,12 +99,6 @@ SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.
 FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/rh/colaboradores.csv',
                 format => 'csv', header => true, multiLine => true,
                 inferColumnTypes => false);
--- alocacoes: quem está em qual projeto, de quando até quando
-CREATE OR REPLACE TABLE lakehouse_vertice.bronze.alocacoes AS
-SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.file_path AS _arquivo_origem
-FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/rh/alocacoes.csv',
-                format => 'csv', header => true, multiLine => true,
-                inferColumnTypes => false);
 -- apontamentos: horas disponíveis x horas apontadas, por pessoa, projeto e semana
 CREATE OR REPLACE TABLE lakehouse_vertice.bronze.apontamentos AS
 SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.file_path AS _arquivo_origem
@@ -120,40 +121,16 @@ SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.
 FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/compras/entregas_fornecedor.csv',
                 format => 'csv', header => true, multiLine => true,
                 inferColumnTypes => false);
--- contratos_capacidade: banco de horas de consultoria e créditos de cloud por projeto
-CREATE OR REPLACE TABLE lakehouse_vertice.bronze.contratos_capacidade AS
-SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.file_path AS _arquivo_origem
-FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/compras/contratos_capacidade.csv',
-                format => 'csv', header => true, multiLine => true,
-                inferColumnTypes => false);
--- consumo_capacidade: saldo semanal de cada contrato e o consumo previsto
-CREATE OR REPLACE TABLE lakehouse_vertice.bronze.consumo_capacidade AS
-SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.file_path AS _arquivo_origem
-FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/compras/consumo_capacidade.csv',
-                format => 'csv', header => true, multiLine => true,
-                inferColumnTypes => false);
-
--- ---------- incidentes ----------
--- postmortems: o relato de cada incidente em produção, em texto livre
-CREATE OR REPLACE TABLE lakehouse_vertice.bronze.postmortems AS
-SELECT * EXCEPT (_rescued_data), current_timestamp() AS _ingerido_em, _metadata.file_path AS _arquivo_origem
-FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/incidentes/postmortems.csv',
-                format => 'csv', header => true, multiLine => true,
-                inferColumnTypes => false);
 
 -- ---------- conferência ----------
--- 13 tabelas. Se alguma vier com 0 linhas, o arquivo não subiu para o volume.
+-- 9 tabelas. Se alguma vier com 0 linhas, o arquivo não subiu para o volume.
 SELECT 'projetos' AS tabela, COUNT(*) AS linhas FROM lakehouse_vertice.bronze.projetos
 UNION ALL SELECT 'status_semanal', COUNT(*) FROM lakehouse_vertice.bronze.status_semanal
 UNION ALL SELECT 'excel_tarefas', COUNT(*) FROM lakehouse_vertice.bronze.excel_tarefas
 UNION ALL SELECT 'clickup_tarefas', COUNT(*) FROM lakehouse_vertice.bronze.clickup_tarefas
 UNION ALL SELECT 'msproject_tarefas', COUNT(*) FROM lakehouse_vertice.bronze.msproject_tarefas
 UNION ALL SELECT 'colaboradores', COUNT(*) FROM lakehouse_vertice.bronze.colaboradores
-UNION ALL SELECT 'alocacoes', COUNT(*) FROM lakehouse_vertice.bronze.alocacoes
 UNION ALL SELECT 'apontamentos', COUNT(*) FROM lakehouse_vertice.bronze.apontamentos
 UNION ALL SELECT 'custos', COUNT(*) FROM lakehouse_vertice.bronze.custos
 UNION ALL SELECT 'entregas_fornecedor', COUNT(*) FROM lakehouse_vertice.bronze.entregas_fornecedor
-UNION ALL SELECT 'contratos_capacidade', COUNT(*) FROM lakehouse_vertice.bronze.contratos_capacidade
-UNION ALL SELECT 'consumo_capacidade', COUNT(*) FROM lakehouse_vertice.bronze.consumo_capacidade
-UNION ALL SELECT 'postmortems', COUNT(*) FROM lakehouse_vertice.bronze.postmortems
 ORDER BY linhas DESC;

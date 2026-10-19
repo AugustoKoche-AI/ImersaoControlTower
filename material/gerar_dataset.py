@@ -15,8 +15,12 @@ MS Project. A Torre de Controle junta tudo.
 
 O dado é SIMULADO, não sorteado linha a linha: cada projeto avança semana a
 semana com uma velocidade (freeze, falta de SRE e squad com rotatividade
-atrasam), cada avanço consome horas e gera custo. Por isso SPI, CPI,
-ociosidade e ruptura de capacidade saem coerentes entre si.
+atrasam), cada avanço consome horas e gera custo. Por isso SPI, CPI e
+ociosidade saem coerentes entre si.
+
+Saem 9 arquivos-tabela (pmo, 3 ferramentas, rh, timesheet, financeiro,
+compras) e os contratos em PDF. As alocações são calculadas por dentro
+(o timesheet depende delas), mas não viram arquivo: o caso ficou enxuto.
 
 Padrões embutidos (o que os KPIs precisam mostrar):
   1. 8 projetos com CPI caindo a partir do 6º mês (escopo cresce sem aditivo)
@@ -61,12 +65,11 @@ SRES_OCIOSOS = ["COL0017", "COL0018"]
 TROCA_SRE = HOJE - dt.timedelta(weeks=12)          # sexta em que os SREs saíram do PRJ-011
 FREEZE_2025 = (dt.date(2025, 11, 1), dt.date(2026, 1, 10))
 FREEZE_2026 = (dt.date(2026, 11, 1), dt.date(2027, 1, 10))
-PRAZO_ADITIVO_DIAS = 30               # tempo para aprovar mais horas/créditos (ruptura de capacidade)
 CONSULTORIA_ATRASADA = "CodeForge Consultoria Ltda"
 GRAFIAS_CODEFORGE = [CONSULTORIA_ATRASADA, "Codeforge Consultoria", "CODEFORGE CONSULTORIA LTDA", "Code Forge Consultoria"]
 FERRAMENTAS = {"excel": 20, "clickup": 25, "msproject": 15}
 PASTAS_GERADAS = ["pmo", "excel", "clickup", "msproject", "rh", "timesheet", "financeiro", "compras",
-                  "incidentes", "documentos"]
+                  "documentos"]
 
 # ---------------------------------------------------------------- cadastros
 
@@ -475,7 +478,7 @@ def gerar_pessoas(projetos, hist, rng):
     return colaboradores, alocacoes, apontamentos
 
 
-# ----------------------------------------------------------------- fornecedores e capacidade
+# ----------------------------------------------------------------- fornecedores
 
 def frac_planejada(tarefas_p, fases, dia_proj):
     tot = sum(t["vp"] for t in tarefas_p if t["fase"] in fases)
@@ -521,50 +524,6 @@ def gerar_fornecedores(projetos, tarefas, hist, rng):
                                 atrasos[(pid, s2["sexta"])] = nome
                     prox = s["sexta"] + dt.timedelta(weeks=rng.randint(3, 6))
     return entregas, atrasos, usa
-
-
-def gerar_capacidade(projetos, tarefas, hist, usa, rng):
-    """Banco de horas da consultoria e créditos de cloud: saldo semanal e consumo previsto."""
-    contratos, consumo = [], []
-    n = 0
-    for p in projetos:
-        pid = p["id"]
-        planos = [("creditos_cloud", NUVEM, "R$", p["orcamento"] * 0.12, list(FASES), p["fim_baseline"])]
-        if CONSULTORIA_ATRASADA in usa[pid]:
-            horas_dev = sum(t["horas"] for t in tarefas[pid] if t["fase"] == "desenvolvimento")
-            planos.append(("banco_de_horas", CONSULTORIA_ATRASADA, "horas", horas_dev * 0.30,
-                           ["desenvolvimento", "integracao", "testes"], p["fim_baseline"]))
-        for tipo, forn, unidade, necessidade, fases, fim_vig in planos:
-            n += 1
-            cid = f"CT{n:04d}"
-            folga = rng.uniform(1.00, 1.18) if tipo == "banco_de_horas" else rng.uniform(1.06, 1.40)
-            qtd = round(necessidade * folga, 0)
-            preco = 1.0 if unidade == "R$" else 185.0
-            contratos.append([cid, pid, forn, tipo, unidade, f"{qtd:.0f}", iso(p["inicio"]), iso(fim_vig),
-                              f"{qtd * preco:.2f}"])
-            tot = sum(t["vp"] for t in tarefas[pid] if t["fase"] in fases)
-            saldo = qtd
-            frac_ant = 0.0
-            for s in hist[pid]:
-                frac = sum(s["ev_fase"].get(f, 0) for f in fases) / tot if tot else 0
-                uso = necessidade * max(0.0, frac - frac_ant) * s["fator"] / p["custo_base"]
-                if tipo == "creditos_cloud":
-                    uso += necessidade * 0.004 * (1 if frac > 0.05 else 0)       # ambiente ligado custa
-                frac_ant = frac
-                saldo = max(0.0, saldo - uso)
-                dia_proj = (s["sexta"] - p["inicio"]).days
-                ritmo = clamp(s["vel"], 0.4, 1.1) * s["fator"] / p["custo_base"]
-                prev = necessidade * max(0.0, frac_planejada(tarefas[pid], fases, dia_proj + 28)
-                                         - frac_planejada(tarefas[pid], fases, dia_proj)) * ritmo / 28
-                if tipo == "creditos_cloud" and frac > 0.05 and frac < 0.999:
-                    prev += necessidade * 0.004 / 7
-                if frac >= 0.999 and tipo == "banco_de_horas":
-                    continue
-                s_txt = round(saldo, 1)
-                if rng.random() < 0.002:                  # sujeira: saldo negativo (erro de lançamento)
-                    s_txt = -round(rng.uniform(1, 50), 1)
-                consumo.append([cid, iso(s["sexta"]), round(uso, 1), s_txt, round(prev, 2)])
-    return contratos, consumo
 
 
 # ----------------------------------------------------------------- textos
@@ -644,69 +603,6 @@ def gerar_status(projetos, tarefas, hist, atrasos, rng):
             if rng.random() < 0.12:
                 farol_txt = rng.choice([farol.capitalize(), farol.upper()])
             linhas.append([pid, iso(s["sexta"]), p["gerente"], farol_txt, pct, texto])
-    return linhas
-
-
-SERVICOS = {"e-commerce": "checkout", "Checkout": "API de pagamentos", "Marketplace": "portal de sellers",
-            "App": "app mobile", "Portal": "portal web", "Core": "motor de crédito", "APIs": "gateway de APIs",
-            "Antifraude": "motor antifraude", "Migração": "plataforma em cloud", "Prontuário": "prontuário",
-            "Integração": "barramento de integração", "Telemedicina": "sala de teleconsulta", "TMS": "TMS",
-            "Rastreamento": "rastreamento", "Roteirizador": "roteirizador", "ERP": "ERP", "MES": "MES",
-            "Data lake": "data lake", "Manutenção": "modelo preditivo", "Gestão": "estoque online"}
-CAUSAS_PM = {
-    "deploy_sem_teste": ["Deploy da versão {v} subiu sem passar pela suíte de regressão; uma alteração no {comp} quebrou o fluxo principal.",
-                         "Hotfix aplicado direto em produção, sem teste integrado, derrubou o {comp}."],
-    "configuracao": ["Variável de ambiente errada no {comp} depois de uma mudança de configuração.",
-                     "Certificado TLS do {comp} expirou sem alerta."],
-    "capacidade": ["Pico de acesso esgotou o pool de conexões do banco do {comp}.",
-                   "O autoscaling não acompanhou o tráfego e a fila de mensagens do {comp} cresceu sem controle."],
-    "dependencia_externa": ["Instabilidade no gateway de pagamento do parceiro afetou o {comp}.",
-                            "A API do ERP do cliente ficou fora do ar e o {comp} parou de sincronizar."],
-    "pipeline_sem_dono": ["Pipeline de deploy sem responsável falhou no meio do rollout; uma versão parcial do {comp} ficou em produção.",
-                          "Cluster de homologação sem manutenção caiu e levou junto o {comp} de produção, que dividia o mesmo banco."],
-}
-
-
-def gerar_postmortems(projetos, hist, rng):
-    linhas = []
-    n = 0
-    for p in projetos:
-        pid = p["id"]
-        comp = next((v for k, v in SERVICOS.items() if k.lower() in p["tipo"].lower()), "sistema principal")
-        for s in hist[pid]:
-            if s["freeze"] or s["ev"] <= 0:
-                continue
-            taxa = 0.022
-            if pid in SQUAD_ROTATIVIDADE:
-                taxa = 0.07
-            if s["sem_sre"]:
-                taxa = 0.35
-            if rng.random() >= taxa:
-                continue
-            n += 1
-            d = s["segunda"] + dt.timedelta(days=rng.randint(0, 4))
-            if s["sem_sre"] and rng.random() < 0.7:
-                causa = "pipeline_sem_dono"
-            elif pid in SQUAD_ROTATIVIDADE and rng.random() < 0.7:
-                causa = "deploy_sem_teste"
-            else:
-                causa = rng.choice(["deploy_sem_teste", "configuracao", "capacidade", "dependencia_externa"])
-            sev = rng.choices(["SEV1", "SEV2", "SEV3"], [0.12, 0.33, 0.55])[0]
-            dur = rng.randint(12, 60) if sev == "SEV3" else rng.randint(35, 190)
-            h, m = rng.randint(8, 21), rng.randint(0, 59)
-            fim = dt.datetime(2000, 1, 1, h, m) + dt.timedelta(minutes=dur)
-            if rng.random() < 0.5:
-                tempo = f"Alerta às {h}h{m:02d}, mitigado às {fim.hour}h{fim.minute:02d} ({dur} minutos)."
-            else:
-                tempo = f"Duração total do incidente: {dur // 60}h{dur % 60:02d}min." if dur >= 60 else \
-                    f"Duração total do incidente: {dur} min."
-            clientes = rng.randint(80, 4000) * (5 if sev == "SEV1" else 1)
-            texto = (f"Postmortem INC-{n:04d} - {br(d)}. Projeto {pid}. Serviço afetado: {comp}. Severidade: {sev}. "
-                     f"{tempo} Causa raiz: " + rng.choice(CAUSAS_PM[causa]).format(v=f"{rng.randint(1, 4)}.{rng.randint(0, 20)}.{rng.randint(0, 9)}", comp=comp)
-                     + f" Impacto: cerca de {clientes} usuários do cliente {p['cliente']} afetados. "
-                     + rng.choice(["Ação: incluir o teste que faltou no pipeline.", "Ação: criar alerta e runbook.",
-                                   "Ação: revisar a alocação de SRE no projeto.", "Ação: acordar janela de deploy com o cliente."]))
-            linhas.append([f"INC-{n:04d}", pid, iso(d), sev, texto])
     return linhas
 
 
@@ -936,10 +832,8 @@ def gerar(saida: pathlib.Path, seed: int) -> dict:
     hist = simular(projetos, tarefas, r("simulacao"))
     custos = gerar_custos(projetos, hist, r("custos"))
     colaboradores, alocacoes, apontamentos = gerar_pessoas(projetos, hist, r("pessoas"))
-    entregas, atrasos, usa = gerar_fornecedores(projetos, tarefas, hist, r("fornecedores"))
-    contratos_cap, consumo = gerar_capacidade(projetos, tarefas, hist, usa, r("capacidade"))
+    entregas, atrasos, _ = gerar_fornecedores(projetos, tarefas, hist, r("fornecedores"))
     status = gerar_status(projetos, tarefas, hist, atrasos, r("status"))
-    postmortems = gerar_postmortems(projetos, hist, r("postmortems"))
 
     # responsável de cada tarefa: alguém do squad
     rr = r("responsaveis")
@@ -998,9 +892,6 @@ def gerar(saida: pathlib.Path, seed: int) -> dict:
     escrever_csv(saida / "rh/colaboradores.csv",
                  ["colaborador_id", "nome", "papel", "senioridade", "custo_hora", "data_admissao", "data_desligamento"],
                  linhas_col)
-    escrever_csv(saida / "rh/alocacoes.csv",
-                 ["colaborador_id", "projeto_id", "data_inicio", "data_fim", "pct_alocacao"],
-                 [[a[0], a[1], iso(a[2]), iso(a[3]), a[4]] for a in alocacoes])
     escrever_csv(saida / "timesheet/apontamentos.csv",
                  ["colaborador_id", "projeto_id", "semana_inicio", "horas_disponiveis", "horas_apontadas"], apontamentos)
     escrever_csv(saida / "financeiro/custos.csv",
@@ -1008,13 +899,6 @@ def gerar(saida: pathlib.Path, seed: int) -> dict:
     escrever_csv(saida / "compras/entregas_fornecedor.csv",
                  ["entrega_id", "projeto_id", "fornecedor", "item", "valor", "data_pedido", "data_prometida",
                   "data_entrega", "prazo_contratado_dias", "status"], entregas)
-    escrever_csv(saida / "compras/contratos_capacidade.csv",
-                 ["contrato_id", "projeto_id", "fornecedor", "tipo", "unidade", "quantidade_contratada", "data_inicio",
-                  "data_fim_vigencia", "valor_contrato"], contratos_cap)
-    escrever_csv(saida / "compras/consumo_capacidade.csv",
-                 ["contrato_id", "data", "consumido_semana", "saldo", "consumo_previsto_dia"], consumo)
-    escrever_csv(saida / "incidentes/postmortems.csv",
-                 ["incidente_id", "projeto_id", "data", "severidade", "texto_postmortem"], postmortems)
 
     rd = r("documentos")
     for c in CONTRATOS:
@@ -1022,9 +906,8 @@ def gerar(saida: pathlib.Path, seed: int) -> dict:
     escrever_pdf(saida / "documentos/manual/manual_de_tecnologias.pdf", manual_pdf())
 
     return dict(projetos=len(projetos), tarefas=n_tarefas, status_semanal=len(status), custos=len(custos),
-                colaboradores=len(linhas_col), alocacoes=len(alocacoes), apontamentos=len(apontamentos),
-                entregas_fornecedor=len(entregas), contratos_capacidade=len(contratos_cap),
-                consumo_capacidade=len(consumo), postmortems=len(postmortems), pdf_contratos=len(CONTRATOS),
+                colaboradores=len(linhas_col), apontamentos=len(apontamentos),
+                entregas_fornecedor=len(entregas), pdf_contratos=len(CONTRATOS),
                 arquivos_excel=FERRAMENTAS["excel"], arquivos_clickup=FERRAMENTAS["clickup"],
                 arquivos_msproject=FERRAMENTAS["msproject"])
 
@@ -1035,7 +918,7 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
     saida = pathlib.Path(args.saida)
-    for pasta in PASTAS_GERADAS + ["erp", "cronograma", "ponto", "frota", "almoxarifado", "rdo"]:
+    for pasta in PASTAS_GERADAS + ["incidentes", "erp", "cronograma", "ponto", "frota", "almoxarifado", "rdo"]:
         if (saida / pasta).exists():                       # recomeça do zero (inclui pastas do case antigo)
             shutil.rmtree(saida / pasta)
     contagens = gerar(saida, args.seed)
