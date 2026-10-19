@@ -43,7 +43,7 @@ Os resultados abaixo foram observados no ensaio de 18/10.
 | # | Pergunta do dono | O que o Genie fez | O que comentar |
 |---|---|---|---|
 | 1 | *Quais projetos estão atrasados, e de quais clientes?* | comparou datas de tarefas do Excel e listou 7 projetos; só o PRJ-011 bate com os 7 críticos ❌ | Ele olhou uma ferramenta só. "Atrasado" não está definido em lugar nenhum. |
-| 2 | *Quanto esse atraso vai me custar?* | "nenhum atraso está impactando financeiramente" ❌ | O estouro previsto é de **R$ 6,47 mi** (exemplo 06). Sem a definição de EAC, ele não tem como saber. |
+| 2 | *Quanto esse atraso vai me custar?* | varia a cada vez e erra sempre: já disse "nenhum atraso está impactando financeiramente" e, no print do README, "27 atrasados" com o PRJ-011 (crítico) de custo negativo ❌ | O estouro previsto é de **R$ 6,47 mi** (exemplo 06). Sem a definição de EAC, ele não tem como saber. |
 | 3 | *Tenho gente parada enquanto outro projeto pede gente?* | "não há colaboradores parados" ❌ | Dois SREs seniores apontam 2% a 9% das horas no PRJ-007, e o PRJ-011 pede SRE toda semana. A resposta está no texto do status, que ele não cruzou com o timesheet. |
 | 4 | *O que vai dar errado no próximo mês?* | "não pode ser respondida com os dados disponíveis" | Esta é honesta: prever é a noite 3. |
 

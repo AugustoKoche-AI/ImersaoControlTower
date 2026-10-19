@@ -14,7 +14,7 @@ Workspace: `https://dbc-84cd5511-fa25.cloud.databricks.com` (o `?o=1253341796019
 | `noite1-volume-excel.jpg` | as 20 planilhas `.xlsx` dentro do volume | Catalog → lakehouse_vertice → bronze → Volumes → raw → `excel/` |
 | `noite1-catalogo-bronze.jpg` | as 13 tabelas da bronze (e o `rascunho_tarefas`) | Catalog → lakehouse_vertice → bronze |
 | `noite1-dashboard.jpg` | os 4 KPIs e o SPI por projeto | `/dashboardsv3/01f1cb42fb791754957e69d572ed0fa6/published` |
-| `noite1-genie-erra.jpg` | a resposta "nenhum atraso está impactando financeiramente" para *Quanto esse atraso vai me custar?* | Genie Agents → **Farol · Noite 1 (bronze, sem curadoria)** (`/genie/rooms/01f1cb43b49b153ba093e02c8e64ba61`) |
+| `noite1-genie-erra.jpg` | a resposta errada para *Quanto esse atraso vai me custar?* (no print: "27 atrasados" e o PRJ-011 com custo negativo; em outra execução, "nenhum atraso está impactando financeiramente") | Genie Agents → **Farol · Noite 1 (bronze, sem curadoria)** (`/genie/rooms/01f1cb43b49b153ba093e02c8e64ba61`) |
 
 ## Noite 2 · Engenheiro de Dados
 
@@ -40,3 +40,35 @@ Workspace: `https://dbc-84cd5511-fa25.cloud.databricks.com` (o `?o=1253341796019
 | `noite4-simulador.jpg` | o simulador COL0017 → PRJ-011, antes de clicar Aprovar | app → Simulador |
 | `noite4-genie-contratos.jpg` | a resposta para *Quanto de multa podemos cobrar da CodeForge?* | Genie Agents → **Farol · Diretoria + Contratos** (`/genie/rooms/01f1cb513eb91dd58208123de3d84ad4`) |
 | `noite4-decisao.jpg` | a decisão aprovada na aba Decisões do app (gravada no Lakebase) | app → Decisões |
+
+> Ainda faltam `noite4-app.jpg`, `noite4-simulador.jpg` e `noite4-decisao.jpg`: o 1º acesso ao app pede
+> **Authorize** (consentimento OAuth), que precisa ser clicado por uma pessoa.
+
+## Ontem × agora (README raiz e apresentação final)
+
+| Arquivo | O que mostra |
+|---|---|
+| `ontem-excel-sujo.jpg` | `bronze.excel_tarefas`: data ora texto, ora número de série do Excel |
+| `ontem-clickup-json.jpg` | `bronze.clickup_tarefas`: responsável e campos dentro de listas JSON |
+| `ontem-msproject-xml.jpg` | `bronze.msproject_tarefas`: baseline e datas aninhados |
+| `agora-silver-tarefas.jpg` | `silver.tarefas`: as 3 ferramentas num formato só |
+| `agora-gold.jpg` | o schema `gold` com as tabelas prontas para o dono |
+
+## Recursos do Databricks (`slides/recursos-databricks.slides.html`)
+
+| Arquivo | Tela |
+|---|---|
+| `recurso-workspace-bundle.jpg` | Workspace → `.bundle/vertice/dev/files/src/ml` |
+| `recurso-notebook.jpg` | notebook `02-modelo` |
+| `recurso-serverless.jpg` | Compute → Serverless |
+| `recurso-sql-warehouse.jpg` | Compute → SQL warehouses |
+| `recurso-compute-lakebase.jpg` | SQL Editor → escolher compute (warehouse ou Lakebase Postgres) |
+| `recurso-catalogo.jpg` | Catalog → `lakehouse_vertice` (5 schemas) |
+| `recurso-ingestao-conectores.jpg` | Data Ingestion → conectores |
+| `recurso-jobs-pipelines.jpg` | Jobs & Pipelines filtrado por "vertice" |
+| `recurso-lineage-lista.jpg` · `recurso-lineage-grafo.jpg` | `gold.projeto_situacao_atual` → Lineage |
+| `recurso-metric-view.jpg` | `gold.mv_projetos` (11 medidas) |
+| `recurso-query-history.jpg` | Query History com as consultas dos Genies |
+| `recurso-genie-perguntas.jpg` · `recurso-genie-instrucoes.jpg` | Genie: perguntas sugeridas e instruções |
+| `recurso-lakebase-projeto.jpg` · `recurso-lakebase-tabela.jpg` | Lakebase → `farol-torre` e a tabela `torre.decisoes` |
+| `recurso-app-authorize.jpg` | 1º acesso ao app `farol-torre` (Authorize) |

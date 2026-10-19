@@ -1,14 +1,18 @@
 # 🔦 Projeto Farol · Imersão Databricks + Claude Code
 
-**4 noites, 4 chapéus, 1 projeto.** Você era engenheiro de dados e acaba de ser promovido a **CTO** de uma empresa
-de tecnologia com 520 pessoas. O primeiro grande case: ninguém sabe quais projetos estão atrasados, porque cada
-gerente usa uma ferramenta. Em 4 noites você constrói no **Databricks Free Edition**, na sua conta, a Torre de
-Controle que responde: do arquivo bruto do Excel, do ClickUp e do MS Project até um app em que o dono aprova decisões,
-com IA lendo status semanais, postmortems e contratos.
+**4 noites, 4 chapéus, 1 caso do começo ao fim.**
+
+Você era engenheiro de dados e acaba de ser promovido a **CTO da Vértice Tecnologia**, uma empresa fictícia com
+520 pessoas e 60 projetos de clientes. No primeiro dia, o dono pergunta uma coisa simples: *quais projetos estão
+atrasados?* E ninguém sabe responder, porque cada gerente controla o seu projeto numa ferramenta diferente.
+
+Em 4 noites, no **Databricks Free Edition** (grátis, na sua conta), você constrói a **Torre de Controle** que responde
+ao dono: dos arquivos crus do Excel, do ClickUp e do MS Project até um app em que ele aprova decisões, com IA lendo
+status semanais, postmortems e contratos.
 
 > **Imersão Jornada de Dados** · ao vivo no YouTube · **19 a 22 de outubro de 2026, às 19h30**
-> Domínio: **Vértice Tecnologia**, empresa fictícia com 60 projetos de clientes e R$ 305 mi de carteira.
 > Stack: Databricks Free Edition (serverless), SQL, Python, Lakeflow, Unity Catalog, AI/BI, Genie, Apps, Lakebase e Claude Code.
+> Nunca programou? Toda noite tem uma **trilha sem código** e a noite 1 é toda no navegador.
 
 ---
 
@@ -28,6 +32,55 @@ No primeiro dia do novo CTO, o dono faz quatro perguntas:
 | 4 | **O que vai dar errado no próximo mês, e o que eu faço agora?** | probabilidade de estouro em 30 dias, ruptura de capacidade, contratos |
 
 Regra de corte: **SPI ou CPI < 0,9 = atenção · < 0,8 = crítico.**
+
+---
+
+## 🔁 Ontem × agora: o que muda em 4 noites
+
+**Ontem: o dado chega como cada ferramenta exporta.** A mesma informação ("quando a tarefa começa") vem como número
+de série do Excel, como texto dentro de um JSON do ClickUp e como data ISO dentro de um XML do Project.
+
+| Excel do PMO | ClickUp (JSON) | MS Project (XML) |
+|---|---|---|
+| ![planilha do Excel na bronze](docs/img/ontem-excel-sujo.jpg) | ![export do ClickUp na bronze](docs/img/ontem-clickup-json.jpg) | ![XML do MS Project na bronze](docs/img/ontem-msproject-xml.jpg) |
+| a data às vezes é texto (`06/03/2025`), às vezes número (`45700`) | responsável e campos personalizados dentro de listas JSON | baseline e datas aninhados, tarefas-resumo que somam duas vezes |
+
+**Agora: uma tabela só, e as respostas em cima dela.**
+
+| `silver.tarefas` (noite 2) | o schema `gold` (noites 2 a 4) |
+|---|---|
+| ![silver.tarefas com as 3 ferramentas](docs/img/agora-silver-tarefas.jpg) | ![tabelas da gold](docs/img/agora-gold.jpg) |
+| as 3 ferramentas no mesmo formato: `projeto_id`, `ferramenta`, `fase`, `tarefa`, datas de verdade | as tabelas prontas para o dono: KPIs por projeto e semana, capacidade, fornecedores, contratos, score do modelo |
+
+**E o Genie (o "pergunte em português" do Databricks) passa de errar a acertar:**
+
+| Noite 1 · sem curadoria, sobre a bronze | Noite 2 · curado, sobre a gold |
+|---|---|
+| ![Genie errando na noite 1](docs/img/noite1-genie-erra.jpg) | ![Genie acertando na noite 2](docs/img/noite2-genie.jpg) |
+| responde com segurança, mas conta "27 atrasados" misturando projetos encerrados e mostra o PRJ-011, que é crítico, com custo **negativo** (em verde) | acha as duas SREs a ~5% no PRJ-007 enquanto o PRJ-011 está bloqueado por falta de SRE |
+
+Tour completo pelas telas do Databricks que usamos: [**slides dos recursos**](slides/recursos-databricks.html)
+(workspace, notebook, serverless, warehouse, catálogo, volume, pipeline, job, lineage, metric view, Genie, MLflow,
+Lakebase e Apps, um por slide, com print).
+
+---
+
+## 📖 Glossário de bolso
+
+| Termo | Em uma frase |
+|---|---|
+| **SPI** | quanto do trabalho planejado já foi feito. 1 = no prazo; 0,8 = 20% atrás |
+| **CPI** | quanto vale o que foi feito ÷ quanto custou. Abaixo de 1 = gastando mais do que entrega |
+| **EAC / estouro** | quanto o projeto vai custar no fim, se seguir no ritmo de hoje; o estouro é o que passa do orçamento |
+| **Melancia** | projeto verde por fora (farol do gerente) e vermelho por dentro (SPI abaixo de 0,9) |
+| **Bronze · silver · gold** | o dado como chegou · limpo e unificado · pronto para responder ao dono |
+| **Unity Catalog** | o "endereço" e a portaria de todo dado: `catálogo.schema.tabela`, com dono e permissão |
+| **Volume** | uma pasta de arquivos (xlsx, json, xml, pdf) dentro do catálogo |
+| **Pipeline / job** | o pipeline monta as tabelas; o job roda tudo em ordem, sozinho, todo dia |
+| **Metric view** | onde mora a fórmula do KPI, para o dashboard, o Genie e o app usarem a mesma |
+| **Genie** | o chat que transforma pergunta em português em SQL sobre as suas tabelas |
+| **Lakebase** | um banco Postgres dentro do Databricks, para o app gravar decisões |
+| **Claude Code** | o assistente de código no terminal que escreve, roda e corrige o projeto a partir dos prompts |
 
 ---
 
@@ -94,7 +147,8 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
 **Apresentações** (abra o `.html` no navegador; ← → navega, F tela cheia):
 [visão geral do case](slides/visao-geral.html) ·
 [noite 1](slides/aula-01.html) · [noite 2](slides/aula-02.html) · [noite 3](slides/aula-03.html) · [noite 4](slides/aula-04.html) ·
-[**apresentação final**](slides/apresentacao-final.html) (o problema, as arquiteturas em Mermaid e os resultados)
+[**apresentação final**](slides/apresentacao-final.html) (o problema, as arquiteturas em Mermaid e os resultados) ·
+[recursos do Databricks](slides/recursos-databricks.html) (um recurso por slide, com print)
 
 ```
   noite 1             noite 2               noite 3                noite 4
@@ -103,6 +157,18 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
   as 3 ferramentas    pipeline que roda     "quais vão             app, agente e o
   e o Genie erra      e define o KPI        estourar?"             pitch para o dono
 ```
+
+### O que aparece na tela, noite a noite
+
+| Noite 1 · o primeiro painel, sobre a bronze | Noite 2 · o pipeline que integra as 3 ferramentas |
+|---|---|
+| ![dashboard da noite 1](docs/img/noite1-dashboard.jpg) | ![pipeline vertice_medalhao](docs/img/noite2-pipeline.jpg) |
+| **Noite 2 · o painel do dono, sobre a gold** | **Noite 2 · o job que roda tudo sozinho** |
+| ![dashboard Portfólio](docs/img/noite2-dashboard.jpg) | ![job vertice_farol](docs/img/noite2-job.jpg) |
+| **Noite 3 · o modelo registrado, com @prod** | **Noite 3 · o score de hoje, com o motivo** |
+| ![modelo no Unity Catalog](docs/img/noite3-modelo.jpg) | ![score de estouro](docs/img/noite3-score.jpg) |
+| **Noite 4 · o Genie que lê contrato** | **Noite 4 · o Lakebase que guarda a decisão do app** |
+| ![Genie de contratos](docs/img/noite4-genie-contratos.jpg) | ![Lakebase farol-torre](docs/img/recurso-lakebase-projeto.jpg) |
 
 Cada pasta é **autocontida** (README, roteiro, verificação e checkpoint). Perdeu uma noite? Comece da próxima.
 Toda noite tem uma **trilha sem código** para gestão, PMO e financeiro.

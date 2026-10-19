@@ -43,7 +43,8 @@
         "       SUM(horas_ociosas) AS horas_ociosas, SUM(custo_ocioso) AS custo_ocioso, MIN(spi_do_projeto) AS spi_do_projeto\n",
         "FROM utilizacao_pessoa_semana\n",
         "WHERE semana > DATE'2026-07-24'\n",
-        "GROUP BY ALL\n"
+        "GROUP BY ALL\n",
+        "ORDER BY utilizacao\n"
       ]
     },
     {
@@ -76,6 +77,17 @@
         "SELECT projeto, fornecedor, tipo, unidade, saldo, consumo_previsto_dia, cobertura_dias, data_prevista_fim_saldo,\n",
         "       CASE WHEN ruptura_prevista THEN 1 ELSE 0 END AS ruptura\n",
         "FROM cobertura_capacidade\n"
+      ]
+    },
+    {
+      "name": "ds_rupturas",
+      "displayName": "Contratos com ruptura prevista",
+      "queryLines": [
+        "SELECT projeto, COUNT(*) AS rupturas\n",
+        "FROM cobertura_capacidade\n",
+        "WHERE ruptura_prevista\n",
+        "GROUP BY projeto\n",
+        "ORDER BY rupturas DESC\n"
       ]
     },
     {
@@ -1124,15 +1136,15 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_capacidade",
+                  "datasetName": "ds_rupturas",
                   "fields": [
                     {
                       "name": "projeto",
                       "expression": "`projeto`"
                     },
                     {
-                      "name": "sum(ruptura)",
-                      "expression": "SUM(`ruptura`)"
+                      "name": "sum(rupturas)",
+                      "expression": "SUM(`rupturas`)"
                     }
                   ],
                   "disaggregated": false
@@ -1154,7 +1166,7 @@
                   "displayName": "projeto"
                 },
                 "x": {
-                  "fieldName": "sum(ruptura)",
+                  "fieldName": "sum(rupturas)",
                   "scale": {
                     "type": "quantitative"
                   },
@@ -1199,14 +1211,6 @@
                       "expression": "`entregas`"
                     },
                     {
-                      "name": "prazo_prometido_medio",
-                      "expression": "`prazo_prometido_medio`"
-                    },
-                    {
-                      "name": "prazo_real_medio",
-                      "expression": "`prazo_real_medio`"
-                    },
-                    {
                       "name": "fator_atraso",
                       "expression": "`fator_atraso`"
                     },
@@ -1234,19 +1238,11 @@
                   },
                   {
                     "fieldName": "grafias_no_cadastro",
-                    "displayName": "Grafias no cadastro"
+                    "displayName": "Grafias"
                   },
                   {
                     "fieldName": "entregas",
                     "displayName": "Entregas"
-                  },
-                  {
-                    "fieldName": "prazo_prometido_medio",
-                    "displayName": "Prazo prometido"
-                  },
-                  {
-                    "fieldName": "prazo_real_medio",
-                    "displayName": "Prazo real"
                   },
                   {
                     "fieldName": "fator_atraso",

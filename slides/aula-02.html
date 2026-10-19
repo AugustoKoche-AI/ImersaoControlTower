@@ -154,7 +154,7 @@
 <pre class="mermaid">
 flowchart LR
   B[("bronze<br/>13 tabelas<br/>CSV · Excel · JSON · XML")]:::bronze --> C["conferencia_bronze<br/>13 contagens<br/>ou raise_error"]
-  C --> M["medalhao<br/>pipeline Lakeflow<br/>silver ×13 · gold ×7<br/>EXPECT"]:::pipe
+  C --> M["medalhao<br/>pipeline Lakeflow<br/>silver ×11 · gold ×7<br/>EXPECT"]:::pipe
   M --> T["testes_de_qualidade<br/>10 testes"]
   M --> S["status_com_ia<br/>ai_classify + ai_extract"]:::ia
   M --> P["postmortem_com_ia<br/>ai_extract tipado"]:::ia

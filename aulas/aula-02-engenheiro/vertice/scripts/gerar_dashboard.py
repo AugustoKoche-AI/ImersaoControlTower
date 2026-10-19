@@ -48,7 +48,8 @@ SELECT colaborador_id, nome, papel, senioridade, projeto_id, projeto,
        SUM(horas_ociosas) AS horas_ociosas, SUM(custo_ocioso) AS custo_ocioso, MIN(spi_do_projeto) AS spi_do_projeto
 FROM utilizacao_pessoa_semana
 WHERE semana > DATE'2026-07-24'
-GROUP BY ALL"""),
+GROUP BY ALL
+ORDER BY utilizacao"""),
     "ds_pessoas_top": ("Pessoas mais paradas (top 15)", """
 SELECT concat(nome, ' · ', papel, ' · ', projeto_id) AS pessoa, SUM(custo_ocioso) AS custo_ocioso
 FROM utilizacao_pessoa_semana
@@ -66,6 +67,12 @@ GROUP BY ALL"""),
 SELECT projeto, fornecedor, tipo, unidade, saldo, consumo_previsto_dia, cobertura_dias, data_prevista_fim_saldo,
        CASE WHEN ruptura_prevista THEN 1 ELSE 0 END AS ruptura
 FROM cobertura_capacidade"""),
+    "ds_rupturas": ("Contratos com ruptura prevista", """
+SELECT projeto, COUNT(*) AS rupturas
+FROM cobertura_capacidade
+WHERE ruptura_prevista
+GROUP BY projeto
+ORDER BY rupturas DESC"""),
     "ds_fornecedores": ("Desempenho de fornecedor", """
 SELECT fornecedor, entregas, grafias_no_cadastro, prazo_prometido_medio, prazo_real_medio,
        fator_atraso, pct_no_prazo, entregas_em_atraso
@@ -181,11 +188,10 @@ def montar() -> dict:
         texto("titulo-cap", "# Capacidade e fornecedores\n\n**O que vai dar errado no próximo mês?** Ruptura prevista = o "
               "banco de horas da consultoria ou o crédito de cloud acaba em menos de 30 dias, o prazo para aprovar um aditivo.",
               pos(0, 0, 12, 2)),
-        barra_h("rupturas-projeto", "ds_capacidade", "projeto", "sum(ruptura)", "SUM(`ruptura`)",
+        barra_h("rupturas-projeto", "ds_rupturas", "projeto", "sum(rupturas)", "SUM(`rupturas`)",
                 "Contratos com ruptura prevista por projeto", {"type": "number-plain"}, pos(0, 2, 6, 8)),
         tabela("fornecedores", "ds_fornecedores", [
-            ("fornecedor", "Fornecedor"), ("grafias_no_cadastro", "Grafias no cadastro"), ("entregas", "Entregas"),
-            ("prazo_prometido_medio", "Prazo prometido"), ("prazo_real_medio", "Prazo real"),
+            ("fornecedor", "Fornecedor"), ("grafias_no_cadastro", "Grafias"), ("entregas", "Entregas"),
             ("fator_atraso", "Real ÷ prometido", NUM2), ("pct_no_prazo", "No prazo", PCT),
             ("entregas_em_atraso", "Em atraso hoje")], "Fornecedores: quem promete e não cumpre", pos(6, 2, 6, 8)),
         tabela("capacidade", "ds_capacidade", [
