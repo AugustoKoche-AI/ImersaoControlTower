@@ -331,4 +331,4 @@ mão) e com o **Genie App Builder** (o app descrito em português).
 | `pitch.md` | o pitch de 3 minutos e o checklist de publicação |
 | `sem-codigo.md` | trilha sem código |
 | `APRENDIZADOS.md` | o que falhou no ensaio e como foi resolvido |
-| Slides | [`slides/aula-04.html`](../../slides/aula-04.html) (abra no navegador, ← → navega, F tela cheia) |
+| Slides | [`slides/imersao.html`](../../slides/imersao.html), seção da noite 4 (abra no navegador, ← → navega, F tela cheia) |

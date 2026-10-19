@@ -416,7 +416,7 @@ Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 | `gerar_dashboard.py` · `dashboard-bronze.lvdash.json` | o dashboard como código |
 | `genie-bronze.json` | o Genie sem curadoria (para errar) |
 | `roteiro-genie-e-dashboard.md` | o bloco sem código da aula, com as respostas do Genie no ensaio |
-| Slides | [`slides/aula-01.html`](../../slides/aula-01.html) (abra no navegador, ← → navega, F tela cheia) |
+| Slides | [`slides/imersao.html`](../../slides/imersao.html), seção da noite 1 (abra no navegador, ← → navega, F tela cheia) |
 
 ---
 

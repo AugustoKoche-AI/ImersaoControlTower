@@ -2,7 +2,7 @@
 
 Os slides embutem estes arquivos. Enquanto um print não existe, o slide mostra um quadro
 "print pendente" com o nome esperado. Salve cada tela como **JPG** nesta pasta, com o nome
-exato, e rode `python3 scripts/gerar_slides.py slides/apresentacao-final.slides.html`.
+exato, e rode `python3 scripts/gerar_slides.py slides/imersao.slides.html`.
 
 Dica: janela do navegador em 1600 × 900 (ou tela cheia), tema do Databricks escuro, zoom 100%.
 Workspace: `https://dbc-84cd5511-fa25.cloud.databricks.com` (o `?o=1253341796019093` é adicionado sozinho).
@@ -54,7 +54,7 @@ Workspace: `https://dbc-84cd5511-fa25.cloud.databricks.com` (o `?o=1253341796019
 | `agora-silver-tarefas.jpg` | `silver.tarefas`: as 3 ferramentas num formato só |
 | `agora-gold.jpg` | o schema `gold` com as tabelas prontas para o dono |
 
-## Recursos do Databricks (`slides/recursos-databricks.slides.html`)
+## Recursos do Databricks (apêndice de `slides/imersao.slides.html`)
 
 | Arquivo | Tela |
 |---|---|

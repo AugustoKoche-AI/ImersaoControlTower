@@ -59,7 +59,7 @@ de série do Excel, como texto dentro de um JSON do ClickUp e como data ISO dent
 | ![Genie errando na noite 1](docs/img/noite1-genie-erra.jpg) | ![Genie acertando na noite 2](docs/img/noite2-genie.jpg) |
 | responde com segurança, mas conta "27 atrasados" misturando projetos encerrados e mostra o PRJ-011, que é crítico, com custo **negativo** (em verde) | acha as duas SREs a ~5% no PRJ-007 enquanto o PRJ-011 está bloqueado por falta de SRE |
 
-Tour completo pelas telas do Databricks que usamos: [**slides dos recursos**](slides/recursos-databricks.html)
+Tour completo pelas telas do Databricks que usamos: no fim de [**slides/imersao.html**](slides/imersao.html)
 (workspace, notebook, serverless, warehouse, catálogo, volume, pipeline, job, lineage, metric view, Genie, MLflow,
 Lakebase e Apps, um por slide, com print).
 
@@ -144,10 +144,9 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
 | **4** | qui 22/10 | Engenheiro de IA | E o dono, que não escreve SQL? | agente de contratos, app da Torre com aprovação no Lakebase, pitch de 3 min | prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
 
 **Apresentações** (abra o `.html` no navegador; ← → navega, F tela cheia):
-[visão geral do case](slides/visao-geral.html) ·
-[noite 1](slides/aula-01.html) · [noite 2](slides/aula-02.html) · [noite 3](slides/aula-03.html) · [noite 4](slides/aula-04.html) ·
-[**apresentação final**](slides/apresentacao-final.html) (o problema, as arquiteturas em Mermaid e os resultados) ·
-[recursos do Databricks](slides/recursos-databricks.html) (um recurso por slide, com print)
+[**slides/imersao.html**](slides/imersao.html), um deck só para as 4 noites: o case, cada noite com passo a passo,
+prompts e um print de cada entregável, e no fim o tour pelos recursos do Databricks. Versão editável em PowerPoint
+(importa no Canva): [`slides/pptx/`](slides/pptx).
 
 ```
   noite 1             noite 2               noite 3                noite 4

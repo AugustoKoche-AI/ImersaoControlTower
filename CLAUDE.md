@@ -26,7 +26,7 @@ Uma pasta por noite, autocontida (README, roteiro, verificação), no mesmo esqu
 | `aulas/aula-04-engenheiro-ia/` | 4 · prompts: agente de contratos (ai_parse_document + ai_extract → gold.contratos), app da Torre (AppKit) + Lakebase, pitch |
 | `material/` | PRD, gerador do dataset, validador dos padrões, writer de PDF |
 | `scripts/` | `run_sql.py`, `genie.py`, `gerar_notebooks.py`, `gerar_slides.py`, `gerar_prompts.py` |
-| `slides/` | `_modelo.html` (motor dos slides do jornada-ops, com Mermaid) + `aula-NN.slides.html` → `aula-NN.html` |
+| `slides/` | `_modelo.html` (motor dos slides do jornada-ops, com Mermaid) + `imersao.slides.html` → `imersao.html` (um deck só, as 4 noites) e `pptx/` (versão editável) |
 
 Exemplos novos na aula 01 seguem `exemplo-NN-tema.sql`, com cabeçalho de conceito, pergunta de negócio e
 conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 scripts/gerar_notebooks.py aulas/aula-01-analista`.
@@ -145,14 +145,14 @@ python3 scripts/genie.py publicar <espaco.json> --titulo "..." --profile imersao
 python3 scripts/genie.py perguntar "<título>" "pergunta" --profile imersao-out26
 python3 scripts/genie.py benchmark "<título>" <benchmark.json> --profile imersao-out26
 python3 scripts/gerar_notebooks.py aulas/aula-01-analista [--importar --profile imersao-out26]
-python3 scripts/gerar_slides.py slides/aula-01.slides.html
+python3 scripts/gerar_slides.py slides/imersao.slides.html
 python3 scripts/gerar_prompts.py                 # regera o PROMPTS.md a partir de aulas/*/prd/prompt-*.md
 ```
 
 ## Slides
 
 Visual da Jornada (Poppins, `#14141A`, azul `#0059DB`, ciano `#22C2F4`), o mesmo motor das apresentações do time
-(`jornada-ops/scripts/apresentacao_time.py`). Escreva só as `<section class="slide">` em `slides/aula-NN.slides.html`
+(`jornada-ops/scripts/apresentacao_time.py`). Escreva só as `<section class="slide">` em `slides/imersao.slides.html`
 e rode o `gerar_slides.py`. `[[IMG:docs/img/x.jpg]]` embute o print; `[[RODAPE]]` põe logo e número da página.
 Todo número do slide sai de uma query rodada; cite a fonte no README da noite.
 

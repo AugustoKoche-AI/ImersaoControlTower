@@ -14,7 +14,7 @@ Marcadores no fragmento:
 
 O HTML final abre sozinho (só a Poppins vem do Google Fonts).
 
-Uso:  python3 scripts/gerar_slides.py slides/aula-01.slides.html [--artifact destino.html]
+Uso:  python3 scripts/gerar_slides.py slides/imersao.slides.html [--artifact destino.html]
 """
 import base64
 import mimetypes
