@@ -1,64 +1,38 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC EXEMPLO 04: GROUP BY — quanto a Vértice gasta por mês?
--- MAGIC Conceito: GROUP BY, date_trunc, try_cast, replace
--- MAGIC Pergunta de negócio: qual é o custo real da carteira, mês a mês?
--- MAGIC Conexão: a primeira query FALHA DE PROPÓSITO. Rode com --continuar.
+-- MAGIC EXEMPLO 04: GROUP BY — para onde vai o dinheiro da Vértice?
+-- MAGIC Conceito: GROUP BY, SUM, replace
+-- MAGIC Pergunta de negócio: quanto a Vértice gasta, por categoria de custo?
+-- MAGIC Conexão: é a pergunta 2 do dono ("quanto custa?") começando a ter resposta.
 -- MAGIC
--- MAGIC 1. A query óbvia. Quebra: '12345,67' não é número.
-
--- COMMAND ----------
-
-SELECT date_trunc('MONTH', CAST(data AS DATE))  AS mes,
-       SUM(CAST(valor AS DECIMAL(18,2)))        AS custo
-FROM lakehouse_vertice.bronze.custos
-GROUP BY 1
-ORDER BY 1;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 2. A "correção" perigosa: try_cast não quebra... ele joga a linha fora em silêncio.
-
--- COMMAND ----------
-
-SELECT ROUND(SUM(try_cast(valor AS DECIMAL(18,2))) / 1e6, 2)               AS custo_milhoes_errado,
-       COUNT(*) FILTER (WHERE try_cast(valor AS DECIMAL(18,2)) IS NULL)    AS linhas_perdidas
-FROM lakehouse_vertice.bronze.custos;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 3. A correção certa: trocar a vírgula por ponto ANTES de converter
-
--- COMMAND ----------
-
-SELECT ROUND(SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) / 1e6, 2) AS custo_milhoes
-FROM lakehouse_vertice.bronze.custos;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 4. Agora sim: custo real por mês
-
--- COMMAND ----------
-
-SELECT date_trunc('MONTH', CAST(data AS DATE))                                     AS mes,
-       ROUND(SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) / 1e6, 2)        AS custo_milhoes
-FROM lakehouse_vertice.bronze.custos
-GROUP BY 1
-ORDER BY 1;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 5. Por categoria: para onde vai o dinheiro de uma empresa de tecnologia?
--- MAGIC    (spoiler: gente. Folha alocada é quase dois terços do custo)
+-- MAGIC A tabela é a bronze.custos: um lançamento de custo por linha (23.640 linhas).
+-- MAGIC
+-- MAGIC 1. Quanto cada categoria gastou?
+-- MAGIC    GROUP BY categoria   junta as linhas da mesma categoria e faz a conta dentro de cada grupo
+-- MAGIC    SUM(...)             soma a coluna dentro do grupo
+-- MAGIC    O valor é texto, então primeiro CAST para número (exemplo 02).
+-- MAGIC    Deve aparecer: um ERRO. É de propósito: '1827,44' não vira número. É a vírgula do exemplo 03.
 
 -- COMMAND ----------
 
 SELECT categoria,
-       ROUND(SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) / 1e6, 1) AS custo_milhoes
+       SUM(CAST(valor AS DECIMAL(18,2))) AS custo
+FROM lakehouse_vertice.bronze.custos
+GROUP BY categoria;
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 2. A correção: trocar a vírgula por ponto ANTES de converter.
+-- MAGIC    replace(valor, ',', '.')   troca ',' por '.'
+-- MAGIC    ROUND(x / 1000000, 1)      em milhões, com 1 casa decimal
+-- MAGIC    Deve aparecer: pessoal no topo, com R$ 117,8 mi. Empresa de tecnologia gasta com gente:
+-- MAGIC    quase dois terços dos R$ 193,35 mi de custo.
+
+-- COMMAND ----------
+
+SELECT categoria,
+       ROUND(SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) / 1000000, 1) AS custo_milhoes
 FROM lakehouse_vertice.bronze.custos
 GROUP BY categoria
-ORDER BY 2 DESC;
+ORDER BY custo_milhoes DESC;

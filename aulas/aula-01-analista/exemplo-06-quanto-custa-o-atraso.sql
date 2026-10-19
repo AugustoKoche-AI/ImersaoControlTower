@@ -1,18 +1,27 @@
 -- ============================================
--- EXEMPLO 06: quanto custa? CPI, EAC, prazo projetado e o farol do gerente
+-- EXEMPLO 06: QUANTO CUSTA? O estouro e o farol do gerente
 -- ============================================
--- Conceito: CTE encadeada, aritmética de KPI, janela (SUM OVER), comparação
+-- Conceito: juntar várias consultas com WITH e fazer conta de KPI
 -- Pergunta de negócio: SE NADA MUDAR, QUANTO A VÉRTICE VAI PERDER? E O FAROL MOSTRA ISSO?
---
---   valor agregado (EV) = orçamento × (horas agregadas ÷ horas totais)
---   CPI = EV / custo real           < 1 é estouro (cada R$ 1 gasto entregou menos de R$ 1)
---   EAC (estimativa no término) = orçamento / CPI
---   estouro previsto            = EAC − orçamento
---   margem projetada            = (valor do contrato − EAC) / valor do contrato
---   atraso projetado (dias)     = duração / SPI − duração
---
 -- Usa o rascunho do exemplo 05 (bronze.rascunho_tarefas): rode o 05 antes.
+--
+-- As contas (todas sobre o orçamento de custo do projeto):
+--   valor agregado (EV) = orçamento × fração pronta          (quanto vale o que já foi entregue)
+--   CPI = EV ÷ custo real                                    abaixo de 1 é estouro: cada R$ 1
+--                                                            gasto entregou menos de R$ 1
+--   EAC = orçamento ÷ CPI                                    quanto o projeto vai custar no fim,
+--                                                            se o ritmo continuar
+--   estouro previsto = EAC − orçamento
+--
+-- A consulta tem 3 pedaços (WITH), cada um uma pergunta simples:
+--   valor   quanto de cada projeto está pronto, e quanto devia estar (o exemplo 05)
+--   custo   quanto cada projeto já gastou (o exemplo 04, por projeto)
+--   farol   a cor que o gerente publicou nesta sexta, 16/10
 
+-- 1. Projeto a projeto: prazo, custo, estouro, e o farol do gerente.
+--    Deve aparecer: 41 projetos, do pior para o melhor. Repare na coluna farol_do_gerente:
+--    PRJ-012, 028, 034 e 042 estão VERDES com SPI abaixo de 0,9. São os "melancias":
+--    verdes por fora, vermelhos por dentro.
 WITH valor AS (
     SELECT projeto_id,
            SUM(horas)                       AS horas_totais,
@@ -24,62 +33,53 @@ WITH valor AS (
     GROUP BY projeto_id
 ),
 custo AS (
-    SELECT projeto_id, SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) AS ac
+    SELECT projeto_id,
+           SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) AS custo_real
     FROM lakehouse_vertice.bronze.custos
     GROUP BY projeto_id
 ),
 farol AS (
-    -- o último status de cada projeto: o farol que o gerente publicou nesta sexta
     SELECT projeto_id, lower(farol) AS farol
     FROM lakehouse_vertice.bronze.status_semanal
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY projeto_id ORDER BY data_status DESC) = 1
-),
-projeto AS (
-    SELECT p.projeto_id, p.nome_projeto, p.cliente,
-           CAST(p.valor_contrato  AS DECIMAL(18,2)) AS valor_contrato,
-           CAST(p.orcamento_custo AS DECIMAL(18,2)) AS orcamento,
-           -- a data de início vem em dois formatos: tenta um, depois o outro
-           datediff(CAST(p.data_fim_baseline AS DATE),
-                    coalesce(try_to_date(p.data_inicio, 'yyyy-MM-dd'),
-                             try_to_date(p.data_inicio, 'dd/MM/yyyy'))) AS duracao_dias,
-           v.horas_agregadas / v.horas_planejadas                         AS spi,
-           CAST(p.orcamento_custo AS DECIMAL(18,2)) * v.horas_agregadas / v.horas_totais / c.ac AS cpi,
-           f.farol
-    FROM lakehouse_vertice.bronze.projetos p
-    JOIN valor v USING (projeto_id)
-    JOIN custo c USING (projeto_id)
-    JOIN farol f USING (projeto_id)
-    WHERE p.status = 'em_andamento'
+    WHERE data_status = '2026-10-16'
 )
-SELECT projeto_id, nome_projeto, cliente,
-       ROUND(spi, 2)                                                AS spi,
-       ROUND(cpi, 2)                                                AS cpi,
-       farol                                                        AS farol_do_gerente,
-       ROUND(orcamento / cpi / 1e6, 2)                              AS eac_milhoes,
-       ROUND((orcamento / cpi - orcamento) / 1e6, 2)                AS estouro_milhoes,
-       ROUND(100 * (valor_contrato - orcamento / cpi) / valor_contrato, 1) AS margem_projetada_pct,
-       ROUND(duracao_dias / spi - duracao_dias)                     AS atraso_projetado_dias,
-       -- só soma quem estoura: projeto com CPI > 1 não "compensa" o que queima margem
-       ROUND(SUM(GREATEST(0, orcamento / cpi - orcamento)) OVER () / 1e6, 2) AS estouro_total_carteira_milhoes
-FROM projeto
-ORDER BY LEAST(spi, cpi)
-LIMIT 20;
+SELECT p.projeto_id,
+       p.cliente,
+       ROUND(v.horas_agregadas / v.horas_planejadas, 2)                          AS spi,
+       ROUND(CAST(p.orcamento_custo AS DECIMAL(18,2))
+             * v.horas_agregadas / v.horas_totais / c.custo_real, 2)              AS cpi,
+       f.farol                                                                   AS farol_do_gerente,
+       -- estouro = EAC − orçamento = orçamento ÷ CPI − orçamento
+       ROUND((c.custo_real * v.horas_totais / v.horas_agregadas
+              - CAST(p.orcamento_custo AS DECIMAL(18,2))) / 1000000, 2)           AS estouro_milhoes
+FROM lakehouse_vertice.bronze.projetos p
+JOIN valor v USING (projeto_id)
+JOIN custo c USING (projeto_id)
+JOIN farol f USING (projeto_id)
+WHERE p.status = 'em_andamento'
+ORDER BY spi;
 
--- O farol mente? O manual da Vértice diz: verde só com SPI ≥ 0,95.
--- Quantos projetos o gerente pintou de verde com o número dizendo outra coisa?
+-- 2. O número para o dono: quanto a carteira vai estourar, somando só quem estoura.
+--    (Projeto que está gastando menos que o previsto não "compensa" o que outro queima.)
+--    Nada novo: as mesmas contas do bloco 1, agora somadas. GREATEST(0, x) zera quem não estoura.
+--    Deve aparecer: R$ 6,47 mi. A resposta da pergunta 2.
 WITH valor AS (
     SELECT projeto_id,
-           SUM(horas * pct_concluido / 100) / SUM(horas * GREATEST(0, LEAST(1,
-               datediff(DATE'2026-10-16', inicio_baseline) / datediff(fim_baseline, inicio_baseline)))) AS spi
+           SUM(horas)                       AS horas_totais,
+           SUM(horas * pct_concluido / 100) AS horas_agregadas
     FROM lakehouse_vertice.bronze.rascunho_tarefas
     GROUP BY projeto_id
+),
+custo AS (
+    SELECT projeto_id,
+           SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) AS custo_real
+    FROM lakehouse_vertice.bronze.custos
+    GROUP BY projeto_id
 )
-SELECT v.projeto_id, ROUND(v.spi, 2) AS spi, lower(s.farol) AS farol_do_gerente
-FROM valor v
-JOIN lakehouse_vertice.bronze.projetos p USING (projeto_id)
-JOIN lakehouse_vertice.bronze.status_semanal s USING (projeto_id)
-WHERE p.status = 'em_andamento'
-  AND s.data_status = '2026-10-16'
-  AND lower(s.farol) = 'verde'
-  AND v.spi < 0.9
-ORDER BY v.spi;
+SELECT ROUND(SUM(GREATEST(0,
+           c.custo_real * v.horas_totais / v.horas_agregadas
+           - CAST(p.orcamento_custo AS DECIMAL(18,2)))) / 1000000, 2) AS estouro_previsto_milhoes
+FROM lakehouse_vertice.bronze.projetos p
+JOIN valor v USING (projeto_id)
+JOIN custo c USING (projeto_id)
+WHERE p.status = 'em_andamento';

@@ -1,11 +1,15 @@
 -- Databricks notebook source
 -- MAGIC %md
--- MAGIC EXEMPLO 02: ORDER BY, DISTINCT e CAST — o tamanho da carteira
--- MAGIC Conceito: ORDER BY, DISTINCT, CAST, SUM
--- MAGIC Pergunta de negócio: quais são os maiores contratos e quanto vale a carteira?
--- MAGIC Conexão: na bronze tudo é texto. Sem CAST, ORDER BY ordena como palavra.
+-- MAGIC EXEMPLO 02: ORDER BY, CAST e DISTINCT — os maiores contratos
+-- MAGIC Conceito: ORDER BY, CAST, DISTINCT
+-- MAGIC Pergunta de negócio: quais são os maiores contratos da Vértice?
+-- MAGIC Conexão: na bronze tudo é texto. Sem CAST, o Databricks ordena como palavra.
 -- MAGIC
--- MAGIC 1. A armadilha: ordenar texto. '9000000.00' vem antes de '12000000.00'?
+-- MAGIC 1. Os 5 maiores contratos... ou não.
+-- MAGIC    ORDER BY coluna DESC   ordena do maior para o menor
+-- MAGIC    Deve aparecer: uma lista que PARECE certa, com o PRJ-052 (R$ 8,4 mi) no topo. Está errada.
+-- MAGIC    O valor é texto, e texto se ordena letra por letra: '8380000' vem antes de '15275000'
+-- MAGIC    porque '8' vem depois de '1', como numa lista telefônica.
 
 -- COMMAND ----------
 
@@ -17,45 +21,26 @@ LIMIT 5;
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 2. Com CAST, ordena como número
+-- MAGIC 2. A correção: converter o texto em número antes de ordenar.
+-- MAGIC    CAST(coluna AS DECIMAL(18,2))   transforma o texto em número com 2 casas decimais
+-- MAGIC    Deve aparecer: o maior contrato de verdade é o PRJ-017, R$ 15,3 mi.
 
 -- COMMAND ----------
 
-SELECT projeto_id, nome_projeto, cliente,
-       CAST(valor_contrato AS DECIMAL(18,2)) AS valor_contrato
+SELECT projeto_id, nome_projeto,
+       CAST(valor_contrato AS DECIMAL(18,2)) AS valor_numero
 FROM lakehouse_vertice.bronze.projetos
-ORDER BY 4 DESC
-LIMIT 10;
+ORDER BY valor_numero DESC
+LIMIT 5;
 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 3. A carteira inteira, e só o que está em andamento
-
--- COMMAND ----------
-
-SELECT COUNT(*)                                                         AS projetos,
-       ROUND(SUM(CAST(valor_contrato AS DECIMAL(18,2))) / 1e6, 1)       AS carteira_milhoes,
-       COUNT(*) FILTER (WHERE status = 'em_andamento')                  AS em_andamento,
-       ROUND(SUM(CAST(valor_contrato AS DECIMAL(18,2)))
-             FILTER (WHERE status = 'em_andamento') / 1e6, 1)           AS em_andamento_milhoes
-FROM lakehouse_vertice.bronze.projetos;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 4. DISTINCT: para quais segmentos a Vértice trabalha?
-
--- COMMAND ----------
-
-SELECT DISTINCT segmento FROM lakehouse_vertice.bronze.projetos ORDER BY segmento;
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 5. E em quais ferramentas os projetos vivem?
--- MAGIC    Repare: 'Excel', 'excel' e 'Planilha' são a mesma coisa. É a primeira sujeira do dia,
--- MAGIC    e é o retrato do problema da Vértice: cada um registra do seu jeito.
+-- MAGIC 3. Em quais ferramentas os projetos vivem?
+-- MAGIC    DISTINCT   tira as repetições: cada valor aparece uma vez só
+-- MAGIC    Deve aparecer: 8 jeitos de escrever 3 ferramentas: 'Excel', 'excel', 'Planilha',
+-- MAGIC    'ClickUp', 'Clickup', 'MS Project', 'Project', 'msproject'.
+-- MAGIC    É o retrato do problema da Vértice: cada um registra do seu jeito.
 
 -- COMMAND ----------
 

@@ -37,7 +37,7 @@ Ninguém sabe responder. Cada gerente controla o projeto num lugar diferente:
 |---|---|---|
 | 1 | Montar o ambiente no Databricks Free Edition | catálogo `lakehouse_vertice` com `bronze`, `silver`, `gold` e o volume `raw` |
 | 2 | Ler Excel, JSON e XML com o mesmo comando | 9 tabelas na bronze, contagens iguais às do `99-verificacao.sql` |
-| 3 | Encontrar a sujeira antes que ela vire decisão | os 12 achados do exemplo 03 |
+| 3 | Encontrar a sujeira antes que ela vire decisão | os 3 achados do exemplo 03 |
 | 4 | Juntar as três ferramentas e responder o dono | SPI dos 41 projetos em andamento (exemplo 05) |
 | 5 | Traduzir o atraso em dinheiro, e desconfiar do farol | R$ 6,47 mi de estouro previsto e 4 projetos "melancia" (exemplo 06) |
 | 6 | Colocar a resposta numa tela e ver o Genie errar | dashboard publicado + as 4 perguntas do dono no Genie da bronze |
@@ -161,14 +161,23 @@ estrutura aninhada.*
 
 Três ferramentas, três formatos, três jeitos de dizer "quanto está pronto". É isso que os exemplos vão juntar.
 
-### 6. Rode os 6 exemplos
+### 6. Volte no tempo (bônus, 3 min)
 
-Cada exemplo usa o anterior. Rode no SQL Editor, na ordem. Detalhes na seção [Os 6 exemplos](#-os-6-exemplos).
+Rode o [`exemplo-00-time-travel.sql`](exemplo-00-time-travel.sql) bloco a bloco. Ele copia o cadastro de projetos,
+duplica o PRJ-021 de propósito (a carteira vai de R$ 305,2 mi para R$ 318,8 mi), mostra o `DESCRIBE HISTORY`, lê a
+versão de antes do erro com `VERSION AS OF 0` e volta com `RESTORE`. Toda tabela Delta guarda as versões: um erro na
+bronze não é o fim do mundo. No fim ele apaga a cópia.
+
+### 6.1 Rode os 6 exemplos (14 queries, ~1 hora)
+
+Cada exemplo usa o anterior. Rode no SQL Editor, na ordem, **um bloco de cada vez** (selecione e Ctrl+Enter).
+Cada bloco diz no comentário o que queremos achar, o que cada comando faz e o que deve aparecer.
+Detalhes na seção [Os 6 exemplos](#-os-6-exemplos).
 
 ### 7. Confira (1 min)
 
 Com o exemplo 05 já rodado (ele cria o rascunho que a verificação usa), rode [`99-verificacao.sql`](99-verificacao.sql).
-As 22 linhas devem dar `ok`. Se alguma der `CONFIRA`, veja [Se der errado](#-se-der-errado).
+As 18 linhas devem dar `ok`. Se alguma der `CONFIRA`, veja [Se der errado](#-se-der-errado).
 
 ### 8. Monte e publique o dashboard (15 min)
 
@@ -264,27 +273,29 @@ Hoje você vê os sintomas: atraso, estouro e o farol que não bate. As causas a
 
 ## 🧪 Os 6 exemplos
 
-Cada exemplo usa o anterior. Rode no SQL Editor ou use os notebooks (logo abaixo).
+São **14 queries** no total, para caber em 1 hora de SQL. Cada exemplo usa o anterior, e cada bloco traz no máximo
+um ou dois comandos novos, explicados no comentário. Rode no SQL Editor ou use os notebooks (logo abaixo).
 
-| # | Arquivo | Conceito | Pergunta de negócio |
-|---|---|---|---|
-| 01 | [`exemplo-01-primeiro-select.sql`](exemplo-01-primeiro-select.sql) | `SELECT`, `LIMIT`, `COUNT` | Que projetos a Vértice tem? Como é cada ferramenta por dentro? |
-| 02 | [`exemplo-02-order-by-e-distinct.sql`](exemplo-02-order-by-e-distinct.sql) | `ORDER BY`, `DISTINCT`, `CAST` | Quais os maiores contratos? Quanto vale a carteira? |
-| 03 | [`exemplo-03-where-e-a-sujeira.sql`](exemplo-03-where-e-a-sujeira.sql) | `WHERE`, `LIKE`, `FILTER`, `HAVING` | **Dá para confiar nesse número?** |
-| 04 | [`exemplo-04-group-by-custo-no-tempo.sql`](exemplo-04-group-by-custo-no-tempo.sql) | `GROUP BY`, `date_trunc`, `try_cast` | Quanto a Vértice gasta por mês? (a 1ª query **quebra de propósito**) |
-| 05 | [`exemplo-05-union-quais-projetos-atrasados.sql`](exemplo-05-union-quais-projetos-atrasados.sql) | `UNION ALL`, `WITH`, `CASE`, `JOIN` | **Quais projetos estão mais atrasados?** (as 3 ferramentas numa fila só) |
-| 06 | [`exemplo-06-quanto-custa-o-atraso.sql`](exemplo-06-quanto-custa-o-atraso.sql) | CTE encadeada, janela `OVER()`, `QUALIFY` | **Quanto o atraso custa? O farol mostra isso?** |
+| # | Arquivo | Queries | Conceito | Pergunta de negócio |
+|---|---|---:|---|---|
+| 01 | [`exemplo-01-primeiro-select.sql`](exemplo-01-primeiro-select.sql) | 2 | `SELECT`, `LIMIT`, `COUNT` | Que projetos a Vértice tem, e onde cada um vive? |
+| 02 | [`exemplo-02-order-by-e-distinct.sql`](exemplo-02-order-by-e-distinct.sql) | 3 | `ORDER BY`, `CAST`, `DISTINCT` | Quais os maiores contratos? |
+| 03 | [`exemplo-03-where-e-a-sujeira.sql`](exemplo-03-where-e-a-sujeira.sql) | 3 | `WHERE`, `LIKE` | **Dá para confiar nesse número?** |
+| 04 | [`exemplo-04-group-by-custo-no-tempo.sql`](exemplo-04-group-by-custo-no-tempo.sql) | 2 | `GROUP BY`, `SUM`, `replace` | Para onde vai o dinheiro? (a 1ª query **quebra de propósito**) |
+| 05 | [`exemplo-05-union-quais-projetos-atrasados.sql`](exemplo-05-union-quais-projetos-atrasados.sql) | 2 | `UNION ALL`, `VIEW`, `CASE`, `JOIN`, `WITH` | **Quais projetos estão mais atrasados?** (as 3 ferramentas numa fila só) |
+| 06 | [`exemplo-06-quanto-custa-o-atraso.sql`](exemplo-06-quanto-custa-o-atraso.sql) | 2 | `WITH`, conta de KPI | **Quanto o atraso custa? O farol mostra isso?** |
 
 O que esperar de cada um:
 
 - **01 e 02:** o primeiro contato. No 02, ordenar valor guardado como texto dá a ordem errada; o `CAST` conserta.
-- **03:** o mais importante do dia. Dado sujo não dá erro: dá um número errado, em silêncio. São 12 achados
-  (datas em 2 formatos, linha de TOTAL no Excel, CodeForge de 4 jeitos, pessoa duplicada…).
-- **04:** a primeira query **quebra de propósito** com `CAST_INVALID_INPUT` (vírgula decimal). A "correção" com
-  `try_cast` não quebra, mas some com 671 lançamentos sem avisar.
+- **03:** dado sujo não dá erro: dá um número errado, em silêncio. 3 achados: data em 2 formatos (24 × 36), a linha
+  de TOTAL nas 20 planilhas e 671 custos com vírgula decimal.
+- **04:** a primeira query **quebra de propósito** com `CAST_INVALID_INPUT` (a vírgula do 03). O `replace` conserta:
+  R$ 193,35 mi de custo, R$ 117,8 mi em gente.
 - **05:** o rascunho à mão. Cada ferramenta vira as mesmas colunas e tudo é empilhado com `UNION ALL` numa view
   (`bronze.rascunho_tarefas`). Sai o SPI dos 41 projetos em andamento.
-- **06:** o atraso vira dinheiro (R$ 6,47 mi de estouro previsto) e aparecem os 4 projetos melancia.
+- **06:** o atraso vira dinheiro (R$ 6,47 mi de estouro previsto) e, na coluna do farol, aparecem os 4 projetos melancia.
+- **00 (bônus):** time travel, se sobrar tempo.
 
 Pelo terminal (opcional):
 
@@ -336,14 +347,13 @@ Se o seu número for diferente, o erro está na query, não no dado: a seed é f
 | Métrica | Valor |
 |---|---|
 | Carteira total · em andamento | R$ 305,2 mi · R$ 208,6 mi (41 projetos) |
-| Custo real total | R$ 193,35 mi (com `try_cast`: R$ 187,94 mi → **671 lançamentos e R$ 5,4 mi somem**) |
+| Custo real total | R$ 193,35 mi (671 lançamentos com vírgula decimal) |
 | Maior categoria de custo | pessoal (folha alocada), R$ 117,8 mi |
 | Projetos em atenção · críticos | 10 · 7 |
 | Piores SPI | PRJ-016 0,63 · PRJ-030 0,69 · PRJ-039 0,75 · PRJ-011 0,77 |
 | Piores CPI | PRJ-009 0,77 · PRJ-027 0,79 · PRJ-005 0,81 |
 | Estouro previsto da carteira | **R$ 6,47 mi** (só projetos que estouram) |
 | Maior estouro | PRJ-021, R$ 1,78 mi |
-| Maior atraso projetado | PRJ-016, +298 dias · PRJ-011, +155 dias |
 | Farol verde com SPI < 0,9 | 4 projetos: PRJ-012, PRJ-028, PRJ-034, PRJ-042 |
 
 ---

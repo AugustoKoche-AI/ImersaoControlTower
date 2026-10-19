@@ -574,7 +574,7 @@ flowchart LR
     <tr><th>#</th><th>Entrega</th><th>Como você sabe que chegou lá</th></tr>
     <tr><td>1</td><td>Ambiente no Databricks Free Edition</td><td>catálogo <b>lakehouse_vertice</b> com bronze, silver, gold e o volume <b>raw</b></td></tr>
     <tr><td>2</td><td>Excel, JSON e XML lidos com o mesmo comando</td><td><b>9 tabelas</b> na bronze, contagens iguais às da verificação</td></tr>
-    <tr><td>3</td><td>A sujeira encontrada antes de virar decisão</td><td>os <b>12 achados</b> do exemplo 03</td></tr>
+    <tr><td>3</td><td>A sujeira encontrada antes de virar decisão</td><td>os <b>3 achados</b> do exemplo 03</td></tr>
     <tr><td>4</td><td>As 3 ferramentas numa fila só</td><td>SPI dos 41 projetos em andamento (exemplo 05)</td></tr>
     <tr><td>5</td><td>O atraso em dinheiro, e o farol desmentido</td><td><b>R$ 6,47 mi</b> de estouro e <b>4 melancias</b> (exemplo 06)</td></tr>
     <tr><td>6</td><td>Dashboard publicado e o Genie errando</td><td>o dashboard da bronze e as 4 perguntas no Genie sem curadoria</td></tr>
@@ -620,18 +620,52 @@ flowchart LR
 
 <section class="slide">
   <div class="kicker">Noite 1 · como rodar</div>
-  <h2>Quatro passos, <span class="grad">tudo pela interface</span></h2>
-  <div class="flow" style="margin-bottom:30px;">
-    <div class="card hl"><div class="tag">1 · conta</div><div class="lbl">databricks.com/learn/free-edition<br>sem cartão, tudo serverless</div></div><div class="arr">→</div>
-    <div class="card hl"><div class="tag">2 · a casa do dado</div><div class="lbl">Catalog → <b>lakehouse_vertice</b>;<br>schemas <b>bronze</b>, <b>silver</b>, <b>gold</b>;<br>volume <b>bronze.raw</b></div></div><div class="arr">→</div>
-    <div class="card hl"><div class="tag">3 · os arquivos</div><div class="lbl">baixe <b>dados-vertice.zip</b> do Drive e suba cada pasta no volume <b>raw</b></div></div><div class="arr">→</div>
-    <div class="card hl"><div class="tag">4 · SQL Editor</div><div class="lbl">copie o <b>01-ingestao-bronze.sql</b> do GitHub, cole e rode</div></div>
+  <h2>Seis passos, <span class="grad">nesta ordem</span></h2>
+  <div class="flow" style="margin-bottom:26px;">
+    <div class="card hl"><div class="tag">1 · conta</div><div class="lbl" style="font-size:24px;">Free Edition,<br>sem cartão</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">2 · catálogo</div><div class="lbl" style="font-size:24px;"><b>lakehouse_vertice</b> +<br>bronze, silver, gold</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">3 · volume</div><div class="lbl" style="font-size:24px;"><b>bronze.raw</b> e<br>as 8 pastas</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">4 · arquivos</div><div class="lbl" style="font-size:24px;">o zip do Drive,<br>pasta por pasta</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">5 · SQL</div><div class="lbl" style="font-size:24px;"><b>01-ingestao-bronze</b><br>no SQL Editor</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">6 · confira</div><div class="lbl" style="font-size:24px;">9 tabelas<br>na bronze</div></div>
   </div>
-  <pre class="code"><span class="c">-- o mesmo comando para CSV, Excel, JSON e XML</span>
-<span class="k">CREATE OR REPLACE TABLE</span> lakehouse_vertice.bronze.excel_tarefas <span class="k">AS</span>
-<span class="k">SELECT</span> ... <span class="k">FROM</span> read_files(<span class="s">'/Volumes/lakehouse_vertice/bronze/raw/excel/'</span>,
-                       format => <span class="s">'excel'</span>, headerRows => 1, inferColumnTypes => false);</pre>
-  <p class="note" style="margin-top:20px;">Conferência: <b>99-verificacao.sql</b> mostra esperado × obtido. Hoje: <b>18 de 18 ok</b>.</p>
+  <p class="note" style="font-size:26px;">Primeiro a casa, depois o dado: o catálogo e o volume existem <b>antes</b> de qualquer arquivo subir. Tudo pelo navegador, nenhum código até o passo 5.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · passo 1 de 6</div>
+  <h2>Crie a conta <span class="grad">no Free Edition</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div class="card hl"><div class="tag">Onde</div><ul class="list" style="font-size:27px;">
+      <li><b>databricks.com/learn/free-edition</b></li>
+      <li><b>Sign up</b> com Google ou e-mail</li>
+      <li>não pede cartão, não expira</li></ul></div>
+    <div class="card"><div class="tag">O que você ganha</div><ul class="list" style="font-size:27px;">
+      <li>um workspace só seu, tudo <b>serverless</b>: ninguém liga cluster</li>
+      <li>SQL Editor, dashboards, Genie, pipelines e apps</li>
+      <li>já tem conta de agosto? use a mesma</li></ul></div>
+  </div>
+  
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · passo 2 de 6</div>
+  <h2>Crie o catálogo <span class="grad">e as três camadas</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div class="card hl"><div class="tag">Cliques</div><ul class="list" style="font-size:27px;">
+      <li>menu da esquerda → <b>Catalog</b></li>
+      <li><b>+</b> (ao lado de "Catalog") → <b>Create a catalog</b></li>
+      <li>nome <b>lakehouse_vertice</b>, tipo <b>Standard</b>, storage padrão → <b>Create</b></li>
+      <li>dentro dele, <b>Create schema</b> três vezes: <b>bronze</b>, <b>silver</b>, <b>gold</b></li></ul></div>
+    <div class="card"><div class="tag">Por que três</div><ul class="list" style="font-size:27px;">
+      <li><b>bronze</b>: o dado como chegou, sujeira inclusa (hoje)</li>
+      <li><b>silver</b>: limpo e integrado (noite 2)</li>
+      <li><b>gold</b>: pronto para o dono (noite 2)</li></ul>
+      <div class="tag" style="margin-top:18px;">Deu erro?</div><div class="lbl" style="font-size:24px;">rode o <b>00-setup-catalogo.sql</b> no SQL Editor: cria o catálogo, os 3 schemas e o volume de uma vez</div></div>
+  </div>
+  
   [[RODAPE]]
 </section>
 
@@ -670,22 +704,77 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 1 · o volume raw</div>
-  <h2>Os arquivos, <span class="grad">do jeito que cada sistema exporta</span></h2>
+  <div class="kicker">Noite 1 · passo 3 de 6</div>
+  <h2>Crie o volume <span class="grad">e as pastas</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start;">
-    <pre class="code" style="font-size:21px;">/Volumes/lakehouse_vertice/bronze/raw
-├── pmo/         projetos · status_semanal
-├── excel/       20 planilhas .xlsx
-├── clickup/     25 exports .json
-├── msproject/   15 arquivos .xml
-├── rh/          colaboradores
-├── timesheet/   apontamentos
-├── financeiro/  custos
-├── compras/     entregas_fornecedor
-└── documentos/  8 contratos em PDF
-                 (lidos na noite 4)</pre>
-    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/noite1-volume-excel.jpg]]" alt="As planilhas no volume"><div class="small" style="margin-top:8px;">As 20 planilhas no volume: arquivo de verdade, um por projeto, cada gerente com o seu nome de arquivo.</div></div>
+    <div class="card hl"><div class="tag">Cliques</div><ul class="list" style="font-size:27px;">
+      <li><b>Catalog → lakehouse_vertice → bronze</b></li>
+      <li><b>Create → Volume</b>: nome <b>raw</b>, tipo <b>Managed</b></li>
+      <li>dentro do volume, <b>Create directory</b> 8 vezes, com estes nomes exatos</li></ul></div>
+    <pre class="code" style="font-size:25px; margin:0;">/Volumes/lakehouse_vertice/bronze/raw
+├── pmo/
+├── excel/
+├── clickup/
+├── msproject/
+├── rh/
+├── timesheet/
+├── financeiro/
+└── compras/</pre>
   </div>
+  <p class="note" style="margin-top:20px;">O nome da pasta importa: o SQL do passo 5 procura <b>/Volumes/lakehouse_vertice/bronze/raw/excel/</b>. Pasta com outro nome vira tabela com 0 linhas.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · passo 4 de 6</div>
+  <h2>Suba os arquivos <span class="grad">pasta por pasta</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div class="card hl"><div class="tag">Cliques</div><ul class="list" style="font-size:27px;">
+      <li>baixe o <b>dados-vertice.zip</b> do Drive (link no chat) e descompacte</li>
+      <li>entre em cada pasta do volume → <b>Upload to this volume</b></li>
+      <li>selecione todos os arquivos da pasta de mesmo nome de uma vez</li>
+      <li><b>documentos/</b> (os PDFs) fica para a noite 4</li></ul></div>
+    <div><img class="shot" style="height:460px;" src="[[IMG:docs/img/noite1-volume-excel.jpg]]" alt="As planilhas no volume"><div class="small" style="margin-top:8px;">A pasta <b>excel/</b> pronta: 20 planilhas, uma por projeto. Ainda é arquivo, não tabela.</div></div>
+  </div>
+  
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · passo 5 de 6</div>
+  <h2>Transforme arquivo em tabela: <span class="grad">um SQL só</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div class="card hl"><div class="tag">Cliques</div><ul class="list" style="font-size:27px;">
+      <li>abra o <b>01-ingestao-bronze.sql</b> no GitHub e copie tudo</li>
+      <li>menu da esquerda → <b>SQL Editor</b> → <b>+</b> nova query</li>
+      <li>cole e clique <b>Run all</b> (~1 min)</li></ul></div>
+    <pre class="code" style="font-size:21px; margin:0;"><span class="c">-- um bloco por arquivo; o mesmo comando para</span>
+<span class="c">-- CSV, Excel, JSON e XML</span>
+<span class="k">CREATE OR REPLACE TABLE</span>
+  lakehouse_vertice.bronze.projetos <span class="k">AS</span>
+<span class="k">SELECT</span> * <span class="k">EXCEPT</span> (_rescued_data)
+<span class="k">FROM</span> read_files(
+  <span class="s">'/Volumes/lakehouse_vertice/bronze/raw/pmo/projetos.csv'</span>,
+  format => <span class="s">'csv'</span>, header => true,
+  inferColumnTypes => false);</pre>
+  </div>
+  <p class="note" style="margin-top:22px; font-size:24px;"><b>inferColumnTypes => false</b>: tudo entra como texto, para a sujeira aparecer. <b>_rescued_data</b>: a coluna "rede de segurança" que o read_files cria sozinho; o que não cabe nas colunas cai ali em vez de sumir. Nos nossos arquivos vem vazia, então o <b>EXCEPT</b> tira.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · passo 6 de 6</div>
+  <h2>Confira: <span class="grad">9 tabelas na bronze</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div class="card hl"><div class="tag">O que tem que aparecer</div><ul class="list" style="font-size:27px;">
+      <li>a última query do passo 5 lista as <b>9 tabelas</b> e as linhas de cada uma</li>
+      <li>em <b>Catalog → bronze</b>, as tabelas ao lado do volume <b>raw</b></li>
+      <li>clique numa tabela → aba <b>Sample Data</b>: olhe o dado antes de fazer conta</li>
+      <li>alguma com 0 linhas? o arquivo está na pasta errada (volte ao passo 4)</li>
+      <li>depois do exemplo 05, o <b>99-verificacao.sql</b> confere tudo: <b>18 de 18 ok</b></li></ul></div>
+    <div><img class="shot" style="height:460px;" src="[[IMG:docs/img/noite1-catalogo-bronze.jpg]]" alt="as tabelas da bronze"></div>
+  </div>
+  
   [[RODAPE]]
 </section>
 
@@ -703,6 +792,26 @@ flowchart LR
       <div class="lbl">noite 1: 9 tabelas na bronze, uma por fonte, mais o <code>rascunho_tarefas</code> (a view que junta as 3 ferramentas à mão)</div>
     </div>
   </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · exemplo 00 · time travel</div>
+  <h2>Errei a tabela. <span class="grad">Volta no tempo.</span></h2>
+  <div class="flow" style="margin-bottom:26px;">
+    <div class="card"><div class="tag">versão 0</div><div class="num sm">60</div><div class="lbl" style="font-size:22px;">projetos · R$ 305,2 mi</div></div><div class="arr">→</div>
+    <div class="card" style="border-color:#E5484D;"><div class="tag">versão 1 · o erro</div><div class="num sm">61</div><div class="lbl" style="font-size:22px;">PRJ-021 duplicado · R$ 318,8 mi</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">versão 2 · RESTORE</div><div class="num sm">60</div><div class="lbl" style="font-size:22px;">de volta · R$ 305,2 mi</div></div>
+  </div>
+  <pre class="code" style="font-size:22px;"><span class="c">-- o histórico: cada mudança vira uma versão</span>
+<span class="k">DESCRIBE HISTORY</span> lakehouse_vertice.bronze.projetos_copia;
+
+<span class="c">-- olhar a tabela como era antes do erro (sem mudar nada)</span>
+<span class="k">SELECT</span> COUNT(*) <span class="k">FROM</span> lakehouse_vertice.bronze.projetos_copia <span class="k">VERSION AS OF</span> 0;
+
+<span class="c">-- voltar de verdade</span>
+<span class="k">RESTORE TABLE</span> lakehouse_vertice.bronze.projetos_copia <span class="k">TO VERSION AS OF</span> 0;</pre>
+  <p class="note" style="margin-top:20px; font-size:24px;">Numa <b>cópia</b> do cadastro, para não mexer na bronze. Rode bloco a bloco: <b>exemplo-00-time-travel.sql</b>. O próprio RESTORE vira a versão 2: voltar no tempo também fica registrado.</p>
   [[RODAPE]]
 </section>
 
@@ -905,6 +1014,21 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
 <!-- 6 · GLOSSÁRIO -->
 
 
+<section class="slide">
+  <div class="kicker">Noite 1 · antes de fazer conta</div>
+  <h2>5 histórias <span class="grad">escondidas no dado</span></h2>
+  <table class="t" style="font-size:23px;">
+    <tr><th>#</th><th>História</th><th>Onde aparece</th><th>Quando a gente explica</th></tr>
+    <tr><td>1</td><td><b>CPI caindo a partir do 6º mês</b>: o cliente pede mais, o time faz, ninguém cobra o aditivo</td><td>8 projetos</td><td>noite 1 (sintoma) · 2</td></tr>
+    <tr><td>2</td><td><b>Change freeze da Black Friday</b> (01/11 a 10/01) trava os projetos de e-commerce</td><td>PRJ-003, 011, 024</td><td>noite 3</td></tr>
+    <tr><td>3</td><td>A consultoria <b>CodeForge</b> entrega 41% depois do prometido, escrita de 4 jeitos</td><td>entregas_fornecedor</td><td>noite 2 · 4 (a multa)</td></tr>
+    <tr><td>4</td><td><b>Dois SREs quase parados</b> no PRJ-007 enquanto o PRJ-011 pede SRE toda semana</td><td>apontamentos · status</td><td>noite 2</td></tr>
+    <tr><td>5</td><td><b>Rotatividade alta</b> nos dois piores SPI da carteira</td><td>PRJ-016, 030</td><td>noite 1 (sintoma) · 2</td></tr>
+  </table>
+  <p class="note" style="margin-top:22px;">Hoje você vê os sintomas: atraso, estouro e o farol que não bate. As causas aparecem nas próximas noites.</p>
+  [[RODAPE]]
+</section>
+
 <section class="slide" style="padding-top:60px;">
   <div class="kicker">Recurso do Databricks · SQL Warehouse</div>
   <h2 style="margin-bottom:18px; font-size:52px;">SQL Warehouse</h2>
@@ -943,17 +1067,17 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
 
 <section class="slide">
   <div class="kicker">Noite 1 · os 6 exemplos SQL</div>
-  <h2>Do primeiro SELECT <span class="grad">à resposta do dono</span></h2>
+  <h2>14 queries: do primeiro SELECT <span class="grad">à resposta do dono</span></h2>
   <table class="t" style="font-size:22px;">
-    <tr><th>Exemplo</th><th>Conceito</th><th>O que ele mostra</th></tr>
-    <tr><td>01 · primeiro SELECT</td><td>SELECT, FROM, LIMIT, COUNT</td><td>60 projetos, 41 em andamento</td></tr>
-    <tr><td>02 · ORDER BY e DISTINCT</td><td>ORDER BY, DISTINCT, CAST, SUM</td><td>carteira de R$ 305,2 mi; a ferramenta escrita de 8 jeitos</td></tr>
-    <tr><td>03 · WHERE e a sujeira</td><td>WHERE, LIKE, IS NULL, FILTER</td><td>os <b>12 achados</b> de sujeira, antes de virarem decisão</td></tr>
-    <tr><td>04 · GROUP BY</td><td>date_trunc, try_cast, replace</td><td>custo por mês; o try_cast que perde 671 lançamentos</td></tr>
-    <tr class="cur"><td>05 · UNION</td><td>CTE, UNION ALL, CASE, JOIN</td><td><b>as 3 ferramentas numa fila só</b> → SPI de cada projeto</td></tr>
-    <tr class="cur"><td>06 · quanto custa</td><td>CTE encadeada, KPI, janela</td><td><b>R$ 6,47 mi</b> de estouro; 7 críticos; 4 melancias</td></tr>
+    <tr><th>Exemplo</th><th>Conceito</th><th class="r">Queries</th><th>O que ele mostra</th></tr>
+    <tr><td>01 · SELECT</td><td>SELECT, FROM, LIMIT, COUNT</td><td class="r">2</td><td>olhar o cadastro: 60 projetos</td></tr>
+    <tr><td>02 · ORDER BY e DISTINCT</td><td>ORDER BY, CAST, DISTINCT</td><td class="r">3</td><td>o maior contrato é o PRJ-017; a ferramenta escrita de 8 jeitos</td></tr>
+    <tr><td>03 · WHERE e a sujeira</td><td>WHERE, LIKE</td><td class="r">3</td><td>data em 2 formatos, linha de TOTAL, 671 custos com vírgula</td></tr>
+    <tr><td>04 · GROUP BY</td><td>GROUP BY, SUM, replace</td><td class="r">2</td><td>o erro da vírgula; R$ 117,8 mi em gente</td></tr>
+    <tr class="cur"><td>05 · UNION</td><td>UNION ALL, VIEW, CASE, JOIN, WITH</td><td class="r">2</td><td><b>as 3 ferramentas numa fila só</b> → quem atrasa (pergunta 1)</td></tr>
+    <tr class="cur"><td>06 · quanto custa</td><td>WITH, conta de KPI</td><td class="r">2</td><td><b>R$ 6,47 mi</b> de estouro e 4 melancias (pergunta 2)</td></tr>
   </table>
-  <p class="note" style="margin-top:22px;">Cada exemplo existe em dois notebooks: <b>em branco</b> (você digita) e <b>resolvido</b> (para conferir).</p>
+  <p class="note" style="margin-top:22px;">Cada exemplo existe em dois notebooks: <b>em branco</b> (você digita) e <b>resolvido</b> (para conferir). Bônus, se sobrar tempo: o <b>exemplo 00</b>, time travel.</p>
   [[RODAPE]]
 </section>
 
@@ -961,18 +1085,17 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
   <div class="kicker">Noite 1 · exemplo 01 · SELECT</div>
   <h2>O que existe no catálogo, <span class="grad">e onde cada projeto vive?</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.25fr 1fr;">
-    <pre class="code" style="font-size:19px;"><span class="k">SELECT</span> *
+    <pre class="code" style="font-size:19px;"><span class="c">-- 1. a primeira olhada</span>
+<span class="k">SELECT</span> *
 <span class="k">FROM</span> lakehouse_vertice.bronze.projetos
 <span class="k">LIMIT</span> 10;
 
-<span class="k">SELECT</span>
-  (<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> bronze.projetos)          <span class="k">AS</span> projetos,
-  (<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> bronze.excel_tarefas)     <span class="k">AS</span> linhas_no_excel,
-  (<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> bronze.clickup_tarefas)   <span class="k">AS</span> tarefas_no_clickup,
-  (<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> bronze.msproject_tarefas) <span class="k">AS</span> tarefas_no_project;</pre>
+<span class="c">-- 2. quantos projetos?</span>
+<span class="k">SELECT COUNT</span>(*) <span class="k">AS</span> projetos
+<span class="k">FROM</span> lakehouse_vertice.bronze.projetos;</pre>
     <div>
       <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">SELECT, FROM, LIMIT, COUNT(*). Antes de calcular qualquer KPI, olhe o dado. Sempre.</div></div>
-      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li><b>60</b> projetos · <b>3.911</b> status semanais</li><li>Excel <b>1.663</b> linhas · ClickUp <b>2.119</b> · Project <b>1.260</b></li><li>a mesma informação com três caras: data em texto, em número de série e em milissegundos</li></ul></div>
+      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>cliente, valor, prazo e a <b>ferramenta</b> de cada projeto</li><li><b>60</b> projetos</li><li>a ferramenta já aparece escrita de jeitos diferentes</li></ul></div>
     </div>
   </div>
   <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-primeiro-select.sql</b> no GitHub. Copie, cole no SQL Editor e rode bloco a bloco.</p>
@@ -981,21 +1104,24 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
 
 <section class="slide">
   <div class="kicker">Noite 1 · exemplo 02 · ORDER BY, DISTINCT e CAST</div>
-  <h2>Quanto vale a carteira, <span class="grad">e quais os maiores contratos?</span></h2>
+  <h2>Quais são <span class="grad">os maiores contratos?</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.25fr 1fr;">
-    <pre class="code" style="font-size:19px;"><span class="c">-- a armadilha: ordenar texto</span>
+    <pre class="code" style="font-size:19px;"><span class="c">-- 1. a armadilha: ordenar texto</span>
 <span class="k">SELECT</span> projeto_id, valor_contrato
 <span class="k">FROM</span> bronze.projetos
-<span class="k">ORDER BY</span> valor_contrato <span class="k">DESC</span>;      <span class="c">-- PRJ-052 em 1º?</span>
+<span class="k">ORDER BY</span> valor_contrato <span class="k">DESC</span>;   <span class="c">-- PRJ-052 em 1º?</span>
 
-<span class="c">-- com CAST, ordena como número</span>
-<span class="k">SELECT</span> projeto_id, <span class="k">CAST</span>(valor_contrato <span class="k">AS DECIMAL</span>(18,2))
-<span class="k">FROM</span> bronze.projetos <span class="k">ORDER BY</span> 2 <span class="k">DESC</span>; <span class="c">-- PRJ-017</span>
+<span class="c">-- 2. com CAST, ordena como número</span>
+<span class="k">SELECT</span> projeto_id,
+       <span class="k">CAST</span>(valor_contrato <span class="k">AS DECIMAL</span>(18,2)) <span class="k">AS</span> valor_numero
+<span class="k">FROM</span> bronze.projetos
+<span class="k">ORDER BY</span> valor_numero <span class="k">DESC</span>;     <span class="c">-- PRJ-017</span>
 
+<span class="c">-- 3. sem repetição</span>
 <span class="k">SELECT DISTINCT</span> ferramenta <span class="k">FROM</span> bronze.projetos;</pre>
     <div>
       <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">Na bronze tudo é texto: sem CAST, ORDER BY ordena como palavra, e '8380000' passa na frente de '15275000'.</div></div>
-      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>maior contrato de verdade: <b>PRJ-017, R$ 15,3 mi</b> (o texto dizia PRJ-052)</li><li>carteira <b>R$ 305,2 mi</b>, R$ 208,6 mi em andamento</li><li>a ferramenta escrita de <b>8 jeitos</b>: Excel, excel, Planilha, ClickUp, Clickup…</li></ul></div>
+      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>maior contrato de verdade: <b>PRJ-017, R$ 15,3 mi</b> (o texto dizia PRJ-052)</li><li>a ferramenta escrita de <b>8 jeitos</b>: Excel, excel, Planilha, ClickUp, Clickup…</li></ul></div>
     </div>
   </div>
   <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-02-order-by-e-distinct.sql</b>. A primeira sujeira do dia é o retrato do problema da Vértice: cada um registra do seu jeito.</p>
@@ -1006,45 +1132,49 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
   <div class="kicker">Noite 1 · exemplo 03 · WHERE e a sujeira</div>
   <h2>Dá para <span class="grad">confiar</span> nesse número?</h2>
   <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.25fr 1fr;">
-    <pre class="code" style="font-size:19px;"><span class="k">SELECT COUNT</span>(*) <span class="k">FILTER</span> (<span class="k">WHERE</span> data_inicio <span class="k">LIKE</span> <span class="s">'%/%'</span>) <span class="k">AS</span> br,
-       <span class="k">COUNT</span>(*) <span class="k">FILTER</span> (<span class="k">WHERE</span> data_inicio <span class="k">LIKE</span> <span class="s">'%-%'</span>) <span class="k">AS</span> iso
-<span class="k">FROM</span> bronze.projetos;
+    <pre class="code" style="font-size:19px;"><span class="c">-- 1. data com barra: 14/03/2025</span>
+<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> bronze.projetos
+<span class="k">WHERE</span> data_inicio <span class="k">LIKE</span> <span class="s">'%/%'</span>;          <span class="c">-- 24 (os outros 36: 2025-03-14)</span>
 
+<span class="c">-- 2. a linha de TOTAL da planilha</span>
 <span class="k">SELECT</span> arquivo, tarefa, horas_previstas
 <span class="k">FROM</span> bronze.excel_tarefas
-<span class="k">WHERE</span> tarefa = <span class="s">'TOTAL'</span>;           <span class="c">-- conta duas vezes</span>
+<span class="k">WHERE</span> tarefa = <span class="s">'TOTAL'</span>;                <span class="c">-- 20: conta duas vezes</span>
 
-<span class="k">SELECT COUNT</span>(*) <span class="k">FILTER</span> (<span class="k">WHERE</span> valor <span class="k">LIKE</span> <span class="s">'%,%'</span>)
-<span class="k">FROM</span> bronze.custos;                   <span class="c">-- vírgula decimal</span></pre>
+<span class="c">-- 3. vírgula decimal</span>
+<span class="k">SELECT COUNT</span>(*) <span class="k">FROM</span> bronze.custos
+<span class="k">WHERE</span> valor <span class="k">LIKE</span> <span class="s">'%,%'</span>;                <span class="c">-- 671</span></pre>
     <div>
-      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">WHERE, LIKE, IS NULL, COUNT(*) FILTER. Dado sujo não dá erro: dá um número errado, em silêncio.</div></div>
-      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>data em 2 formatos: <b>24</b> × <b>36</b> projetos</li><li><b>20</b> linhas de TOTAL no Excel · <b>105</b> tarefas-resumo no Project</li><li><b>671</b> custos com vírgula · <b>3</b> pessoas duplicadas · <b>51</b> status vazios</li><li>CodeForge de <b>4</b> jeitos · status do ClickUp de <b>12</b></li></ul></div>
+      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">WHERE escolhe as linhas; LIKE '%/%' = "tem uma barra em algum lugar". Dado sujo não dá erro: dá um número errado, em silêncio.</div></div>
+      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>data em 2 formatos: <b>24</b> × <b>36</b> projetos</li><li><b>20</b> linhas de TOTAL no Excel</li><li><b>671</b> custos com vírgula decimal</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-03-where-e-a-sujeira.sql</b>: 12 achados. É o exemplo mais importante do dia, e tudo que ele acha é o que a silver conserta amanhã.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-03-where-e-a-sujeira.sql</b>: 3 achados. Tudo que ele acha é o que a silver conserta amanhã.</p>
   [[RODAPE]]
 </section>
 
 <section class="slide">
   <div class="kicker">Noite 1 · exemplo 04 · GROUP BY</div>
-  <h2>Quanto a Vértice <span class="grad">gasta por mês?</span></h2>
+  <h2>Para onde vai <span class="grad">o dinheiro?</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.25fr 1fr;">
-    <pre class="code" style="font-size:19px;"><span class="c">-- 1. quebra: '12345,67' não é número</span>
-<span class="k">SELECT SUM</span>(<span class="k">CAST</span>(valor <span class="k">AS DECIMAL</span>(18,2))) <span class="k">FROM</span> bronze.custos;
+    <pre class="code" style="font-size:19px;"><span class="c">-- 1. quebra: '1827,44' não é número</span>
+<span class="k">SELECT</span> categoria, <span class="k">SUM</span>(<span class="k">CAST</span>(valor <span class="k">AS DECIMAL</span>(18,2)))
+<span class="k">FROM</span> bronze.custos
+<span class="k">GROUP BY</span> categoria;
 
-<span class="c">-- 2. não quebra... e joga 671 linhas fora</span>
-<span class="k">SELECT SUM</span>(<span class="k">try_cast</span>(valor <span class="k">AS DECIMAL</span>(18,2))) <span class="k">FROM</span> bronze.custos;
-
-<span class="c">-- 3. o certo: vírgula vira ponto antes</span>
-<span class="k">SELECT</span> date_trunc(<span class="s">'MONTH'</span>, <span class="k">CAST</span>(data <span class="k">AS DATE</span>)) <span class="k">AS</span> mes,
+<span class="c">-- 2. o certo: vírgula vira ponto antes</span>
+<span class="k">SELECT</span> categoria,
        <span class="k">SUM</span>(<span class="k">CAST</span>(replace(valor, <span class="s">','</span>, <span class="s">'.'</span>) <span class="k">AS DECIMAL</span>(18,2)))
-<span class="k">FROM</span> bronze.custos <span class="k">GROUP BY</span> 1 <span class="k">ORDER BY</span> 1;</pre>
+         <span class="k">AS</span> custo
+<span class="k">FROM</span> bronze.custos
+<span class="k">GROUP BY</span> categoria
+<span class="k">ORDER BY</span> custo <span class="k">DESC</span>;</pre>
     <div>
-      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">GROUP BY, date_trunc, try_cast, replace. A primeira query falha de propósito; a segunda "funciona" e mente.</div></div>
-      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>com try_cast: <b>R$ 187,94 mi</b> (671 lançamentos sumiram)</li><li>certo: <b>R$ 193,35 mi</b> de custo real</li><li>gente é <b>R$ 117,8 mi</b>, quase dois terços; consultoria R$ 29,4 mi; cloud R$ 23,0 mi</li></ul></div>
+      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">GROUP BY junta as linhas da mesma categoria e faz a conta dentro de cada grupo. A primeira query falha de propósito: é a vírgula do exemplo 03.</div></div>
+      <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>a primeira: erro <b>CAST_INVALID_INPUT</b></li><li>a segunda: <b>R$ 193,35 mi</b> de custo real</li><li>gente é <b>R$ 117,8 mi</b>, quase dois terços; consultoria R$ 29,4 mi; cloud R$ 23,0 mi</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-04-group-by-custo-no-tempo.sql</b>. A diferença de R$ 5,41 mi é o tamanho de um erro silencioso.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-04-group-by-custo-no-tempo.sql</b>. Começa a responder a pergunta 2: quanto custa.</p>
   [[RODAPE]]
 </section>
 
@@ -1063,13 +1193,13 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
 <span class="k">SELECT</span> ..., <span class="s">'msproject'</span>, Name, <span class="c">-- PT40H0M0S</span>
 <span class="k">FROM</span> bronze.msproject_tarefas <span class="k">WHERE</span> Summary = 0;
 
-<span class="c">-- SPI = horas agregadas ÷ horas planejadas até 16/10/2026</span></pre>
+<span class="c">-- 2. SPI = horas agregadas ÷ horas planejadas até 16/10</span></pre>
     <div>
-      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">CTE, UNION ALL, CASE, JOIN. Cada ferramenta é traduzida para as mesmas 7 colunas e empilhada: um rascunho à mão da silver de amanhã.</div></div>
+      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">UNION ALL empilha; a VIEW guarda a consulta com um nome. Cada ferramenta é traduzida para as mesmas 7 colunas e empilhada: um rascunho à mão da silver de amanhã.</div></div>
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>Excel <b>20</b> projetos / 1.643 tarefas · ClickUp <b>25</b> / 2.119 · Project <b>15</b> / 1.155</li><li>os <b>60</b> projetos numa tabela só, pela primeira vez</li><li>o SPI de cada um: o pior é o <b>PRJ-016, 0,63</b></li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-05-union-quais-projetos-atrasados.sql</b>. Rode inteiro: ele cria a view que o exemplo 06, o dashboard e a verificação usam.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-05-union-quais-projetos-atrasados.sql</b>. 2 queries. A primeira cria a view que o exemplo 06, o dashboard e a verificação usam.</p>
   [[RODAPE]]
 </section>
 
@@ -1094,17 +1224,19 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
   <div class="kicker">Noite 1 · exemplo 06 · quanto custa</div>
   <h2>Se nada mudar, <span class="grad">quanto a Vértice vai perder?</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.25fr 1fr;">
-    <pre class="code" style="font-size:19px;"><span class="k">WITH</span> valor <span class="k">AS</span> (... <span class="k">FROM</span> bronze.rascunho_tarefas ...),
+    <pre class="code" style="font-size:19px;"><span class="c">-- 1. projeto a projeto</span>
+<span class="k">WITH</span> valor <span class="k">AS</span> (... <span class="k">FROM</span> bronze.rascunho_tarefas ...),
      custo <span class="k">AS</span> (... replace(valor, <span class="s">','</span>, <span class="s">'.'</span>) ...),
-     farol <span class="k">AS</span> (... <span class="k">QUALIFY ROW_NUMBER</span>() ... = 1)
-<span class="k">SELECT</span> projeto_id, spi, cpi, farol,
-       orcamento / cpi              <span class="k">AS</span> eac,
-       orcamento / cpi - orcamento  <span class="k">AS</span> estouro,
-       <span class="k">SUM</span>(<span class="k">GREATEST</span>(0, orcamento / cpi - orcamento))
-         <span class="k">OVER</span> ()                     <span class="k">AS</span> estouro_total
-<span class="k">FROM</span> projeto <span class="k">ORDER BY LEAST</span>(spi, cpi);</pre>
+     farol <span class="k">AS</span> (... <span class="k">WHERE</span> data_status = <span class="s">'2026-10-16'</span>)
+<span class="k">SELECT</span> projeto_id, cliente, spi, cpi,
+       farol <span class="k">AS</span> farol_do_gerente,
+       eac - orcamento <span class="k">AS</span> estouro
+<span class="k">FROM</span> ... <span class="k">ORDER BY</span> spi;
+
+<span class="c">-- 2. a carteira: só quem estoura</span>
+<span class="k">SELECT SUM</span>(<span class="k">GREATEST</span>(0, eac - orcamento))   <span class="c">-- R$ 6,47 mi</span></pre>
     <div>
-      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">CTE encadeada, aritmética de KPI, janela (SUM OVER). EV = orçamento × % pronto; CPI = EV ÷ custo; EAC = orçamento ÷ CPI.</div></div>
+      <div class="card" style="margin-bottom:22px;"><div class="tag">Conceito</div><div class="lbl" style="color:#fff; font-size:24px;">WITH divide a conta em 3 perguntas simples: quanto está pronto, quanto gastou, qual o farol. EV = orçamento × % pronto; CPI = EV ÷ custo; EAC = orçamento ÷ CPI.</div></div>
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li><b>R$ 6,47 mi</b> de estouro previsto</li><li><b>7</b> críticos e <b>10</b> em atenção</li><li><b>4</b> melancias: verdes para o gerente, abaixo de 0,9 pelo número</li></ul></div>
     </div>
   </div>
@@ -1122,6 +1254,23 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
   </div>
   <div class="card"><div class="tag">As melancias: verdes por fora, vermelhas por dentro</div>
     <div class="lbl" style="font-size:26px; color:#fff;">PRJ-012 · PRJ-028 · PRJ-034 · PRJ-042: o gerente publicou verde na sexta; o número diz atraso. A regra da Vértice é verde só com SPI ≥ 0,95.</div></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · o que deve aparecer na tela</div>
+  <h2>Seu número é diferente? <span class="grad">O erro está na query</span></h2>
+  <table class="t" style="font-size:23px;">
+    <tr><th>Métrica</th><th>Valor</th></tr>
+    <tr><td>Carteira total · em andamento</td><td>R$ 305,2 mi · R$ 208,6 mi (41 projetos)</td></tr>
+    <tr><td>Custo real total</td><td>R$ 193,35 mi (pessoal: R$ 117,8 mi)</td></tr>
+    <tr><td>Projetos em atenção · críticos</td><td>10 · 7</td></tr>
+    <tr><td>Piores SPI</td><td>PRJ-016 0,63 · PRJ-030 0,69 · PRJ-039 0,75 · PRJ-011 0,77</td></tr>
+    <tr><td>Piores CPI</td><td>PRJ-009 0,77 · PRJ-027 0,79 · PRJ-005 0,81</td></tr>
+    <tr class="cur"><td>Estouro previsto da carteira</td><td><b>R$ 6,47 mi</b> (maior: PRJ-021, R$ 1,78 mi)</td></tr>
+    <tr><td>Farol verde com SPI &lt; 0,9</td><td>4 melancias: PRJ-012, 028, 034, 042</td></tr>
+  </table>
+  <p class="note" style="margin-top:20px;">A seed é fixa: todo mundo tem o mesmo dado. Rode o <b>99-verificacao.sql</b> (depois do exemplo 05): <b>18 de 18 ok</b>.</p>
   [[RODAPE]]
 </section>
 
@@ -1236,6 +1385,23 @@ O que vai dar errado no próximo mês?</pre>
 </section>
 
 <!-- ============================================================ NOITE 2 -->
+
+<section class="slide">
+  <div class="kicker">Noite 1 · se der errado</div>
+  <h2>Sintoma, causa, <span class="grad">o que fazer</span></h2>
+  <table class="t" style="font-size:20px;">
+    <tr><th>Sintoma</th><th>O que fazer</th></tr>
+    <tr><td>"Create a catalog" dá erro</td><td>rode o <b>00-setup-catalogo.sql</b> no SQL Editor</td></tr>
+    <tr><td><b>PERMISSION_DENIED</b> ao criar catálogo</td><td>o workspace não é seu: use a sua conta Free Edition</td></tr>
+    <tr><td><b>PATH_NOT_FOUND</b> ou tabela com 0 linhas</td><td>arquivo na pasta errada: confira <b>/Volumes/lakehouse_vertice/bronze/raw/pmo/projetos.csv</b></td></tr>
+    <tr><td><b>CAST_INVALID_INPUT</b> no exemplo 04</td><td><b>é de propósito</b>: é a vírgula decimal, o ponto da aula</td></tr>
+    <tr><td><b>rascunho_tarefas</b> não existe</td><td>rode o exemplo 05 inteiro antes do 06 e da verificação</td></tr>
+    <tr><td>SPI/CPI diferentes</td><td>use <b>DATE'2026-10-16'</b>, nunca <b>current_date()</b></td></tr>
+    <tr><td>primeiro comando ou dashboard demora</td><td>o serverless está ligando: espere uns 10 segundos</td></tr>
+    <tr><td>o Genie respondeu diferente do roteiro</td><td>normal, ele varia. Pergunte "qual a regra de crítico?" e veja que ele não sabe</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
 
 <section class="slide hero">
   <div class="kicker">A frase do primeiro dia</div>
