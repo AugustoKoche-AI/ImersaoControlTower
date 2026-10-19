@@ -29,8 +29,28 @@ Um dashboard tem duas partes: a aba **Data** (as consultas SQL, chamadas de *dat
 
 ### 3. Criar os gráficos (canvas)
 
-Volte para a página do canvas. Para cada gráfico: na barra de baixo, **Add a visualization**, e solte o
-quadro na página. Dá para montar de dois jeitos:
+Volte para a página do canvas.
+
+**O jeito rápido: um prompt para o dashboard inteiro.** Com os 2 datasets criados, abra o **Assistant** no canvas
+e cole:
+
+```
+Monte um dashboard da carteira de projetos usando os datasets "Projetos em andamento"
+e "Custos por mês". No topo, 4 contadores: a soma de valor_contrato (título "Carteira
+em andamento", em reais), a soma de em_risco ("Projetos com SPI ou CPI < 0,9"), a soma
+de critico ("Projetos críticos (< 0,8)") e a soma de melancia ("Farol verde com
+SPI < 0,9"). Embaixo, à esquerda, barras horizontais com o SPI de cada projeto, do
+menor para o maior, cor pela situacao. À direita, barras empilhadas com a quantidade
+de projetos por ferramenta, cor pela situacao. Depois, barras empilhadas do custo
+(soma de valor) por mês, cor pela categoria, do dataset "Custos por mês". No fim, uma
+tabela com projeto, cliente, ferramenta, spi, cpi, situacao, farol, estouro_previsto
+e atraso_projetado_dias, ordenada por spi.
+```
+
+Confira os gráficos. Se algum sair diferente, refaça só ele com o prompt da tabela abaixo.
+
+**Gráfico por gráfico:** na barra de baixo, **Add a visualization**, e solte o quadro na página. Dá para montar de
+dois jeitos:
 
 - **Com o assistente:** no quadro novo, digite o prompt da tabela abaixo e aperte Enter. O Databricks Assistant
   escolhe o tipo de gráfico e os campos. Confira e ajuste no painel da direita.

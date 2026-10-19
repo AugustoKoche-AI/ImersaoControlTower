@@ -204,9 +204,40 @@ UNION ALL
 SELECT 'msproject' AS ferramenta, COUNT(*) AS linhas FROM lakehouse_vertice.bronze.msproject_tarefas;
 
 -- 2. Traduzir UMA ferramenta: o Excel nas 7 colunas.
---    As 7 colunas: projeto_id · ferramenta · tarefa · inicio_baseline · fim_baseline
---                  · pct_concluido · horas       (baseline = o plano original)
---    CASE WHEN ... THEN ... ELSE ... END   o "se" do SQL
+--
+--    O QUE A GENTE QUER: que cada linha da planilha vire uma tarefa "limpa", com as mesmas
+--    7 colunas que o ClickUp e o MS Project vão ter. Só assim dá para empilhar (bloco 1).
+--      projeto_id · ferramenta · tarefa · inicio_baseline · fim_baseline · pct_concluido · horas
+--      (baseline = o plano original: quando a tarefa DEVIA começar e terminar)
+--
+--    O QUE ATRAPALHA (você viu tudo isso nos exemplos 01 e 03):
+--      · a planilha não tem coluna de projeto: o PRJ-xxx está no nome do arquivo
+--      · a data vem de dois jeitos: '06/03/2025' ou 45700 (número de série do Excel,
+--        que conta os dias desde 30/12/1899)
+--      · o % vem de dois jeitos: '45%' (às vezes '64,4%', com vírgula) ou 0.45; e tem % acima de 100
+--      · as horas vêm como texto, às vezes com 'h' ('64h')
+--      · a última linha de cada planilha é o TOTAL
+--
+--    O COMANDO NOVO: CASE WHEN condição THEN isto ELSE aquilo END, o "se" do SQL.
+--      Ele resolve os dois jeitos: SE tem barra, lê como data; SENÃO, é número de série.
+--
+--    TENTE COM A IA: no SQL Editor, abra o Assistant (o ícone de estrelinha) e cole o prompt:
+--
+--      Escreva um SELECT na tabela lakehouse_vertice.bronze.excel_tarefas, com LIMIT 10,
+--      que devolva 7 colunas: projeto_id, ferramenta, tarefa, inicio_baseline, fim_baseline,
+--      pct_concluido e horas. Regras:
+--      - projeto_id: extraia o padrão PRJ- seguido de 3 dígitos da coluna arquivo
+--      - ferramenta: o texto fixo 'excel'
+--      - inicio_baseline e fim_baseline vêm de inicio_previsto e termino_previsto, que são texto.
+--        Se tiver barra, é uma data dd/MM/yyyy. Senão, é o número de série do Excel: dias
+--        contados a partir de 1899-12-30
+--      - pct_concluido: se tiver o símbolo %, tire o % e troque vírgula por ponto. Senão, é
+--        uma fração (0.45): multiplique por 100. Limite o resultado a no máximo 100
+--      - horas: horas_previstas sem a letra h, como número
+--      - ignore as linhas em que tarefa = 'TOTAL'
+--      Use CASE WHEN e escreva um comentário curto em português antes de cada coluna.
+--
+--    Compare o que a IA escreveu com o gabarito abaixo. Rode os dois: o resultado bate?
 --    Deve aparecer: datas de verdade (mesmo onde a planilha tinha 45700) e % de 0 a 100.
 SELECT -- o projeto está no nome do arquivo: 'Cronograma PRJ-002.xlsx' → pega "PRJ-" + 3 dígitos
        regexp_extract(arquivo, 'PRJ-[0-9]{3}', 0)                         AS projeto_id,

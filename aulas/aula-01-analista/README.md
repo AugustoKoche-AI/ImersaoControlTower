@@ -110,7 +110,7 @@ Tudo pelo menu da esquerda, sem código. É aqui que a gente desenha a estratég
 | `financeiro/` | `custos.csv` |
 | `compras/` | `entregas_fornecedor.csv` |
 
-A pasta `documentos/` (os contratos em PDF) só entra na noite 4.
+A pasta `documentos/` (os contratos em PDF) é usada na noite 4 e no bônus do exemplo 07: se for rodar o bônus, suba ela também.
 
 > **O caminho importa.** O SQL do passo 4 procura `/Volumes/lakehouse_vertice/bronze/raw/pmo/projetos.csv`, e assim
 > por diante. Arquivo fora da pasta certa vira tabela com 0 linhas.
@@ -301,6 +301,8 @@ O que esperar de cada um:
   projetos em andamento.
 - **06:** o atraso vira dinheiro (R$ 6,47 mi de estouro previsto) e, na coluna do farol, aparecem os 4 projetos melancia.
 - **00 (bônus):** time travel, se sobrar tempo.
+- **07 (bônus):** [`exemplo-07-ler-pdf.sql`](exemplo-07-ler-pdf.sql): o SQL lê o contrato da CodeForge em PDF com
+  `ai_parse_document` e mostra a cláusula de multa. Precisa da pasta `documentos/` no volume. É o gancho da noite 4.
 
 Pelo terminal (opcional):
 
