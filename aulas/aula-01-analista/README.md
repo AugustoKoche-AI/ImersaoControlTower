@@ -74,27 +74,51 @@ O "hoje" do dataset é **16/10/2026**. Todas as contas usam essa data, nunca a d
 Entre em [databricks.com/learn/free-edition](https://www.databricks.com/learn/free-edition). Não pede cartão.
 Tudo roda em **serverless**: você não precisa criar cluster.
 
-### 2. Traga o repositório para dentro do Databricks (2 min)
+### 2. Monte a casa do dado: catálogo, camadas e volume (5 min)
 
-**Workspace → Create → Git folder** → cole `https://github.com/lvgalvao/ImersaoControlTower` → **Create Git folder**.
+Tudo pelo menu da esquerda, sem código. É aqui que a gente desenha a estratégia: **um catálogo** para o projeto e
+**três camadas** (o medalhão) antes de qualquer dado chegar.
 
-O repositório inteiro aparece no seu workspace, inclusive o gerador de dados.
+1. **Catalog → `+` (ao lado de "Catalog") → Create a catalog**. Nome: `lakehouse_vertice`. Tipo: **Standard**,
+   storage padrão. **Create**.
+2. Dentro de `lakehouse_vertice`: **Create schema** três vezes: `bronze`, `silver` e `gold`.
+   - `bronze`: o dado como veio de cada ferramenta, sujeira inclusa (hoje);
+   - `silver`: limpo e integrado, as 3 ferramentas num modelo só (noite 2);
+   - `gold`: pronto para a diretoria (noite 2).
+3. Dentro de `bronze`: **Create → Volume**. Nome: `raw`. Tipo: **Managed**. É uma pasta para guardar **arquivos**
+   (planilha, JSON, XML, CSV) dentro do catálogo.
 
-### 3. Gere os dados direto no volume (3 min)
+> **O botão "Create a catalog" deu erro?** Abra o **SQL Editor** e rode
+> [`00-setup-catalogo.sql`](00-setup-catalogo.sql): ele cria o catálogo, os 3 schemas e o volume de uma vez.
 
-Abra `aulas/aula-01-analista/00-carregar-dados` e clique **Run all**. O notebook faz três coisas:
+### 3. Baixe os arquivos da Vértice e suba no volume (5 min)
 
-1. roda o [`00-setup-catalogo.sql`](00-setup-catalogo.sql): cria o catálogo, os 3 schemas e o volume `bronze.raw`;
-2. roda o [`material/gerar_dataset.py`](../../material/gerar_dataset.py), que escreve os arquivos em
-   `/Volumes/lakehouse_vertice/bronze/raw/`;
-3. roda o [`material/validar_padroes.py`](../../material/validar_padroes.py), que confere se as 5 histórias
-   escondidas no dado estão lá. Ele termina com `TODOS OS PADRÕES OK`.
+1. Baixe o **`dados-vertice.zip`** da pasta da imersão no Drive (link no chat da aula) e descompacte. Saem 9 pastas.
+2. Abra **Catalog → lakehouse_vertice → bronze → Volumes → raw**.
+3. Para cada pasta, **Create directory** com o mesmo nome e, dentro dela, **Upload to this volume** com os arquivos
+   (dá para selecionar todos de uma vez):
+
+| Pasta no volume | O que vai dentro |
+|---|---|
+| `pmo/` | `projetos.csv` · `status_semanal.csv` |
+| `excel/` | as 20 planilhas `.xlsx` |
+| `clickup/` | os 25 `.json` |
+| `msproject/` | os 15 `.xml` |
+| `rh/` | `colaboradores.csv` |
+| `timesheet/` | `apontamentos.csv` |
+| `financeiro/` | `custos.csv` |
+| `compras/` | `entregas_fornecedor.csv` |
+
+A pasta `documentos/` (os contratos em PDF) só entra na noite 4.
+
+> **O caminho importa.** O SQL do passo 4 procura `/Volumes/lakehouse_vertice/bronze/raw/pmo/projetos.csv`, e assim
+> por diante. Arquivo fora da pasta certa vira tabela com 0 linhas.
 
 Abra **Catalog** no menu da esquerda e clique em `lakehouse_vertice`:
 
 ![O catálogo lakehouse_vertice com os schemas bronze, silver e gold](../../docs/img/recurso-catalogo.jpg)
 
-*Repare nos três schemas que você criou: `bronze`, `silver` e `gold`. O `default` e o `information_schema` o
+*Repare nos três schemas que você criou à mão: `bronze`, `silver` e `gold`. O `default` e o `information_schema` o
 Databricks cria sozinho. Hoje só a `bronze` recebe dado; `silver` e `gold` ficam vazias até a noite 2.*
 
 Agora entre em **bronze → Volumes → raw → excel**:
@@ -104,13 +128,10 @@ Agora entre em **bronze → Volumes → raw → excel**:
 *Repare: são arquivos `.xlsx` de verdade, um por projeto (`Cronograma PRJ-002.xlsx`…), guardados no volume. Ainda
 não é tabela. É exatamente o que cada gerente mandaria por e-mail.*
 
-> **Prefere fazer à mão?** Rode `00-setup-catalogo.sql` no SQL Editor, gere os dados no seu computador
-> (`python3 material/gerar_dataset.py --saida ./dados`) e suba cada pasta com **Upload to this volume**,
-> mantendo a estrutura `raw/<sistema>/<arquivo>`.
-
 ### 4. Transforme os arquivos em tabelas: a bronze (2 min)
 
-Abra [`01-ingestao-bronze.sql`](01-ingestao-bronze.sql) no **SQL Editor**, selecione tudo e rode.
+Abra o [`01-ingestao-bronze.sql`](01-ingestao-bronze.sql) aqui no GitHub, copie tudo, cole numa query nova do
+**SQL Editor** e rode (**Run all**).
 O mesmo comando (`read_files`) lê CSV, Excel, JSON e XML. A última query mostra as 9 tabelas e as linhas de cada uma.
 
 ![As tabelas da bronze no Catalog Explorer](../../docs/img/noite1-catalogo-bronze.jpg)
@@ -294,7 +315,7 @@ projeto vai custar no fim se nada mudar. Um SPI de 0,80 quer dizer "andou 80% do
 - `notebooks/resolvidos/`: cada bloco é uma célula, com a query pronta;
 - `notebooks/em-branco/`: a mesma explicação, com a célula vazia para escrever ao vivo.
 
-No Git folder eles já aparecem. Para importar por fora:
+Para abrir no Databricks: **Workspace → Import → URL** e cole o link *raw* do notebook no GitHub, ou copie e cole a query no SQL Editor. Para o instrutor importar todos de uma vez:
 
 ```bash
 python3 scripts/gerar_notebooks.py aulas/aula-01-analista --importar --profile SEU-PERFIL
@@ -348,7 +369,7 @@ Os comandos de terminal são opcionais hoje: a CLI é a lição de casa (veja o 
 
 Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 
-1. faça os passos 1 a 4 (só cliques e **Run all**);
+1. faça os passos 1 a 4 (cliques, upload e um **Run all** no SQL Editor);
 2. abra o **dashboard** publicado e responda as perguntas do dono olhando para ele;
 3. use o **Genie** com as 4 perguntas do roteiro e compare com a tabela [O que deve aparecer na tela](#-o-que-deve-aparecer-na-tela);
 4. no SQL Editor, use o **Genie Code** (o assistente do editor) e peça: *"junte as tarefas de bronze.excel_tarefas,
@@ -361,9 +382,10 @@ Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 
 | Sintoma | Causa | O que fazer |
 |---|---|---|
-| `00-carregar-dados` não acha `material/gerar_dataset.py` | o notebook foi importado solto, fora do Git folder | abra pelo Git folder (passo 2) |
+| "Create a catalog" dá erro | o Free Edition recusa criar catálogo por ali em algumas contas | rode o `00-setup-catalogo.sql` no SQL Editor |
+| "Error creating Git folder" / credencial expirada | o Git folder não é mais usado na noite 1 | siga os passos 2 a 4: tudo pela interface |
 | `PERMISSION_DENIED` ao criar catálogo | workspace que não é seu | use a sua conta Free Edition |
-| `01-ingestao-bronze` dá `PATH_NOT_FOUND` | os arquivos não estão em `raw/<sistema>/` | rode o `00-carregar-dados` de novo |
+| `01-ingestao-bronze` dá `PATH_NOT_FOUND` | os arquivos não estão em `raw/<sistema>/` | confira os nomes das pastas no volume (tabela do passo 3) |
 | Tabela com 0 linhas | upload manual numa pasta errada | confira `/Volumes/lakehouse_vertice/bronze/raw/pmo/projetos.csv` |
 | `CAST_INVALID_INPUT` no exemplo 04 | **é de propósito** | é o ponto da aula: a vírgula decimal |
 | Exemplo 06 ou verificação: `rascunho_tarefas` não existe | o exemplo 05 não rodou | rode o exemplo 05 inteiro |
@@ -378,7 +400,7 @@ Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 
 | Arquivo | Para que serve |
 |---|---|
-| `00-carregar-dados.py` | notebook: catálogo + gera os dados no volume + confere os padrões |
+| `00-carregar-dados.py` | atalho opcional (Git folder): cria tudo e gera os dados direto no volume |
 | `00-setup-catalogo.sql` | catálogo, schemas e volume (também roda no SQL Editor) |
 | `01-ingestao-bronze.sql` | CSV, Excel, JSON e XML viram 9 tabelas Delta |
 | `exemplo-01..06-*.sql` | os 6 exemplos da noite |
