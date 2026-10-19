@@ -14,7 +14,7 @@ seu numa ferramenta — planilhas Excel, ClickUp ou MS Project — e o PMO conso
 O produto cobre a plataforma de ponta a ponta: ingestão de qualquer formato (`read_files` com Excel, JSON e XML),
 integração e transformação (Lakeflow), IA sobre texto livre (`ai_classify`, `ai_extract`, `ai_parse_document`), KPIs
 governados (Metric Views), dashboards AI/BI, Genie, um modelo de previsão (MLflow + Unity Catalog), um Data App com
-Lakebase para registrar decisões, e um agente que lê contratos e o manual da empresa. Tudo roda no **Databricks Free
+Lakebase para registrar decisões, e um agente que lê os contratos de fornecedor. Tudo roda no **Databricks Free
 Edition**, então cada aluno reproduz na própria conta, construindo com o **Claude Code** e as skills oficiais do Databricks.
 
 ## Objetivos e métricas de sucesso
@@ -32,7 +32,7 @@ O projeto tem dois clientes: o dono da Vértice, que usa a Torre, e o aluno, que
 | --- | --- | --- |
 | Projetos com SPI/CPI atualizados toda semana | 0% (cada ferramenta de um jeito) | 100% das 3 ferramentas |
 | Tempo para responder "por que o projeto X atrasou?" | dias (ler status de cada gerente) | < 1 minuto (Genie) |
-| Antecedência na detecção de estouro | 0 dias (o cliente reclama) | ~40 dias (modelo da noite 3) |
+| Antecedência na detecção de estouro | 0 dias (o cliente reclama) | ~41 dias (modelo da noite 3) |
 | Farol confiável | farol do gerente | farol calculado pelo número |
 | Decisões de realocação registradas | e-mail/WhatsApp | 100% no app, com dono e horário |
 
@@ -56,9 +56,8 @@ logística e indústria: 60 projetos (41 em andamento), R$ 305 mi de carteira, 5
 | PMO | cadastro de projetos (o de-para) + status semanal em texto livre | ferramenta de cada projeto, farol do gerente, bloqueios |
 | RH e timesheet | colaboradores, alocações, apontamentos semanais | quem está onde e quanto trabalhou |
 | Financeiro | lançamentos de custo | pessoal, consultoria, cloud, licenças, despesas |
-| Compras | entregas das consultorias, banco de horas e créditos de cloud | prometido × entregue, saldo e consumo |
-| Incidentes | postmortems em texto livre | serviço, causa raiz, duração, impacto |
-| Documentos | 8 contratos de fornecedor/SaaS e o manual de tecnologias (PDF) | multa, SLA, renovação, aviso prévio, regras internas |
+| Compras | entregas das consultorias | prometido × entregue |
+| Documentos | 8 contratos de fornecedor/SaaS (PDF) | multa, SLA, renovação, aviso prévio |
 
 ### Personas
 
@@ -69,7 +68,7 @@ logística e indústria: 60 projetos (41 em andamento), R$ 305 mi de carteira, 5
 | PMO | as 3 ferramentas numa visão só, simular realocação | app: simula, aprova e registra |
 | Gerente de projeto | a causa do desvio, sem farol de enfeite | causa extraída do status semanal |
 | Financeiro | margem por contrato, estouro previsto, multa de fornecedor | EAC, margem e exposição contratual governados |
-| Compras | consultoria que atrasa, banco de horas acabando | ranking de fornecedor e ruptura de capacidade |
+| Compras | consultoria que atrasa | ranking de fornecedor e multa cobrável |
 
 ## KPIs
 
@@ -81,7 +80,6 @@ logística e indústria: 60 projetos (41 em andamento), R$ 305 mi de carteira, 5
 | Atraso projetado | duração ÷ SPI − duração | 1, 2 |
 | Farol calculado · melancia | verde ≥ 0,95, amarelo ≥ 0,90 · farol do gerente verde com SPI < 0,9 | 1, 2 |
 | Utilização · horas e custo ociosos | apontadas ÷ disponíveis; < 20% em 12 semanas = parado | 2 |
-| Ruptura de capacidade | saldo ÷ consumo previsto por dia < 30 dias | 2 |
 | Prazo real ÷ prometido do fornecedor | média por fornecedor normalizado | 2 |
 | Probabilidade de estouro em 30 dias | modelo: o pior índice cruza 0,9 em até 4 semanas | 3 |
 | Multa cobrável · aviso prévio vencendo | contrato × entregas atrasadas · fim da vigência − aviso prévio | 4 |
@@ -106,9 +104,9 @@ decimal; estornos; pessoa duplicada; status vazio.
 | Noite | Chapéu | Entrega | Como constrói |
 | --- | --- | --- | --- |
 | 1 | Analista | bronze lendo Excel, JSON e XML; 6 exemplos SQL até o SPI das 3 ferramentas (UNION à mão); dashboard; Genie sem curadoria que erra | navegador |
-| 2 | Engenheiro de Dados | bundle; pipeline Lakeflow que integra as 3 ferramentas (silver.tarefas); gold; IA nos status e postmortems; 5 metric views; dashboard e Genie curado | 6 prompts no Claude Code |
+| 2 | Engenheiro de Dados | bundle; pipeline Lakeflow que integra as 3 ferramentas (silver.tarefas); gold; IA nos status semanais; a metric view mv_projetos; dashboard e Genie curado | 6 prompts no Claude Code |
 | 3 | Cientista de Dados | features projeto × semana; modelo de estouro em 30 dias (MLflow + UC); score por projeto com motivos | 3 prompts |
-| 4 | Engenheiro de IA | agente de contratos e do manual (ai_parse_document + ai_extract tipado + Genie); app da Torre (AppKit) com simulador e aprovação no Lakebase; pitch | 3 prompts |
+| 4 | Engenheiro de IA | agente de contratos (ai_parse_document + ai_extract tipado + Genie); app da Torre (AppKit) com simulador e aprovação no Lakebase; pitch | 3 prompts |
 
 Toda noite tem uma trilha sem código para gestão, PMO e financeiro.
 

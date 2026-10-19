@@ -57,15 +57,15 @@
   },
   {
     "pergunta": "Qual fornecedor mais atrasa as entregas?",
-    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.desempenho_fornecedor ORDER BY fator_atraso DESC LIMIT 1"
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.silver.entregas_fornecedor GROUP BY fornecedor ORDER BY AVG(prazo_real_dias / prazo_prometido_dias) DESC LIMIT 1"
   },
   {
     "pergunta": "Quantas entregas de fornecedor estão em atraso hoje?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.entregas_em_atraso"
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.silver.entregas_fornecedor WHERE em_atraso"
   },
   {
-    "pergunta": "Quantos contratos de capacidade têm ruptura prevista?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.cobertura_capacidade WHERE ruptura_prevista"
+    "pergunta": "Quais projetos de e-commerce em andamento ficam travados pelo change freeze da Black Friday?",
+    "sql_referencia": "SELECT projeto_id FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' AND (lower(tipo_projeto) LIKE '%commerce%' OR lower(tipo_projeto) LIKE '%checkout%' OR lower(tipo_projeto) LIKE '%marketplace%')"
   },
   {
     "pergunta": "Quais SREs estão com utilização abaixo de 20% nas últimas 12 semanas?",
@@ -76,7 +76,7 @@
     "sql_referencia": "SELECT causa_bloqueio FROM lakehouse_vertice.gold.status_estruturado WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') GROUP BY causa_bloqueio ORDER BY COUNT(*) DESC LIMIT 1"
   },
   {
-    "pergunta": "Qual categoria de causa gerou mais incidentes em produção?",
-    "sql_referencia": "SELECT categoria_causa FROM lakehouse_vertice.gold.postmortem_estruturado GROUP BY categoria_causa ORDER BY COUNT(*) DESC LIMIT 1"
+    "pergunta": "Qual era o SPI do projeto PRJ-016 na semana de 25/09/2026?",
+    "sql_referencia": "SELECT ROUND(spi, 2) FROM lakehouse_vertice.gold.fato_projeto_semana WHERE projeto_id = 'PRJ-016' AND semana = DATE'2026-09-25'"
   }
 ]

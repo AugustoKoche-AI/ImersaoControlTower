@@ -19,7 +19,8 @@ echo "service principal do app $APP: $SP"
 TMP=$(mktemp)
 cat > "$TMP" <<SQL
 GRANT USE CATALOG ON CATALOG lakehouse_vertice TO \`$SP\`;
-GRANT USE SCHEMA, SELECT ON SCHEMA lakehouse_vertice.gold TO \`$SP\`
+GRANT USE SCHEMA, SELECT ON SCHEMA lakehouse_vertice.gold TO \`$SP\`;
+GRANT USE SCHEMA, SELECT ON SCHEMA lakehouse_vertice.silver TO \`$SP\`
 SQL
 python3 "$RAIZ/scripts/run_sql.py" "$TMP" --profile "$PERFIL" --quiet
 rm -f "$TMP"

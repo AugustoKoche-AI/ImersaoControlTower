@@ -27,8 +27,9 @@
       "name": "ds_evolucao",
       "displayName": "Evolução semanal da carteira",
       "queryLines": [
-        "SELECT semana, MEASURE(spi) AS spi, MEASURE(cpi) AS cpi, MEASURE(horas_ociosas) AS horas_ociosas\n",
-        "FROM mv_evolucao\n",
+        "-- PV, EV e AC já vêm acumulados por projeto: somar os projetos de UMA semana é válido.\n",
+        "SELECT semana, SUM(ev) / SUM(pv) AS spi, SUM(ev) / SUM(ac) AS cpi, SUM(horas_ociosas) AS horas_ociosas\n",
+        "FROM fato_projeto_semana\n",
         "WHERE semana >= DATE'2025-03-07'\n",
         "GROUP BY semana\n",
         "ORDER BY semana\n"
@@ -71,33 +72,28 @@
       ]
     },
     {
-      "name": "ds_capacidade",
-      "displayName": "Capacidade contratada hoje",
-      "queryLines": [
-        "SELECT projeto, fornecedor, tipo, unidade, saldo, consumo_previsto_dia, cobertura_dias, data_prevista_fim_saldo,\n",
-        "       CASE WHEN ruptura_prevista THEN 1 ELSE 0 END AS ruptura\n",
-        "FROM cobertura_capacidade\n"
-      ]
-    },
-    {
-      "name": "ds_rupturas",
-      "displayName": "Contratos com ruptura prevista",
-      "queryLines": [
-        "SELECT projeto, COUNT(*) AS rupturas\n",
-        "FROM cobertura_capacidade\n",
-        "WHERE ruptura_prevista\n",
-        "GROUP BY projeto\n",
-        "ORDER BY rupturas DESC\n"
-      ]
-    },
-    {
       "name": "ds_fornecedores",
       "displayName": "Desempenho de fornecedor",
       "queryLines": [
-        "SELECT fornecedor, entregas, grafias_no_cadastro, prazo_prometido_medio, prazo_real_medio,\n",
-        "       fator_atraso, pct_no_prazo, entregas_em_atraso\n",
-        "FROM desempenho_fornecedor\n",
+        "-- Direto da silver: o nome da CodeForge já foi normalizado (4 grafias viraram 1).\n",
+        "SELECT fornecedor, COUNT(*) AS entregas, COUNT(DISTINCT fornecedor_como_veio) AS grafias_no_cadastro,\n",
+        "       AVG(prazo_real_dias / prazo_prometido_dias) AS fator_atraso,\n",
+        "       AVG(CASE WHEN data_entrega <= data_prometida THEN 1.0 ELSE 0.0 END) FILTER (WHERE data_entrega IS NOT NULL) AS pct_no_prazo,\n",
+        "       COUNT_IF(em_atraso) AS entregas_em_atraso\n",
+        "FROM lakehouse_vertice.silver.entregas_fornecedor\n",
+        "GROUP BY fornecedor\n",
         "ORDER BY fator_atraso DESC\n"
+      ]
+    },
+    {
+      "name": "ds_atrasadas",
+      "displayName": "Entregas em atraso hoje",
+      "queryLines": [
+        "SELECT e.projeto_id, e.fornecedor, e.item, e.valor, e.data_prometida,\n",
+        "       datediff(DATE'2026-10-16', e.data_prometida) AS dias_de_atraso\n",
+        "FROM lakehouse_vertice.silver.entregas_fornecedor e\n",
+        "WHERE e.em_atraso\n",
+        "ORDER BY dias_de_atraso DESC\n"
       ]
     }
   ],
@@ -1112,81 +1108,21 @@
       ]
     },
     {
-      "name": "capacidade",
-      "displayName": "Capacidade e fornecedores",
+      "name": "fornecedores",
+      "displayName": "Fornecedores",
       "pageType": "PAGE_TYPE_CANVAS",
       "layoutVersion": "GRID_V1",
       "layout": [
         {
           "widget": {
-            "name": "titulo-cap",
-            "textbox_spec": "# Capacidade e fornecedores\n\n**O que vai dar errado no próximo mês?** Ruptura prevista = o banco de horas da consultoria ou o crédito de cloud acaba em menos de 30 dias, o prazo para aprovar um aditivo."
+            "name": "titulo-forn",
+            "textbox_spec": "# Fornecedores\n\n**Quem promete e não cumpre?** Prazo real ÷ prometido de cada consultoria. A CodeForge veio escrita de 4 jeitos no cadastro de compras: sem normalizar, ela sumia do ranking."
           },
           "position": {
             "x": 0,
             "y": 0,
             "width": 12,
             "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "rupturas-projeto",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_rupturas",
-                  "fields": [
-                    {
-                      "name": "projeto",
-                      "expression": "`projeto`"
-                    },
-                    {
-                      "name": "sum(rupturas)",
-                      "expression": "SUM(`rupturas`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "y": {
-                  "fieldName": "projeto",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "projeto"
-                },
-                "x": {
-                  "fieldName": "sum(rupturas)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Contratos com ruptura prevista por projeto",
-                  "format": {
-                    "type": "number-plain"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Contratos com ruptura prevista por projeto"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 2,
-            "width": 6,
-            "height": 8
           }
         },
         {
@@ -1274,57 +1210,49 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Fornecedores: quem promete e não cumpre"
+                "title": "Fornecedores: do que mais atrasa ao que menos atrasa"
               }
             }
           },
           "position": {
-            "x": 6,
+            "x": 0,
             "y": 2,
-            "width": 6,
-            "height": 8
+            "width": 12,
+            "height": 6
           }
         },
         {
           "widget": {
-            "name": "capacidade",
+            "name": "atrasadas",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_capacidade",
+                  "datasetName": "ds_atrasadas",
                   "fields": [
                     {
-                      "name": "projeto",
-                      "expression": "`projeto`"
+                      "name": "projeto_id",
+                      "expression": "`projeto_id`"
                     },
                     {
                       "name": "fornecedor",
                       "expression": "`fornecedor`"
                     },
                     {
-                      "name": "tipo",
-                      "expression": "`tipo`"
+                      "name": "item",
+                      "expression": "`item`"
                     },
                     {
-                      "name": "saldo",
-                      "expression": "`saldo`"
+                      "name": "valor",
+                      "expression": "`valor`"
                     },
                     {
-                      "name": "unidade",
-                      "expression": "`unidade`"
+                      "name": "data_prometida",
+                      "expression": "`data_prometida`"
                     },
                     {
-                      "name": "cobertura_dias",
-                      "expression": "`cobertura_dias`"
-                    },
-                    {
-                      "name": "data_prevista_fim_saldo",
-                      "expression": "`data_prevista_fim_saldo`"
-                    },
-                    {
-                      "name": "ruptura",
-                      "expression": "`ruptura`"
+                      "name": "dias_de_atraso",
+                      "expression": "`dias_de_atraso`"
                     }
                   ],
                   "disaggregated": true
@@ -1337,7 +1265,7 @@
               "encodings": {
                 "columns": [
                   {
-                    "fieldName": "projeto",
+                    "fieldName": "projeto_id",
                     "displayName": "Projeto"
                   },
                   {
@@ -1345,42 +1273,43 @@
                     "displayName": "Fornecedor"
                   },
                   {
-                    "fieldName": "tipo",
-                    "displayName": "Tipo"
+                    "fieldName": "item",
+                    "displayName": "Item"
                   },
                   {
-                    "fieldName": "saldo",
-                    "displayName": "Saldo"
+                    "fieldName": "valor",
+                    "displayName": "Valor",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "BRL",
+                      "abbreviation": "compact",
+                      "decimalPlaces": {
+                        "type": "max",
+                        "places": 1
+                      }
+                    }
                   },
                   {
-                    "fieldName": "unidade",
-                    "displayName": "Unidade"
+                    "fieldName": "data_prometida",
+                    "displayName": "Prometida para"
                   },
                   {
-                    "fieldName": "cobertura_dias",
-                    "displayName": "Cobertura (dias)"
-                  },
-                  {
-                    "fieldName": "data_prevista_fim_saldo",
-                    "displayName": "Saldo acaba em"
-                  },
-                  {
-                    "fieldName": "ruptura",
-                    "displayName": "Ruptura prevista"
+                    "fieldName": "dias_de_atraso",
+                    "displayName": "Dias de atraso"
                   }
                 ]
               },
               "frame": {
                 "showTitle": true,
-                "title": "Banco de horas e créditos de cloud por projeto"
+                "title": "Entregas em atraso hoje"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 10,
+            "y": 8,
             "width": 12,
-            "height": 8
+            "height": 6
           }
         }
       ]

@@ -22,8 +22,8 @@ declare module "@databricks/appkit-ui/react" {
           /** @sqlType DECIMAL(28,2) */
           carteira: number;
           /** @sqlType BIGINT */
-          rupturas_capacidade: number;
-          /** @sqlType DECIMAL(28,2) */
+          alto_risco_30d: number;
+          /** @sqlType DOUBLE */
           multa_a_cobrar: number;
         }>;
       };
@@ -89,9 +89,7 @@ declare module "@databricks/appkit-ui/react" {
           dias_falta_sre: number;
           /** @sqlType DOUBLE */
           dias_rotatividade: number;
-          /** @sqlType BIGINT */
-          rupturas_capacidade: number;
-          /** @sqlType DECIMAL(28,2) */
+          /** @sqlType DOUBLE */
           multa_a_cobrar: number;
         }>;
       };

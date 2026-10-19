@@ -6,11 +6,10 @@ Uso:
     python3 scripts/genie.py publicar aulas/aula-04-engenheiro-ia/torre-app/agente/diretoria-contratos-genie.json \
         --titulo "Farol · Diretoria + Contratos" --profile SEU-PERFIL
 
-É o Genie da noite 2 com duas camadas a mais: os CONTRATOS de fornecedor e o
-MANUAL de tecnologias. O dono não pergunta só "quem está atrasado?": pergunta
-"e o que o contrato diz? e o que a nossa regra manda fazer?". O agente cruza o
-status (a causa), a gold (o tamanho do problema), a cláusula (o direito) e o
-manual (a regra da casa).
+É o Genie da noite 2 com uma camada a mais: os CONTRATOS de fornecedor. O dono
+não pergunta só "quem está atrasado?": pergunta "e o que o contrato diz? dá para
+cobrar multa?". O agente cruza o status (a causa), a gold (o tamanho do problema),
+o modelo da noite 3 (o que vem aí) e a cláusula (o direito).
 
 A tabela do modelo da noite 3 (gold.score_estouro_30d) entra se existir:
 o Genie recusa publicar com tabela inexistente.
@@ -27,6 +26,7 @@ AQUI = pathlib.Path(__file__).resolve().parent
 # ("Requested node type [UNKNOWN] is not supported") e o app não sobe.
 SAIDA = AQUI / "diretoria-contratos-genie.json"
 G = "lakehouse_vertice.gold"
+S = "lakehouse_vertice.silver"
 
 
 def ident(prefixo: str, n: int) -> str:
@@ -41,10 +41,21 @@ def existe(tabela: str, profile: str | None) -> bool:
     return r.returncode == 0 and '"table_exists": true' in r.stdout.replace("\n", " ").replace("  ", " ")
 
 
-TABELAS = ["contratos_avisos", "contratos_clausulas", "contratos_multa_fornecedor", "contratos_resumo",
-           "cobertura_capacidade", "desempenho_fornecedor", "entregas_em_atraso", "manual_secoes",
-           "projeto_situacao_atual", "status_estruturado", "utilizacao_pessoa_semana"]
-METRICAS = ["mv_projetos"]
+TABELAS = [f"{G}.contratos", f"{G}.projeto_situacao_atual", f"{G}.status_estruturado",
+           f"{G}.utilizacao_pessoa_semana", f"{S}.entregas_fornecedor"]
+METRICAS = [f"{G}.mv_projetos"]
+
+MULTA_SQL = (
+    f"WITH atrasos AS (SELECT e.fornecedor, e.valor, e.data_prometida, "
+    f"CASE WHEN e.data_entrega IS NOT NULL THEN e.dias_de_atraso_na_entrega "
+    f"ELSE datediff(DATE'2026-10-16', e.data_prometida) END AS dias_de_atraso "
+    f"FROM {S}.entregas_fornecedor e "
+    f"WHERE (e.data_entrega IS NOT NULL AND e.dias_de_atraso_na_entrega > 0) OR e.em_atraso) "
+    f"SELECT a.fornecedor, COUNT(*) AS entregas_atrasadas, "
+    f"ROUND(SUM(a.valor * least(a.dias_de_atraso * c.multa_atraso_pct_dia, c.teto_multa_pct) / 100), 2) AS multa_cobravel "
+    f"FROM atrasos a JOIN {G}.contratos c ON lower(c.fornecedor) = lower(a.fornecedor) "
+    f"WHERE c.multa_atraso_pct_dia IS NOT NULL AND a.data_prometida > add_months(c.data_fim_vigencia, -12) "
+)
 
 INSTRUCOES = [
     "Você é o assessor do DONO da Vértice Tecnologia (empresa de tecnologia, 520 pessoas, 60 projetos de clientes). "
@@ -60,45 +71,35 @@ INSTRUCOES = [
     "ignorando 'sem_bloqueio' e 'nao_reportado'. Gente parada: utilizacao_pessoa_semana nas últimas 12 semanas, "
     "SUM(horas_apontadas) / SUM(horas_disponiveis) < 0,2.",
     "CONTRATOS: são 8 contratos de fornecedor e SaaS (CodeForge, Pixel Design Studio, QualiTest Brasil, SecureOps Segurança, "
-    "DataPrime Analytics, NuvemSul Cloud, Observa360, CodeVault). contratos_resumo tem os campos estruturados "
-    "(valor_anual, data_fim_vigencia, renovacao_automatica, aviso_previo_dias, multa_atraso_pct_dia, teto_multa_pct, sla, reajuste). "
-    "contratos_clausulas tem o texto de cada cláusula: SEMPRE cite o número da cláusula e um trecho curto quando disser o que o contrato diz. "
-    "Para valores de um contrato específico, filtre contratos_resumo por fornecedor com LIKE (ex.: fornecedor LIKE '%NuvemSul%').",
-    "MULTA de fornecedor: contratos_multa_fornecedor já calcula multa_cobravel por entrega atrasada "
-    "(valor × % ao dia × dias de atraso, com teto). 'Na vigência atual' / 'no contrato atual' = na_vigencia_atual = true; "
-    "sem esse qualificador, informe o total e o da vigência atual. Some multa_cobravel; conte entregas com COUNT(*).",
-    "AVISO PRÉVIO: contratos_avisos tem data_limite_aviso (fim da vigência menos aviso prévio), dias_ate_limite e "
-    "situacao_aviso ('vencido', 'vence em até 60 dias', 'ok'). 'Já passou' = 'vencido'; 'próximos 60 dias' = "
-    "'vence em até 60 dias'. Explique o que fazer com a coluna o_que_fazer (depende de renovacao_automatica).",
-    "MANUAL: manual_secoes tem as 10 seções do Manual de Tecnologias da Vértice (secao_numero, titulo, texto): stack, ambientes, "
-    "deploy, CHANGE FREEZE DE VAREJO (seção 4), ALOCAÇÃO DE SRE (seção 5), severidade, postmortem, STATUS SEMANAL E FAROL "
-    "(seção 8), consultorias, segurança. Para 'o que o manual diz' ou 'em qual seção', devolva secao_numero, titulo e texto "
-    "da seção, filtrando por titulo com LIKE.",
+    "DataPrime Analytics, NuvemSul Cloud, Observa360, CodeVault), um por linha em contratos, com os campos extraídos por IA "
+    "(valor_anual, data_fim_vigencia, renovacao_automatica, aviso_previo_dias, multa_atraso_pct_dia, teto_multa_pct, sla, reajuste) "
+    "e o texto das cláusulas em clausulas. Quando disser o que o contrato diz, cite o número da cláusula e um trecho curto. "
+    "Para um contrato específico, filtre por fornecedor com LIKE (ex.: fornecedor LIKE '%NuvemSul%').",
+    "MULTA de fornecedor = valor da entrega × multa_atraso_pct_dia × dias de atraso, limitada a teto_multa_pct, em % (divida por 100). "
+    "Dias de atraso: até a entrega se entregue (dias_de_atraso_na_entrega), até hoje se em aberto. Só conta o que foi prometido "
+    "na vigência atual: data_prometida > add_months(data_fim_vigencia, -12). Junte entregas_fornecedor com contratos por "
+    "lower(fornecedor). Use a SQL de exemplo da multa.",
+    "AVISO PRÉVIO: data limite = date_sub(data_fim_vigencia, aviso_previo_dias). Já passou = data limite antes de 16/10/2026; "
+    "vence em breve = até 60 dias. Se renovacao_automatica, o contrato renova sozinho se ninguém avisar; se não, o serviço para "
+    "se ninguém formalizar a renovação.",
     "Quando citar um projeto, use projeto_id e nome (ex.: PRJ-011 · Checkout e meios de pagamento - Supermercados Bom Preço).",
 ]
 
 EXEMPLOS = [
     ("Quanto a Vértice pode cobrar de multa da CodeForge?",
-     f"SELECT fornecedor, ROUND(SUM(multa_cobravel), 2) AS multa_total, "
-     f"ROUND(SUM(multa_cobravel) FILTER (WHERE na_vigencia_atual), 2) AS multa_na_vigencia_atual, "
-     f"COUNT(*) FILTER (WHERE na_vigencia_atual) AS entregas_atrasadas_na_vigencia_atual "
-     f"FROM {G}.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' GROUP BY fornecedor"),
+     MULTA_SQL + "AND a.fornecedor LIKE '%CodeForge%' GROUP BY a.fornecedor"),
     ("Quais contratos precisam de decisão por causa do aviso prévio?",
-     f"SELECT fornecedor, data_fim_vigencia, aviso_previo_dias, data_limite_aviso, dias_ate_limite, situacao_aviso, o_que_fazer "
-     f"FROM {G}.contratos_avisos WHERE situacao_aviso <> 'ok' ORDER BY dias_ate_limite"),
-    ("O que o manual diz sobre o change freeze?",
-     f"SELECT secao_numero, titulo, texto FROM {G}.manual_secoes WHERE titulo LIKE '%FREEZE%'"),
-    ("Por que o PRJ-011 atrasou e o que o manual manda fazer?",
-     f"WITH causa AS (SELECT causa_bloqueio, COUNT(*) AS semanas FROM {G}.status_estruturado "
-     f"WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') "
-     f"GROUP BY causa_bloqueio) "
-     f"SELECT c.causa_bloqueio, c.semanas, m.secao_numero, m.titulo, m.texto FROM causa c "
-     f"LEFT JOIN {G}.manual_secoes m ON m.secao_numero = CASE c.causa_bloqueio WHEN 'falta_sre' THEN 5 "
-     f"WHEN 'change_freeze' THEN 4 WHEN 'dependencia_fornecedor' THEN 9 ELSE 8 END ORDER BY c.semanas DESC"),
+     f"SELECT fornecedor, valor_anual, data_fim_vigencia, aviso_previo_dias, renovacao_automatica, "
+     f"date_sub(data_fim_vigencia, aviso_previo_dias) AS data_limite_aviso, "
+     f"datediff(date_sub(data_fim_vigencia, aviso_previo_dias), DATE'2026-10-16') AS dias_ate_limite "
+     f"FROM {G}.contratos WHERE datediff(date_sub(data_fim_vigencia, aviso_previo_dias), DATE'2026-10-16') <= 60 "
+     f"ORDER BY dias_ate_limite"),
     ("Qual a multa por atraso e o teto no contrato da CodeForge?",
-     f"SELECT r.fornecedor, r.multa_atraso_pct_dia, r.teto_multa_pct, c.clausula_numero, c.texto "
-     f"FROM {G}.contratos_resumo r JOIN {G}.contratos_clausulas c ON c.fornecedor = r.fornecedor AND c.titulo LIKE 'MULTA%' "
-     f"WHERE r.fornecedor LIKE '%CodeForge%'"),
+     f"SELECT fornecedor, multa_atraso_pct_dia, teto_multa_pct, clausulas FROM {G}.contratos WHERE fornecedor LIKE '%CodeForge%'"),
+    ("Por que o PRJ-011 atrasou?",
+     f"SELECT causa_bloqueio, COUNT(*) AS semanas, SUM(coalesce(dias_impacto, 0)) AS dias_de_impacto "
+     f"FROM {G}.status_estruturado WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' "
+     f"AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') GROUP BY causa_bloqueio ORDER BY semanas DESC"),
     ("Tenho SRE parado que poderia ir para o PRJ-011?",
      f"SELECT colaborador_id, nome, papel, projeto_id, projeto, ROUND(SUM(horas_apontadas) / SUM(horas_disponiveis), 3) AS utilizacao, "
      f"SUM(horas_ociosas) AS horas_ociosas, SUM(custo_ocioso) AS custo_ocioso "
@@ -109,7 +110,7 @@ EXEMPLOS = [
 PERGUNTAS = [
     "Quanto a Vértice pode cobrar de multa da CodeForge?",
     "Quais contratos precisam de decisão por causa do aviso prévio?",
-    "Por que o PRJ-011 atrasou e o que o manual manda fazer?",
+    "Por que o PRJ-011 atrasou?",
     "Tenho SRE parado que poderia ir para o PRJ-011?",
 ]
 
@@ -118,15 +119,15 @@ def montar(profile: str | None) -> dict:
     tabelas = list(TABELAS)
     instr = list(INSTRUCOES)
     if existe(f"{G}.score_estouro_30d", profile):
-        tabelas.append("score_estouro_30d")
-        instr.append("Probabilidade de estouro nos próximos 30 dias: score_estouro_30d (prob_estouro_30d de 0 a 1, "
-                     "ranking, faixa_risco, principais_fatores), modelo treinado na noite 3. Use a data_referencia mais recente.")
+        tabelas.append(f"{G}.score_estouro_30d")
+        instr.append("O que vai dar errado no próximo mês: score_estouro_30d (prob_estouro_30d de 0 a 1, ranking, faixa_risco, "
+                     "principais_fatores), o modelo treinado na noite 3. Use a data_referencia mais recente e ordene por ranking.")
     return {
         "version": 2,
         "config": {"sample_questions": [{"id": ident("e1", i), "question": [q]} for i, q in enumerate(PERGUNTAS, 1)]},
         "data_sources": {
-            "tables": [{"identifier": f"{G}.{t}"} for t in sorted(tabelas)],
-            "metric_views": [{"identifier": f"{G}.{m}"} for m in sorted(METRICAS)],
+            "tables": [{"identifier": t} for t in sorted(tabelas)],
+            "metric_views": [{"identifier": m} for m in sorted(METRICAS)],
         },
         "instructions": {
             "text_instructions": [{"id": ident("e2", 1), "content": [l + "\n" for l in instr]}],

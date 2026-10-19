@@ -7,7 +7,7 @@
 
 ## O que você terá ao fim da noite
 
-1. **Um agente que lê contrato e manual** e responde em português, citando a cláusula e a seção.
+1. **Um agente que lê contrato** e responde em português, citando a cláusula.
 2. **O app do Projeto Farol**, uma URL que o dono abre no celular, com login do workspace.
 3. **Um botão Aprovar** que grava a decisão num banco (Lakebase), com o seu e-mail e o horário.
 4. **O pitch de 3 minutos** para pedir o piloto ao dono ([`pitch.md`](pitch.md)).
@@ -21,14 +21,14 @@ O trabalho é **entregar**. Um dado que só o time de dados consegue abrir não 
 | 1 | as 3 ferramentas no catálogo, SPI e CPI | SQL |
 | 2 | pipeline, IA nos status, KPIs governados, dashboard, Genie | engenharia de dados |
 | 3 | a probabilidade de estouro em 30 dias | ciência de dados |
-| **4** | **o app, o agente de contratos e manual, e a aprovação** | **nada** |
+| **4** | **o app, o agente de contratos e a aprovação** | **nada** |
 
 | Pergunta do dono | Onde a noite 4 responde |
 |---|---|
 | Quais projetos estão atrasados, e de quais clientes? | app → **Projetos em risco** |
 | Quanto esse atraso vai me custar? | app (estouro) + agente (multa que dá para **cobrar** do fornecedor) |
 | Tenho gente parada enquanto outro projeto pede gente? | agente + **Simulador** (COL0017 → PRJ-011) |
-| O que vai dar errado no próximo mês, e o que eu faço agora? | score da noite 3 + avisos prévios + manual (freeze de 01/11) + **Aprovar** |
+| O que vai dar errado no próximo mês, e o que eu faço agora? | score da noite 3 (**Alto risco em 30 dias**) + avisos prévios dos contratos + **Aprovar** |
 
 ---
 
@@ -36,9 +36,9 @@ O trabalho é **entregar**. Um dado que só o time de dados consegue abrir não 
 
 Um caso só atravessa a noite inteira. Guarde estes quatro passos:
 
-1. **O dono pergunta:** *"Por que o PRJ-011 atrasou e o que o manual manda fazer?"*
-2. **O agente responde:** falta de SRE, reportada em **12 semanas** de status. A **seção 5 do manual** diz
-   que todo projeto em testes ou implantação precisa de pelo menos um SRE.
+1. **O dono pergunta:** *"Por que o PRJ-011 atrasou?"*
+2. **O agente responde:** falta de SRE, reportada em **12 semanas** de status, com **57 dias** de impacto
+   nos últimos 90 dias. A causa vem do texto livre do status semanal, que a IA da noite 2 transformou em coluna.
 3. **O dono continua:** *"Tenho SRE parado que poderia ir para o PRJ-011?"* → **COL0017 e COL0018**, SREs
    seniores no **PRJ-007** (ainda no discovery), com uso de 5 a 6%: R$ 179,5 mil pagos em 12 semanas sem produzir.
 4. **O app fecha:** no **Simulador**, COL0017 → PRJ-011 mostra **19,0 dias** de cronograma recuperados e
@@ -63,33 +63,32 @@ Cada prompt constrói uma parte desse caminho: o prompt 1 dá os passos 1 a 3, o
 
 > **Por que o agente é um Genie, e não um Knowledge Assistant?** No Free Edition, Knowledge Assistant e
 > Supervisor Agent viraram *legacy* e não criam mais ("use Genie Agents instead"). O nosso agente é um
-> Genie com as cláusulas e o manual guardados em tabelas. Ele **cita** a fonte porque a fonte é uma linha,
-> e dá para auditar o SQL.
+> Genie com os contratos guardados numa tabela, com o texto das cláusulas junto. Ele **cita** a fonte porque a
+> fonte está na linha do contrato, e dá para auditar o SQL.
 
 ---
 
 ## 🏛️ Arquitetura
 
 ```
-                ┌──────────────── noite 4 ───────────────────────────────────────────────────┐
- contratos PDF ─┼─ ai_parse_document ─▶ documentos_elementos ─▶ contratos_clausulas (72)       │
- manual PDF     │                                          └──▶ manual_secoes (10)            │
- (no volume)    │        cláusulas ── ai_extract + JSON schema ─▶ contratos_resumo (8, tipado) │
-                │ silver.entregas_fornecedor + resumo ─▶ contratos_multa_fornecedor (R$)      │
-                │ resumo ─────────────────────────────▶ contratos_avisos (aviso prévio)       │
+                ┌──────────────── noite 4 ────────────────────────────────────────────────────┐
+ 8 contratos PDF┼─ ai_parse_document ─▶ silver.documentos_elementos                           │
+ (no volume)    │      agrupar ─────────▶ silver.contratos_clausulas (72)                       │
+                │      ai_extract + JSON schema ─▶ gold.contratos (8 linhas, colunas tipadas)   │
+                │      multa e aviso prévio = consultas (gold.contratos + entregas_fornecedor) │
  gold (noite 2) ┼─ projeto_situacao_atual · status_estruturado · utilizacao_pessoa_semana ─┐   │
- score (noite 3)┼──────────────────────────────────────────────────────────────────────┐   │   │
-                │                                                                      ▼   ▼   │
-                │   Genie Agent "Farol · Diretoria + Contratos" ◀── 12 tabelas + mv_projetos   │
-                │          ▲                                                                   │
-                │          │ aba Perguntar                                                     │
-                │   App "Projeto Farol" (Databricks App · AppKit · login SSO)                  │
-                │     leitura ── config/queries/*.sql ── SQL warehouse (gold)                  │
-                │     escrita ── POST /api/decisoes ──── Lakebase Postgres torre.decisoes      │
-                └──────────────────────────────────────────────────────────────────────────────┘
+ score (noite 3)┼─ score_estouro_30d ─────────────────────────────────────────────────┐   │   │
+                │                                                                     ▼   ▼   │
+                │   Genie Agent "Farol · Diretoria + Contratos" ◀── 6 tabelas + mv_projetos   │
+                │          ▲                                                                  │
+                │          │ aba Perguntar                                                    │
+                │   App "Projeto Farol" (Databricks App · AppKit · login SSO)                 │
+                │     leitura ── config/queries/*.sql ── SQL warehouse (gold)                 │
+                │     escrita ── POST /api/decisoes ──── Lakebase Postgres torre.decisoes     │
+                └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Leia assim: **o PDF vira tabela** (em cima), **o Genie lê as tabelas** (meio), **o app mostra e grava** (embaixo).
+Leia assim: **o PDF vira uma linha por contrato** (em cima), **o Genie lê as tabelas** (meio), **o app mostra e grava** (embaixo).
 A leitura vai ao SQL warehouse (a gold); a escrita vai ao Lakebase (o Postgres).
 
 ---
@@ -113,25 +112,26 @@ o gabarito pronto está em [`torre-app/`](torre-app).
 
 | # | Entrega | Deploy | Arquivo |
 |---|---|---|---|
-| 1 | **O agente que lê contrato e manual** | Genie publicado | [`prd/prompt-01-agente-de-contratos.md`](prd/prompt-01-agente-de-contratos.md) |
+| 1 | **O agente que lê contrato** | Genie publicado | [`prd/prompt-01-agente-de-contratos.md`](prd/prompt-01-agente-de-contratos.md) |
 | 2 | **O app do Farol**: projetos em risco, simulador, perguntar | `apps deploy` | [`prd/prompt-02-app.md`](prd/prompt-02-app.md) |
 | 3 | **A aprovação no Lakebase** (e a tela Decisões) | `apps deploy` | [`prd/prompt-03-aprovacao-lakebase.md`](prd/prompt-03-aprovacao-lakebase.md) |
 
-### 1. Prompt 1 · o agente que lê contrato e manual (20 min)
+### 1. Prompt 1 · o agente que lê contrato (20 min)
 
 **O problema.** A gold sabe que a CodeForge atrasa, mas não sabe o que o contrato diz. Contrato é PDF, e PDF não é coluna.
 
 **O que o Claude Code faz:**
 
-1. `ai_parse_document` lê os 9 PDFs (8 contratos + o manual) e guarda os pedaços em `gold.documentos_elementos`.
+1. `ai_parse_document` lê os **8 contratos** em PDF e guarda os pedaços em `silver.documentos_elementos`.
    É a chamada cara: roda uma vez e vira tabela.
-2. Os pedaços viram **uma linha por cláusula** (`gold.contratos_clausulas`, 72) e **uma linha por seção do
-   manual** (`gold.manual_secoes`, 10). É isso que faz o agente citar a fonte.
-3. `ai_extract` tira os campos de cada contrato para `gold.contratos_resumo`: valor, vigência, renovação,
-   aviso prévio, multa. Primeiro **sem schema** (volta texto), depois **com schema** (volta número).
-4. Duas views respondem em R$ e em datas: `contratos_multa_fornecedor` (quanto cobrar) e `contratos_avisos`
-   (qual contrato renova sozinho se ninguém avisar).
-5. O Genie **"Farol · Diretoria + Contratos"** é publicado com essas tabelas e testado com 10 perguntas.
+2. Os pedaços viram **uma linha por cláusula** (`silver.contratos_clausulas`, 72). É isso que faz o agente citar a fonte.
+3. `ai_extract` tira os campos de cada contrato para **`gold.contratos`**, uma linha por contrato: valor anual,
+   fim da vigência, renovação automática, aviso prévio, multa, teto, SLA, reajuste e o texto das cláusulas.
+   Primeiro **sem schema** (volta texto), depois **com schema** (volta número).
+4. Duas consultas no fim do mesmo SQL respondem em R$ e em datas: quanto cobrar de multa (com
+   `silver.entregas_fornecedor`) e qual contrato renova sozinho se ninguém avisar. São consultas, não tabelas novas.
+5. O Genie **"Farol · Diretoria + Contratos"** é publicado com a `gold.contratos` e a gold das noites 2 e 3, e
+   testado com 10 perguntas.
 
 **Por que o schema importa:**
 
@@ -155,7 +155,7 @@ multa, não paga.*
 
 1. `databricks apps init` monta o esqueleto do app (React + TypeScript) em uns 10 segundos.
 2. As leituras viram arquivos `.sql` em `config/queries/` (KPIs, projetos em risco, pessoas ociosas).
-3. Três telas: **Projetos em risco**, **Simulador** (pessoa ociosa → projeto que precisa) e **Perguntar**
+3. Três telas: **Projetos em risco** (KPIs no topo, incluindo **Alto risco em 30 dias**, do score da noite 3), **Simulador** (pessoa ociosa → projeto que precisa) e **Perguntar**
    (o Genie do prompt 1 dentro do app).
 4. `bundle deploy` cria o app e o **service principal**. O script `conceder-acesso.sh` dá a ele os `GRANT`
    na gold. Depois, `databricks apps deploy` publica o código.
@@ -233,7 +233,7 @@ bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh <perfil>
 ### Confira
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile <perfil>        # 12 × ok
+python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile <perfil>        # 11 × ok
 python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" \
   aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile <perfil>                         # ≥ 8/10
 uv run --no-project --with "psycopg[binary]" python \
@@ -249,7 +249,8 @@ decisão **direto do Postgres**, com o seu e-mail, o horário, R$ 30.123,20 e 19
 
 | O quê | Valor |
 |---|---|
-| Contratos lidos / cláusulas / seções do manual | 8 / 72 / 10 |
+| Contratos lidos / cláusulas | 8 / 72 |
+| Contratos sem multa por atraso (só SLA) | 3 |
 | `ai_extract` sem schema | `"0,2% do valor da entrega atrasada por dia corrido, limitada a 5%..."` (texto) |
 | `ai_extract` com schema | `multa_atraso_pct_dia = 0.2`, `teto_multa_pct = 5.0` (número) |
 | Multa da CodeForge | 0,5% ao dia, teto de 10% |
@@ -257,16 +258,15 @@ decisão **direto do Postgres**, com o seu e-mail, o horário, R$ 30.123,20 e 19
 | Aviso prévio vencido | DataPrime e NuvemSul (renovaram sozinhos em 01 e 02/10; R$ 21,4 mi por ano) |
 | Aviso prévio nos próximos 60 dias | Observa360 (31/10) e QualiTest (01/12, **sem renovação automática**) |
 | App: em risco · críticos · melancias · estouro | **17 de 41** · 7 · 4 · **R$ 6,5 mi** |
-| App: multa a cobrar · rupturas de capacidade | R$ 1,2 mi (todos os fornecedores) · 15 |
+| App: multa a cobrar · alto risco em 30 dias | R$ 1,2 mi (todos os fornecedores) · 18 (faixa alta no score da noite 3) |
 | Simulador COL0017 (PRJ-007) → PRJ-011 | 151 h no mês · R$ 30,1 mil de ociosidade evitada · **19,0 dias** recuperados · onboarding R$ 8,0 mil · saldo R$ 22,1 mil |
 | Aprovar COL0017 → PRJ-011 | "Decisão nº 1 aprovada e registrada por <seu e-mail>" |
-| Benchmark do Genie | **10/10** no ensaio |
+| Benchmark do Genie | **≥ 8/10** (10/10 no ensaio de 18/10, antes da simplificação) |
 
-### A pergunta-âncora, como o Genie respondeu no ensaio (18/10)
+### A pergunta-âncora, o que o Genie deve responder
 
-> *"O projeto PRJ-011 atrasou por **falta de SRE**, que foi reportada em **12 semanas**. O manual (seção 5,
-> 'ALOCAÇÃO DE SRE') orienta que todo projeto nas fases de testes ou implantação precisa de pelo menos um SRE
-> alocado, sendo o PMO responsável por revisar essa alocação semanalmente."*
+> *"O PRJ-011 atrasou por **falta de SRE**, reportada em **12 semanas** de status nos últimos 90 dias, com
+> **57 dias** de impacto no cronograma."*
 
 ---
 
@@ -275,7 +275,7 @@ decisão **direto do Postgres**, com o seu e-mail, o horário, R$ 30.123,20 e 19
 | Bloco | Min | O quê |
 |---|---:|---|
 | Abertura | 8 | o arco das 4 noites; as 4 perguntas do dono; "e quem não escreve SQL?" |
-| Prompt 1 · contratos, manual + Genie | 20 | abrir o PDF da CodeForge, colar o prompt, mostrar o ai_extract sem e com schema; a pergunta-âncora |
+| Prompt 1 · contratos + Genie | 20 | abrir o PDF da CodeForge, colar o prompt, mostrar o ai_extract sem e com schema; a pergunta-âncora |
 | Prompt 2 · o app | 22 | `apps list` (limite de 3), `apps init`, as queries, o GRANT ao vivo, o deploy, a URL |
 | Prompt 3 · aprovação | 12 | Lakebase em 7 s, o botão, a linha no Postgres |
 | Pitch | 10 | os 3 minutos, ao vivo, com a demo da pergunta |
@@ -325,7 +325,7 @@ mão) e com o **Genie App Builder** (o app descrito em português).
 | `prd/prompt-0N-*.md` | os 3 prompts, com o que mostrar, o que falar e "se der errado" |
 | `prd/genie-benchmark.json` | 10 perguntas com SQL de referência |
 | `prd/99-limpar-aula-04.sh` | apaga só a noite 4 |
-| `99-verificacao.sql` | 12 checagens esperado × obtido |
+| `99-verificacao.sql` | 11 checagens esperado × obtido |
 | `torre-app/` | o gabarito: app + agente + job + scripts |
 | `meu-agente/`, `minha-torre/` | onde você constrói |
 | `pitch.md` | o pitch de 3 minutos e o checklist de publicação |

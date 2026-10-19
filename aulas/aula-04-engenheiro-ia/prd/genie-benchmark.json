@@ -1,39 +1,39 @@
 [
   {
     "pergunta": "Quanto a Vértice pode cobrar de multa da CodeForge na vigência atual do contrato?",
-    "sql_referencia": "SELECT ROUND(SUM(multa_cobravel), 2) FROM lakehouse_vertice.gold.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' AND na_vigencia_atual"
+    "sql_referencia": "SELECT ROUND(SUM(e.valor * least(CASE WHEN e.data_entrega IS NOT NULL THEN e.dias_de_atraso_na_entrega ELSE datediff(DATE'2026-10-16', e.data_prometida) END * c.multa_atraso_pct_dia, c.teto_multa_pct) / 100), 2) FROM lakehouse_vertice.silver.entregas_fornecedor e JOIN lakehouse_vertice.gold.contratos c ON lower(c.fornecedor) = lower(e.fornecedor) WHERE e.fornecedor LIKE '%CodeForge%' AND c.multa_atraso_pct_dia IS NOT NULL AND ((e.data_entrega IS NOT NULL AND e.dias_de_atraso_na_entrega > 0) OR e.em_atraso) AND e.data_prometida > add_months(c.data_fim_vigencia, -12)"
   },
   {
     "pergunta": "Quantas entregas da CodeForge atrasaram na vigência atual do contrato?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' AND na_vigencia_atual"
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.silver.entregas_fornecedor e JOIN lakehouse_vertice.gold.contratos c ON lower(c.fornecedor) = lower(e.fornecedor) WHERE e.fornecedor LIKE '%CodeForge%' AND c.multa_atraso_pct_dia IS NOT NULL AND ((e.data_entrega IS NOT NULL AND e.dias_de_atraso_na_entrega > 0) OR e.em_atraso) AND e.data_prometida > add_months(c.data_fim_vigencia, -12)"
   },
   {
     "pergunta": "Qual a multa por dia de atraso e o teto da multa no contrato da CodeForge?",
-    "sql_referencia": "SELECT multa_atraso_pct_dia, teto_multa_pct FROM lakehouse_vertice.gold.contratos_resumo WHERE fornecedor LIKE '%CodeForge%'"
+    "sql_referencia": "SELECT multa_atraso_pct_dia, teto_multa_pct FROM lakehouse_vertice.gold.contratos WHERE fornecedor LIKE '%CodeForge%'"
   },
   {
     "pergunta": "Quais contratos já passaram da data limite do aviso prévio?",
-    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos_avisos WHERE situacao_aviso = 'vencido'"
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos WHERE datediff(date_sub(data_fim_vigencia, aviso_previo_dias), DATE'2026-10-16') < 0"
   },
   {
     "pergunta": "Quais contratos têm a data limite do aviso prévio nos próximos 60 dias?",
-    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos_avisos WHERE situacao_aviso = 'vence em até 60 dias'"
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos WHERE datediff(date_sub(data_fim_vigencia, aviso_previo_dias), DATE'2026-10-16') BETWEEN 0 AND 60"
   },
   {
     "pergunta": "Qual contrato não tem renovação automática?",
-    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos_resumo WHERE NOT renovacao_automatica"
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos WHERE NOT renovacao_automatica"
   },
   {
     "pergunta": "Quantos dias de aviso prévio exige o contrato da NuvemSul Cloud?",
-    "sql_referencia": "SELECT aviso_previo_dias FROM lakehouse_vertice.gold.contratos_resumo WHERE fornecedor LIKE '%NuvemSul%'"
+    "sql_referencia": "SELECT aviso_previo_dias FROM lakehouse_vertice.gold.contratos WHERE fornecedor LIKE '%NuvemSul%'"
   },
   {
-    "pergunta": "Em qual seção do manual está a regra do change freeze de varejo?",
-    "sql_referencia": "SELECT secao_numero FROM lakehouse_vertice.gold.manual_secoes WHERE titulo LIKE '%FREEZE%'"
+    "pergunta": "Quantos contratos não têm multa por atraso?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.contratos WHERE multa_atraso_pct_dia IS NULL"
   },
   {
-    "pergunta": "Em qual seção do manual está a regra de alocação de SRE?",
-    "sql_referencia": "SELECT secao_numero FROM lakehouse_vertice.gold.manual_secoes WHERE titulo LIKE '%SRE%'"
+    "pergunta": "Qual a causa de bloqueio mais frequente do PRJ-011 nos últimos 90 dias?",
+    "sql_referencia": "SELECT causa_bloqueio FROM lakehouse_vertice.gold.status_estruturado WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') GROUP BY causa_bloqueio ORDER BY COUNT(*) DESC LIMIT 1"
   },
   {
     "pergunta": "Quais SREs estão com utilização abaixo de 20% nas últimas 12 semanas?",

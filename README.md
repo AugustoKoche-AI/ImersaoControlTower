@@ -8,7 +8,7 @@ atrasados?* E ninguém sabe responder, porque cada gerente controla o seu projet
 
 Em 4 noites, no **Databricks Free Edition** (grátis, na sua conta), você constrói a **Torre de Controle** que responde
 ao dono: dos arquivos crus do Excel, do ClickUp e do MS Project até um app em que ele aprova decisões, com IA lendo
-status semanais, postmortems e contratos.
+status semanais e contratos.
 
 > **Imersão Jornada de Dados** · ao vivo no YouTube · **19 a 22 de outubro de 2026, às 19h30**
 > Stack: Databricks Free Edition (serverless), SQL, Python, Lakeflow, Unity Catalog, AI/BI, Genie, Apps, Lakebase e Claude Code.
@@ -29,7 +29,7 @@ No primeiro dia do novo CTO, o dono faz quatro perguntas:
 | 1 | **Quais projetos estão atrasados, e de quais clientes?** | SPI, CPI, situação, farol calculado × farol do gerente |
 | 2 | **Quanto esse atraso vai me custar?** | EAC, estouro previsto, margem projetada, atraso projetado |
 | 3 | **Tenho gente parada enquanto outro projeto pede gente?** | utilização por pessoa e projeto, horas ociosas, causa no status |
-| 4 | **O que vai dar errado no próximo mês, e o que eu faço agora?** | probabilidade de estouro em 30 dias, ruptura de capacidade, contratos |
+| 4 | **O que vai dar errado no próximo mês, e o que eu faço agora?** | probabilidade de estouro em 30 dias, entregas de fornecedor atrasadas, contratos |
 
 Regra de corte: **SPI ou CPI < 0,9 = atenção · < 0,8 = crítico.**
 
@@ -50,7 +50,7 @@ de série do Excel, como texto dentro de um JSON do ClickUp e como data ISO dent
 | `silver.tarefas` (noite 2) | o schema `gold` (noites 2 a 4) |
 |---|---|
 | ![silver.tarefas com as 3 ferramentas](docs/img/agora-silver-tarefas.jpg) | ![tabelas da gold](docs/img/agora-gold.jpg) |
-| as 3 ferramentas no mesmo formato: `projeto_id`, `ferramenta`, `fase`, `tarefa`, datas de verdade | as tabelas prontas para o dono: KPIs por projeto e semana, capacidade, fornecedores, contratos, score do modelo |
+| as 3 ferramentas no mesmo formato: `projeto_id`, `ferramenta`, `fase`, `tarefa`, datas de verdade | as tabelas prontas para o dono: KPIs por projeto e semana, pessoas, causa do atraso, contratos, score do modelo |
 
 **E o Genie (o "pergunte em português" do Databricks) passa de errar a acertar:**
 
@@ -92,7 +92,6 @@ Lakebase e Apps, um por slide, com print).
 | O farol do gerente decide o que o dono vê | farol calculado pelo número (SPI) | o projeto "melancia" aparece antes |
 | Escopo cresce sem aditivo e ninguém cobra o cliente | alerta quando o CPI começa a cair | margem recuperada |
 | SRE parado num projeto, faltando em outro | ociosidade por pessoa e projeto, cruzada com o status | realocar em vez de contratar |
-| Banco de horas da consultoria acaba sem aviso | ruptura de capacidade prevista com 30 dias | o aditivo sai antes de o time parar |
 | Decisão de realocação por WhatsApp e e-mail | aprovação no app, gravada com usuário e horário | decisão rastreável e auditável |
 
 Medido no dado da Vértice ao fim das 4 noites:
@@ -103,10 +102,10 @@ Medido no dado da Vértice ao fim das 4 noites:
 | Estouro previsto se nada mudar | **R$ 6,47 mi** |
 | Farol verde com SPI abaixo de 0,9 | **4 projetos** (32 faróis verdes; pelo número, 24 projetos ok) |
 | Gente parada | **2 SREs seniores a ~5%** no PRJ-007, enquanto o PRJ-011 pede SRE há 12 semanas |
-| Antecedência do modelo de estouro | **9 de 10** estouros avisados, em média **40 dias** antes (AUC 0,92; a regra atual: 0,50) |
-| Genie em português | **20/20** (portfólio) e **10/10** (contratos e manual) no benchmark |
+| Antecedência do modelo de estouro | **9 de 10** estouros avisados, em média **41 dias** antes (AUC 0,92; a regra atual: 0,50) |
+| Genie em português | **20/20** (portfólio) e **10/10** (contratos) no benchmark |
 | Multa cobrável da CodeForge pelo contrato | **R$ 1,12 mi** (0,5% ao dia, teto de 10%) |
-| Rupturas de capacidade · entregas em atraso | **15 · 5** (todas da CodeForge) |
+| Entregas de fornecedor em atraso | **5** (todas da CodeForge) |
 | ROI do pitch (premissas explícitas) | **≈ R$ 3,0 mi** no ano 1 contra R$ 0,4 mi de custo |
 
 **Para o aluno:** um projeto completo de ponta a ponta no GitHub, o tipo de entrega que toda empresa que vive de
@@ -125,8 +124,8 @@ projeto compra, e o pitch pronto para vender para o dono.
  PMO: status semanal        │   │ read_files│   │ tas num modelo │   │ projeto e     │  │  │   (perguntas do dono)
  RH · timesheet             │   │ lê tudo  │   │ só, testado    │   │ semana        │  │  ├ App da Torre
  Financeiro · compras       │   └──────────┘   │ ai_extract nos │   │ Metric Views  │  │  │   + Lakebase (decisões)
- Postmortems + PDFs ────────┘     noite 1      │ textos         │   └───────────────┘  │  └ Agente de contratos
-                                               └────────────────┘        noite 2       │      e manual (noite 4)
+ Contratos em PDF ──────────┘     noite 1      │ textos         │   └───────────────┘  │  └ Agente de contratos
+                                               └────────────────┘        noite 2       │      (noite 4)
                                                      noite 2                           │
                                      Modelo de estouro em 30 dias (MLflow, UC) ◀───────┘ noite 3
 ```
@@ -140,9 +139,9 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
 | Noite | Data | Chapéu | A pergunta | O que existe no fim | Como constrói | Pasta |
 |---|---|---|---|---|---|---|
 | **1** | seg 19/10 | Analista | O que o Databricks faz? Quem está atrasado? | bronze lendo Excel, JSON e XML, ranking de atraso das 3 ferramentas, R$ de estouro, 1º dashboard, Genie que erra | navegador (SQL Editor) | [`aula-01-analista`](aulas/aula-01-analista) |
-| **2** | ter 20/10 | Engenheiro de Dados | Como integrar tudo e rodar sozinho? | pipeline Lakeflow, silver que integra as 3 ferramentas, IA nos status e postmortems, KPIs em Metric Views, Genie curado | prompts no Claude Code | [`aula-02-engenheiro`](aulas/aula-02-engenheiro) |
+| **2** | ter 20/10 | Engenheiro de Dados | Como integrar tudo e rodar sozinho? | pipeline Lakeflow, silver que integra as 3 ferramentas, IA nos status semanais, a metric view mv_projetos, Genie curado | prompts no Claude Code | [`aula-02-engenheiro`](aulas/aula-02-engenheiro) |
 | **3** | qua 21/10 | Cientista de Dados | Quais vão estourar nos próximos 30 dias? | modelo no Unity Catalog, score por projeto com motivo | prompts no Claude Code | [`aula-03-cientista`](aulas/aula-03-cientista) |
-| **4** | qui 22/10 | Engenheiro de IA | E o dono, que não escreve SQL? | agente de contratos e manual, app da Torre com aprovação no Lakebase, pitch de 3 min | prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
+| **4** | qui 22/10 | Engenheiro de IA | E o dono, que não escreve SQL? | agente de contratos, app da Torre com aprovação no Lakebase, pitch de 3 min | prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
 
 **Apresentações** (abra o `.html` no navegador; ← → navega, F tela cheia):
 [visão geral do case](slides/visao-geral.html) ·
@@ -222,14 +221,13 @@ python3 material/validar_padroes.py --dados ./dados      # junta as 3 ferramenta
 | Excel | 20 planilhas `.xlsx`, uma por projeto | 1.663 |
 | ClickUp | 25 exports `.json` da API | 2.119 tarefas |
 | MS Project | 15 arquivos `.xml` | 1.260 tarefas |
-| RH e timesheet | `colaboradores` · `alocacoes` · `apontamentos` | 523 · 517 · 30.883 |
+| RH e timesheet | `colaboradores` · `apontamentos` | 523 · 30.883 |
 | Financeiro | `custos` | 23.640 |
-| Compras | `entregas_fornecedor` · `contratos_capacidade` · `consumo_capacidade` | 640 · 93 · 6.070 |
-| Incidentes | `postmortems` (texto livre) | 101 |
-| Documentos | contratos de fornecedor e SaaS · manual de tecnologias (PDF) | 8 · 1 |
+| Compras | `entregas_fornecedor` | 640 |
+| Documentos | contratos de fornecedor e SaaS (PDF, lidos na noite 4) | 8 |
 
 **O dado é simulado, não sorteado:** cada projeto avança semana a semana. Freeze, falta de SRE e squad com
-rotatividade atrasam; cada avanço consome horas e gera custo. Por isso SPI, CPI, ociosidade e ruptura saem
+rotatividade atrasam; cada avanço consome horas e gera custo. Por isso SPI, CPI e ociosidade saem
 coerentes entre si. **Padrões embutidos:**
 
 1. 8 projetos com CPI caindo a partir do 6º mês (escopo cresce sem aditivo);
@@ -278,7 +276,7 @@ slides/                        as apresentações de cada noite (abra o .html no
 | Padrões da história | `python3 material/validar_padroes.py --dados ./dados` | `TODOS OS PADRÕES OK` |
 | Noite 1 no workspace | `python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile P` | 22 × `ok` |
 | Genie da noite 1 | `python3 scripts/genie.py perguntar "Farol · Noite 1 (bronze, sem curadoria)" "Quanto esse atraso vai me custar?" --profile P` | resposta errada, de propósito |
-| Job completo (noites 2 e 3) | `cd aulas/aula-02-engenheiro/vertice && databricks bundle deploy --profile P && databricks bundle run vertice_farol --profile P` | 9 tarefas verdes, ~4 a 5 min |
+| Job completo (noites 2 e 3) | `cd aulas/aula-02-engenheiro/vertice && databricks bundle deploy --profile P && databricks bundle run vertice_farol --profile P` | 8 tarefas verdes, ~4 a 5 min |
 | Noite 2 | `python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile P` | 20 × `ok` |
 | Genie da noite 2 | `python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile P` | 20/20 |
 | Noite 3 | `python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile P` | 17 × `ok` |
@@ -295,12 +293,12 @@ slides/                        as apresentações de cada noite (abra o .html no
 | Unity Catalog, volumes, SQL warehouse serverless | ✅ | `CREATE CATALOG` via SQL (a API recusa no Free Edition) |
 | `read_files` com Excel, JSON e XML | ✅ | as 3 ferramentas entram na bronze sem conversão |
 | Notebook serverless com internet | ✅ | o `00-carregar-dados` roda o gerador dentro do workspace |
-| `ai_extract`, `ai_classify`, `ai_query` | ✅ | causa do atraso a partir do texto do status e do postmortem |
+| `ai_extract`, `ai_classify`, `ai_query` | ✅ | causa do atraso a partir do texto do status semanal |
 | Metric Views | ✅ | só pela API de statements: o `aitools query` achata a indentação do YAML |
 | AI/BI Dashboards, Genie Agents (com modo Agent) | ✅ | dashboard como JSON e Genie como JSON |
 | Databricks Apps | ✅ | app da Torre (noite 4) |
 | **Lakebase** (Postgres) | ✅ **novo**: em agosto não existia | decisões gravadas pelo app |
-| `ai_parse_document` em PDF | ✅ | contratos e manual viram tabela |
+| `ai_parse_document` em PDF | ✅ | os contratos viram tabela |
 | Lakeflow Declarative Pipelines (SQL) com `EXPECT` | ✅ | silver e gold |
 | Registro de modelo no Unity Catalog | ⚠️ falha com o MLflow do serverless (`s3:PutObject ... explicit deny`) | `%pip install -U "mlflow-skinny[databricks]>=2.21,<3"` + `restartPython()` |
 | Knowledge Assistant e Supervisor Agent | ❌ "legacy", não cria mais | agente de contratos com `ai_parse_document` + Genie |

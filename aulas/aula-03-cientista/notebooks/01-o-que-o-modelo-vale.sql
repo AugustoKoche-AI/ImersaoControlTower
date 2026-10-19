@@ -23,7 +23,7 @@ SELECT versao,
        ROUND(estouro_previsto_avisado / 1e6, 2) AS estouro_desses_projetos_mi,
        projetos_avisados,
        feature_principal
-FROM lakehouse_vertice.gold.modelo_metricas;
+FROM lakehouse_vertice.ml.modelo_metricas;
 
 -- COMMAND ----------
 
@@ -59,13 +59,14 @@ ORDER BY s.prob_estouro_30d DESC;
 
 -- MAGIC %md
 -- MAGIC ## 4. A curva do PRJ-024: por que ele entrou na lista
--- MAGIC O índice está acima de 0,9 hoje, mas colado no corte, e o crédito de cloud está acabando.
--- MAGIC É o marketplace de sellers: o freeze da Black Friday começa em 01/11.
+-- MAGIC O índice está acima de 0,9 hoje (SPI 0,91), mas a 0,01 do corte: o modelo dá 46% de chance de cruzar em 30 dias.
+-- MAGIC É o marketplace de sellers, um e-commerce: o change freeze da Black Friday começa em 01/11, daqui a 15 dias,
+-- MAGIC e trava deploy. Repare no que aconteceu com o SPI no freeze do ano passado (novembro de 2025 a janeiro).
 
 -- COMMAND ----------
 
 SELECT semana, ROUND(spi, 3) AS spi, ROUND(cpi, 3) AS cpi, ROUND(indice_min, 3) AS pior_indice,
-       ROUND(spi_ultimas_4s, 2) AS ritmo_ultimo_mes, rupturas_capacidade, status_freeze_4s, estoura_30d
-FROM lakehouse_vertice.gold.features_projeto_semana
+       ROUND(spi_ultimas_4s, 2) AS ritmo_ultimo_mes, status_freeze_4s, estoura_30d
+FROM lakehouse_vertice.ml.features_projeto_semana
 WHERE projeto_id = 'PRJ-024' AND semana >= DATE'2025-10-01'
 ORDER BY semana;

@@ -10,9 +10,9 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status e postmortems com IA, 5 metric views, dashboard e Genie |
+| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status semanal com IA, a metric view mv_projetos, dashboard e Genie |
 | [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
-| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | o agente de contratos e do manual, o app da Torre e a decisão gravada no Lakebase |
+| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | o agente de contratos, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
@@ -97,14 +97,13 @@ CONTEXTO DO WORKSPACE
      ${var.warehouse_id} com o arquivo ../src/conferencia/00-conferencia-bronze.sql
    - comentário no topo listando as tarefas que os próximos prompts vão
      acrescentar (medalhao, testes_de_qualidade, status_com_ia,
-     postmortem_com_ia, metricas_governadas)
+     metricas_governadas)
 
 3. src/conferencia/00-conferencia-bronze.sql
-   Confere as 13 tabelas da bronze contra a contagem esperada (seed 42):
+   Confere as 9 tabelas da bronze contra a contagem esperada (seed 42):
    projetos 60 · status_semanal 3911 · excel_tarefas 1663 · clickup_tarefas 2119 ·
-   msproject_tarefas 1260 · colaboradores 523 · alocacoes 517 ·
-   apontamentos 30883 · custos 23640 · entregas_fornecedor 640 ·
-   contratos_capacidade 93 · consumo_capacidade 6070 · postmortems 101
+   msproject_tarefas 1260 · colaboradores 523 · apontamentos 30883 ·
+   custos 23640 · entregas_fornecedor 640
    Uma linha por tabela com esperado e obtido; se alguma divergir, chame
    raise_error() com uma mensagem que diga qual tabela e o que fazer
    (rodar de novo o 00-carregar-dados e o 01-ingestao-bronze da noite 1).
@@ -180,18 +179,18 @@ pct entre 0 e 100 e horas > 0, todos FAIL UPDATE.
 04-pessoas.sql
 - colaboradores: COL0102, COL0257 e COL0433 aparecem duas vezes (nome e papel
   em CAIXA ALTA). Mantenha o cadastro com papel em minúsculas (row_number).
-- alocacoes tipada; apontamentos com semana = semana_inicio + 4 (sexta).
+- apontamentos com semana = semana_inicio + 4 (sexta).
 
-05-fornecedores-e-capacidade.sql
-- entregas_fornecedor: a CodeForge vem de 4 jeitos ('CodeForge Consultoria
-  Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA LTDA', 'Code Forge
-  Consultoria'): normalize (replace(lower(x), ' ', '') LIKE '%codeforge%') e
-  guarde fornecedor_como_veio. data_entrega vazia = em aberto (não é sujeira).
-  prazo_real_dias, dias_de_atraso_na_entrega, em_aberto e em_atraso (em
-  aberto e data_prometida antes de DATE'2026-10-16').
-- contratos_capacidade tipada; consumo_capacidade com saldo negativo → 0 e flag.
+05-fornecedores.sql — entregas_fornecedor: a CodeForge vem de 4 jeitos
+('CodeForge Consultoria Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA
+LTDA', 'Code Forge Consultoria'): normalize (replace(lower(x), ' ', '') LIKE
+'%codeforge%') e guarde fornecedor_como_veio. data_entrega vazia = em aberto
+(não é sujeira). prazo_prometido_dias, prazo_real_dias,
+dias_de_atraso_na_entrega, em_aberto e em_atraso (em aberto e data_prometida
+antes de DATE'2026-10-16').
 
-06-postmortems.sql — tipado, EXPECT severidade IN ('SEV1','SEV2','SEV3').
+São 7 tabelas na silver, nem uma a mais: projetos, tarefas, status_semanal,
+custos, colaboradores, apontamentos e entregas_fornecedor.
 
 Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
@@ -223,16 +222,14 @@ Uma linha por projeto e semana (sexta-feira), da semana do início até
 - spi = ev/pv, cpi = ev/ac (try_divide, 4 casas), eac = orcamento / cpi
 - farol_do_gerente (o último farol publicado)
 - horas_disponiveis, horas_apontadas e horas_ociosas da semana (apontamentos)
-- rupturas_capacidade: contratos do projeto com consumo_previsto_dia > 0 e
-  saldo / consumo_previsto_dia < 30 naquela semana.
 - EXPECT pv >= 0 e ev <= orcamento, FAIL UPDATE.
 
-src/gold/02-dim-e-marts.sql
-- dim_projeto: projeto (projeto_id · nome), cliente, segmento, tipo_projeto,
-  ferramenta, contrato, orçamento, datas, duracao_baseline_dias, status, gerente.
+src/gold/02-situacao-e-pessoas.sql
 - projeto_situacao_atual: a fotografia de 2026-10-16 de cada projeto (60
-  linhas), calculada sobre silver.tarefas (o % de hoje das ferramentas):
-  pv, ev, ac, spi, cpi, eac, estouro_previsto = greatest(eac - orcamento, 0),
+  linhas). Traz o cadastro (projeto = projeto_id · nome, cliente, segmento,
+  tipo_projeto, ferramenta, gerente_projeto, valor_contrato, orcamento,
+  data_inicio, data_fim_baseline, duracao_baseline_dias, status) e os KPIs
+  calculados sobre silver.tarefas (o % de hoje das ferramentas): pv, ev, ac, spi, cpi, eac, estouro_previsto = greatest(eac - orcamento, 0),
   margem_projetada, atraso_projetado_dias, termino_projetado, situacao
   ('concluído' se status <> em_andamento; 'crítico' se SPI ou CPI < 0,8;
   'atenção' se < 0,9; senão 'ok'), farol_do_gerente (status de hoje),
@@ -241,13 +238,8 @@ src/gold/02-dim-e-marts.sql
 - utilizacao_pessoa_semana: pessoa × projeto × semana com nome, papel,
   senioridade, horas disponíveis, apontadas, ociosas, utilizacao,
   custo_ocioso (horas ociosas × custo_hora) e o spi_do_projeto naquela semana.
-- desempenho_fornecedor: por fornecedor normalizado: entregas,
-  grafias_no_cadastro, prazo prometido e real médios, fator_atraso
-  (real/prometido), pct_no_prazo, entregas_em_atraso, valor_contratado.
-- cobertura_capacidade: contrato × hoje dos projetos em andamento: saldo,
-  consumo previsto, cobertura_dias, data_prevista_fim_saldo e
-  ruptura_prevista (cobertura < 30 dias).
-- entregas_em_atraso: entregas em aberto com data prometida antes de hoje.
+Não crie dim_projeto nem tabela gold de fornecedor: o cadastro já está na
+projeto_situacao_atual, e fornecedor é lido direto da silver.entregas_fornecedor.
 
 src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
  1 os 60 projetos têm cronograma na silver.tarefas
@@ -270,14 +262,14 @@ Rode e me mostre a saída:
 
 ### Prompt 4 · Texto com IA
 
-*o status e o postmortem viram coluna* · noite 2 · deploy nº 4 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
+*o status semanal vira coluna* · noite 2 · deploy nº 4 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
-vira coluna: o status semanal e os postmortems. Use as funções de IA na versão
-2.0 (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+do status semanal vira coluna. Use as funções de IA na versão 2.0
+(map('version','2.0')); o resultado é VARIANT, lido com ':response'.
 
-1. src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
    a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
       COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
       bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
@@ -307,19 +299,8 @@ vira coluna: o status semanal e os postmortems. Use as funções de IA na versã
         'impacto estimado: 1 semana' (= 7).
    c. No fim, um SELECT de leitura: quantos status por metodo e causa.
 
-2. src/ia/postmortem_estruturado.sql (sql_task)
-   Tabela lakehouse_vertice.gold.postmortem_estruturado (CREATE TABLE IF NOT
-   EXISTS + MERGE incremental por incidente_id) com: incidente_id, projeto_id,
-   data, severidade, e, por ai_extract com JSON schema tipado:
-   servico_afetado (string), causa_raiz (string), duracao_minutos (number,
-   "duração total convertida para minutos; 1h25min = 85"), usuarios_afetados
-   (number). E categoria_causa por ai_classify em ["deploy_sem_teste",
-   "configuracao","capacidade","dependencia_externa","pipeline_sem_dono"].
-   São só ~100 textos: a IA roda em todos. SELECT final: incidentes e horas
-   fora do ar por categoria.
-
-Acrescente ao job as tarefas status_com_ia e postmortem_com_ia, as duas
-depois de medalhao (em paralelo com testes_de_qualidade).
+Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
+com testes_de_qualidade).
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
@@ -332,39 +313,28 @@ Rode e me mostre a saída:
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora os KPIs
-governados, como metric views do Unity Catalog.
+governados, numa metric view do Unity Catalog. Uma só.
 
-Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW ...
-WITH METRICS LANGUAGE YAML AS $$ ... $$ (version 1.1), comment em toda
-dimensão e medida que não for óbvia, e synonyms em português:
+Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW
+lakehouse_vertice.gold.mv_projetos WITH METRICS LANGUAGE YAML AS $$ ... $$
+(version 1.1), comment em toda dimensão e medida que não for óbvia, e
+synonyms em português.
+- source: lakehouse_vertice.gold.projeto_situacao_atual, com
+  filter status = 'em_andamento'.
+- Dimensões: projeto_id, projeto, cliente, segmento, ferramenta, situacao,
+  farol_do_gerente, farol_calculado, gerente_projeto.
+- Medidas: projetos, carteira (SUM valor_contrato), spi (SUM(ev)/SUM(pv)),
+  cpi (SUM(ev)/SUM(ac)), eac, estouro_previsto, margem_projetada
+  ((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato)),
+  atraso_projetado_medio_dias, projetos_em_risco, projetos_criticos,
+  projetos_melancia (COUNT FILTER WHERE melancia).
 
-1. lakehouse_vertice.gold.mv_projetos sobre gold.projeto_situacao_atual com
-   filter status = 'em_andamento'. Dimensões: projeto_id, projeto, cliente,
-   segmento, ferramenta, situacao, farol_do_gerente, farol_calculado,
-   gerente_projeto. Medidas: projetos, carteira (SUM valor_contrato),
-   spi (SUM(ev)/SUM(pv)), cpi (SUM(ev)/SUM(ac)), eac, estouro_previsto,
-   margem_projetada ((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato)),
-   atraso_projetado_medio_dias, projetos_em_risco, projetos_criticos,
-   projetos_melancia (COUNT FILTER WHERE melancia).
-2. mv_evolucao sobre gold.fato_projeto_semana com join em gold.dim_projeto
-   (using: [projeto_id]): dimensões semana, mes, projeto, cliente, segmento,
-   ferramenta; medidas spi, cpi, utilizacao_equipe, horas_ociosas,
-   rupturas_capacidade.
-3. mv_pessoas sobre gold.utilizacao_pessoa_semana: dimensões semana, nome,
-   papel, senioridade, projeto; medidas utilizacao, horas_ociosas,
-   custo_ocioso, pessoas.
-4. mv_capacidade sobre gold.cobertura_capacidade: dimensões projeto,
-   fornecedor, tipo; medidas contratos, rupturas_previstas,
-   cobertura_media_dias.
-5. mv_fornecedores sobre silver.entregas_fornecedor: dimensões fornecedor,
-   projeto_id, mes_pedido; medidas entregas, entregas_em_atraso,
-   prazo_real_medio_dias, fator_atraso.
-
-ARMADILHA MEDIDA: o YAML precisa da indentação intacta. Teste com
-python3 scripts/run_sql.py <arquivo> --profile <perfil>.
+ARMADILHAS MEDIDAS: o YAML precisa da indentação intacta (teste com
+python3 scripts/run_sql.py <arquivo> --profile <perfil>), e NUNCA use ';'
+dentro do YAML, nem num comment: a sql_task do job corta o arquivo em todo ';'.
 
 Acrescente ao job a tarefa metricas_governadas, depois de
-testes_de_qualidade, status_com_ia E postmortem_com_ia.
+testes_de_qualidade E status_com_ia.
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
@@ -381,34 +351,34 @@ as métricas estão prontos. Agora as duas portas para quem não escreve SQL.
 
 1. Dashboard como código
    - scripts/gerar_dashboard.py gera resources/dashboard-portfolio.lvdash.json
-     (AI/BI, GRID_V1, queries com nome de tabela PURO, sem catálogo nem
-     schema). Três páginas:
+     (AI/BI, GRID_V1, queries da gold com nome de tabela PURO, sem catálogo
+     nem schema; a silver.entregas_fornecedor vai com o nome completo
+     lakehouse_vertice.silver.entregas_fornecedor). Três páginas:
      Portfólio: KPIs da mv_projetos com MEASURE() (carteira, SPI, CPI, estouro
        previsto, projetos em risco, críticos, melancias); barra de estouro
        previsto por projeto colorida por situação (crítico #FF5F46, atenção
        #F6C344, ok #22C2F4); dispersão SPI × CPI; linha de SPI e CPI semanais
-       da carteira (mv_evolucao); tabela dos projetos em andamento com o farol
+       da carteira (SUM(ev)/SUM(pv) por semana no fato_projeto_semana); tabela dos projetos em andamento com o farol
        do gerente ao lado do farol pelo número.
      Pessoas: top 15 pessoas por custo da hora parada (12 semanas), tabela de
        utilização por pessoa e projeto, e barras de causas de bloqueio por
        projeto (status_estruturado, últimos 90 dias).
-     Capacidade e fornecedores: contratos com ruptura prevista por projeto,
-       tabela de fornecedores (grafias no cadastro, prazo prometido x real,
-       % no prazo, em atraso) e tabela de banco de horas e créditos de cloud.
+     Fornecedores: tabela por fornecedor (grafias no cadastro, entregas,
+       prazo real ÷ prometido, % no prazo, em atraso hoje) e tabela das
+       entregas em atraso hoje, as duas sobre silver.entregas_fornecedor.
      Tema nas cores da Jornada: #0059DB, #22C2F4, fundo #14141A no escuro.
    - resources/dashboard.dashboard.yml: recurso dashboard_portfolio, display
      name "Projeto Farol · Portfólio", dataset_catalog ${var.catalog},
      dataset_schema gold, warehouse ${var.warehouse_id}.
    Antes do deploy, rode cada query do dashboard (prefixando
-   lakehouse_vertice.gold.) e me mostre a contagem de linhas de cada uma.
+   lakehouse_vertice.gold. nas tabelas gold) e me mostre a contagem de linhas de cada uma.
 
 2. Genie Agent como código
    - scripts/gerar_genie.py gera resources/farol.geniespace.json
      (serialized_space versão 2; ids de 32 caracteres hex, únicos e em ordem):
-     tabelas gold (cobertura_capacidade, desempenho_fornecedor, dim_projeto,
-     entregas_em_atraso, fato_projeto_semana, postmortem_estruturado,
-     projeto_situacao_atual, status_estruturado, utilizacao_pessoa_semana)
-     e as 5 metric views mv_*; as 4 perguntas do dono como perguntas de
+     tabelas gold.fato_projeto_semana, gold.projeto_situacao_atual,
+     gold.status_estruturado, gold.utilizacao_pessoa_semana e
+     silver.entregas_fornecedor, e a metric view gold.mv_projetos; as 4 perguntas do dono como perguntas de
      exemplo; instruções de texto com: quem pergunta (o dono e o CTO); HOJE =
      2026-10-16 e o que é "últimos 90 dias / 12 semanas / próximo mês"; as
      fórmulas e as regras de corte; mv_projetos para totais de hoje e
@@ -416,10 +386,12 @@ as métricas estão prontos. Agora as duas portas para quem não escreve SQL.
      somar semanas); farol e melancia; "por que o projeto X atrasou" responde
      com status_estruturado dos últimos 90 dias (sem sem_bloqueio e
      nao_reportado), mais o SPI e SREs ociosos se a causa for falta_sre;
-     gente parada = utilização < 20% em 12 semanas; "o que vai dar errado no
-     próximo mês" junta ruptura de capacidade, entregas em atraso e o change
-     freeze de varejo (01/11/2026 a 10/01/2027) nos projetos de e-commerce;
-     "quais clientes" devolve cada cliente uma vez. E um exemplo de SQL para
+     gente parada = utilização < 20% em 12 semanas; fornecedor = prazo real ÷
+     prometido na silver.entregas_fornecedor; "o que vai dar errado no
+     próximo mês" junta as entregas de consultoria em atraso e o change
+     freeze de varejo (01/11/2026 a 10/01/2027) nos projetos de e-commerce
+     (o modelo de previsão vem na noite 3); "quais clientes" devolve cada
+     cliente uma vez. E um exemplo de SQL para
      cada uma das 4 perguntas do dono.
    - resources/genie.genie_space.yml: recurso genie_farol, título
      "Farol · Diretoria".
@@ -464,9 +436,11 @@ Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
 em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
 não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
 
-Crie src/ml/01-features.sql (sql_task) que recria a tabela
-lakehouse_vertice.gold.features_projeto_semana: uma linha por projeto e semana
-(sexta-feira), a partir de gold.fato_projeto_semana + gold.dim_projeto.
+Crie src/ml/01-features.sql (sql_task). Primeiro CREATE SCHEMA IF NOT EXISTS
+lakehouse_vertice.ml (o laboratório do cientista; na gold só vai o score).
+Depois recrie lakehouse_vertice.ml.features_projeto_semana: uma linha por
+projeto e semana (sexta-feira), a partir de gold.fato_projeto_semana +
+gold.projeto_situacao_atual (o cadastro: início, duração, segmento).
 COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
 
 - spi, cpi, indice_min = least(spi, cpi)
@@ -477,13 +451,11 @@ COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
 - spi_ultimas_4s = o mesmo com pv
 - pct_fisico = ev / orcamento; pct_prazo = dias desde o início / duração baseline
 - ociosidade_4s = horas ociosas / horas disponíveis das últimas 4 semanas
-- rupturas_capacidade da semana
 - pct_consultoria_4s e pct_cloud_4s: participação no custo das últimas
   4 semanas (silver.custos, pela coluna semana)
-- saidas_12s: pessoas alocadas no projeto que se desligaram nas últimas
-  12 semanas (silver.alocacoes + silver.colaboradores)
-- incidentes_8s: postmortems do projeto nas últimas 8 semanas
-  (gold.postmortem_estruturado)
+- saidas_12s: pessoas do squad que se desligaram nas últimas 12 semanas.
+  Squad = quem apontou hora no projeto (silver.apontamentos) + data de
+  desligamento em silver.colaboradores
 - status_freeze_4s, status_falta_sre_4s, status_fornecedor_4s,
   status_rotatividade_4s, status_escopo_4s, status_retrabalho_4s,
   status_com_bloqueio_4s: quantos dos status dos últimos 28 dias tiveram
@@ -535,7 +507,8 @@ ARMADILHAS MEDIDAS NO FREE EDITION (siga todas):
   com SyntaxError na linha do texto.
 
 O notebook, nesta ordem:
-1. Lê gold.features_projeto_semana. Teste = elegíveis com rótulo e semana >=
+1. Lê ml.features_projeto_semana (24 features: todas as colunas do prompt 1
+   menos segmento, farol_do_gerente, elegivel e os dois alvos). Teste = elegíveis com rótulo e semana >=
    2026-04-03. Treino = rotulados com semana <= 2026-03-06 e pct_prazo > 0,15
    (inclui projetos já abaixo de 0,9: eles ensinam como um projeto afunda).
 2. BASELINES no teste, impressos antes de qualquer treino: regra de corte
@@ -557,8 +530,8 @@ O notebook, nesta ordem:
    disso é vazamento); AUC >= a folga até o corte (senão, use a regra);
    avisados >= 70% dos estouros.
 7. Retreine com TODOS os rotulados, registre em
-   lakehouse_vertice.gold.modelo_estouro_30d com input_example, alias @prod.
-8. Grave gold.modelo_metricas (uma linha: versão, auc, todas as réguas,
+   lakehouse_vertice.ml.modelo_estouro_30d com input_example, alias @prod.
+8. Grave ml.modelo_metricas (uma linha: versão, auc, todas as réguas,
    sigma, estouros, avisados e quais, antecedência, estouro avisado,
    feature principal).
 
@@ -577,10 +550,10 @@ src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
 ml_score (notebook_task, depois de ml_modelo).
 
 1. Carregue o modelo com mlflow.sklearn.load_model("models:/lakehouse_vertice
-   .gold.modelo_estouro_30d@prod") — NÃO use spark_udf: no serverless ele
-   quebra com InvalidVersion. O sigma vem de gold.modelo_metricas.
+   .ml.modelo_estouro_30d@prod") — NÃO use spark_udf: no serverless ele
+   quebra com InvalidVersion. O sigma vem de ml.modelo_metricas.
 2. Pontue os projetos em andamento na semana 2026-10-16 de
-   gold.features_projeto_semana, com join em gold.projeto_situacao_atual:
+   ml.features_projeto_semana, com join em gold.projeto_situacao_atual:
    pior_previsto = indice_min + previsão; prob = P(pior < 0,9) com erro
    normal; quem tem least(spi, cpi) < 0,9 NA FOTOGRAFIA DE HOJE → 1,0.
 3. ranking por prob desc (desempate: índice de hoje asc); faixa_risco alto
@@ -592,9 +565,8 @@ ml_score (notebook_task, depois de ml_modelo).
    últimas semanas, cpi_ultimas_4s < 0,85 ("cada R$ 1 gasto no último mês
    entregou R$ X"), spi_ultimas_4s < 0,85, falta de SRE em 2+ dos últimos 4
    status, change freeze em 2+, rotatividade (saídas em 12 semanas ou citada
-   no status), escopo crescendo em 2+, consultoria atrasando em 2+, 2+
-   incidentes em 8 semanas, ociosidade >= 25%, ruptura de capacidade.
-   Sem sinal: "sem sinal de piora".
+   no status), escopo crescendo em 2+, consultoria atrasando em 2+,
+   ociosidade >= 25%. Sem sinal: "sem sinal de piora".
 5. Grave lakehouse_vertice.gold.score_estouro_30d com EXATAMENTE as colunas
    projeto_id STRING, data_referencia DATE, prob_estouro_30d DOUBLE,
    ranking INT, faixa_risco STRING, principais_fatores STRING (overwrite).
@@ -637,43 +609,44 @@ O job `vertice_farol` agora tem **9 tarefas** e roda verde em ~4 a 5 min. A noit
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar. Use a skill
 databricks-ai-functions.
 
-Crie a pasta aulas/aula-04-engenheiro-ia/meu-agente/ com o agente que lê os
-contratos de fornecedor e o manual da Vértice. Perfil: <perfil> (sempre --profile).
+Crie a pasta aulas/aula-04-engenheiro-ia/meu-agente/ com o agente que lê os 8
+contratos de fornecedor da Vértice. Perfil: <perfil> (sempre --profile).
+Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
 
 1. meu-agente/01-contratos.sql, executável com
    python3 scripts/run_sql.py meu-agente/01-contratos.sql --profile <perfil>
-   (API de statements, não o aitools query). Na gold, com COMMENT em tudo (é o que o Genie lê):
-   a) gold.documentos_elementos: read_files (binaryFile) dos PDFs em
-      /Volumes/lakehouse_vertice/bronze/raw/documentos/contratos/ e .../manual/,
+   (API de statements, não o aitools query). COMMENT em toda tabela (é o que o Genie lê).
+   a) silver.documentos_elementos: read_files (binaryFile) dos PDFs em
+      /Volumes/lakehouse_vertice/bronze/raw/documentos/contratos/,
       ai_parse_document(content, map('version','2.0')), posexplode dos elementos:
-      tipo_documento, documento, ordem, tipo (title/section_header/text), conteudo.
-   b) gold.contratos_clausulas: uma linha por cláusula (fornecedor, clausula_numero INT,
+      documento, ordem, tipo (title/section_header/text), conteudo.
+   b) silver.contratos_clausulas: uma linha por cláusula (fornecedor, clausula_numero INT,
       titulo, texto). Cada texto pertence à última section_header "CLÁUSULA N - TÍTULO"
       antes dele (last_value ignorando nulos). O fornecedor sai da linha "CONTRATADA: ...".
-   c) gold.manual_secoes: uma linha por seção do manual (secao_numero, titulo, texto), mesmo método.
-   d) Um SELECT de demonstração com ai_extract SEM schema (lista de nomes de campo) em 3
+   c) Um SELECT de demonstração com ai_extract SEM schema (lista de nomes de campo) em 3
       contratos, para a turma ver que volta texto.
-   e) gold.contratos_resumo: ai_extract(texto, JSON schema, map('version','2.0')) com os campos
-      objeto, valor_anual (number), data_fim_vigencia (string AAAA-MM-DD), renovacao_automatica
-      (boolean), aviso_previo_dias (integer), multa_atraso_pct_dia (number, nulo se não há),
-      teto_multa_pct (number), sla e reajuste (string). Descrição em cada campo; peça
-      "em português" nos campos de texto. Leia com :response:campo::TIPO.
-   f) view gold.contratos_multa_fornecedor: silver.entregas_fornecedor entregue com atraso ou
-      em aberto vencida; dias de atraso até a entrega (ou até 16/10/2026); multa_cobravel =
-      valor × least(dias × multa % ao dia, teto) / 100; na_vigencia_atual = data_prometida
-      nos 12 meses que terminam no fim da vigência.
-   g) view gold.contratos_avisos: data_limite_aviso = fim da vigência − aviso prévio,
-      dias até ela a partir de 16/10/2026, situacao_aviso (vencido / vence em até 60 dias / ok)
-      e o_que_fazer conforme renovacao_automatica.
+   d) gold.contratos, uma linha por contrato: ai_extract(texto do contrato, JSON schema,
+      map('version','2.0')) com objeto, valor_anual (number), data_fim_vigencia (string
+      AAAA-MM-DD), renovacao_automatica (boolean), aviso_previo_dias (integer),
+      multa_atraso_pct_dia (number, nulo se não há), teto_multa_pct (number), sla e
+      reajuste (string). Descrição em cada campo; "em português" nos campos de texto.
+      Leia com :response:campo::TIPO. Guarde também clausulas = o texto de todas as
+      cláusulas, cada uma com "CLÁUSULA N - TÍTULO:" na frente.
+   e) No fim, duas CONSULTAS (não views) sobre gold.contratos, com hoje = 16/10/2026:
+      - multa a cobrar por fornecedor: silver.entregas_fornecedor entregue com atraso ou
+        em aberto vencida; dias de atraso até a entrega (ou até hoje); multa = valor ×
+        least(dias × multa % ao dia, teto) / 100; só o prometido na vigência atual
+        (data_prometida > add_months(data_fim_vigencia, -12));
+      - aviso prévio: data limite = data_fim_vigencia − aviso_previo_dias e dias até ela.
 
 2. meu-agente/gerar_genie.py: escreve meu-agente/diretoria-contratos-genie.json (NÃO use a
-   extensão .geniespace.json) com as tabelas contratos_*, manual_secoes, projeto_situacao_atual,
-   status_estruturado, utilizacao_pessoa_semana, cobertura_capacidade, entregas_em_atraso,
-   desempenho_fornecedor e a metric view mv_projetos. Inclua gold.score_estouro_30d SÓ se
-   existir (databricks tables exists). Instruções: a Vértice é a CONTRATANTE (multa é dinheiro
-   que ela cobra); hoje = 16/10/2026; cite cláusula e seção do manual; "na vigência atual" =
-   na_vigencia_atual; manual: freeze é a seção 4, SRE a 5, farol a 8. Exemplos de SQL para
-   "quanto cobrar da CodeForge", "aviso prévio" e "o que o manual diz sobre o freeze".
+   extensão .geniespace.json) com gold.contratos, gold.projeto_situacao_atual,
+   gold.status_estruturado, gold.utilizacao_pessoa_semana, silver.entregas_fornecedor e a
+   metric view gold.mv_projetos. Inclua gold.score_estouro_30d SÓ se existir (databricks
+   tables exists). Instruções: a Vértice é a CONTRATANTE (multa é dinheiro que ela cobra);
+   hoje = 16/10/2026; cite o número da cláusula; a conta da multa e do aviso prévio acima.
+   Exemplos de SQL para "quanto cobrar da CodeForge", "aviso prévio", "por que o PRJ-011
+   atrasou" e "tenho SRE parado para o PRJ-011".
 
 3. Publique e teste:
    python3 scripts/genie.py publicar meu-agente/diretoria-contratos-genie.json \
@@ -705,18 +678,18 @@ databricks-app-design.
 
 2. config/queries (apague os exemplos do template):
    - kpis.sql: projetos em andamento, em risco (atenção+crítico), críticos, melancias,
-     estouro previsto e carteira (projeto_situacao_atual), rupturas de capacidade
-     (cobertura_capacidade) e multa a cobrar de fornecedor na vigência atual
-     (contratos_multa_fornecedor).
+     estouro previsto e carteira (projeto_situacao_atual), alto risco em 30 dias
+     (faixa_risco = 'alto' na data_referencia mais recente de score_estouro_30d) e multa a
+     cobrar de fornecedor, calculada na própria query com gold.contratos +
+     silver.entregas_fornecedor (a mesma conta do prompt 1, só a vigência atual).
    - projetos_risco.sql: projetos em andamento do pior para o melhor, com SPI, CPI, estouro,
      atraso projetado, farol do gerente × calculado, melancia, a causa mais frequente no
      status_estruturado dos últimos 90 dias, os dias de impacto por falta_sre e por
-     rotatividade, rupturas de capacidade e multa a cobrar por projeto.
+     rotatividade e multa a cobrar por projeto (mesma conta da multa).
    - pessoas_ociosas.sql: pessoas com utilização < 20% nas últimas 12 semanas
      (utilizacao_pessoa_semana), com horas paradas e custo ocioso MÉDIOS por semana e custo_hora.
-   A probabilidade de estouro (gold.score_estouro_30d, da noite 3) NÃO vai em config/queries:
-   a tabela pode não existir e quebraria o build. Faça uma rota GET /api/score-estouro no
-   servidor que responde {disponivel, linhas}.
+   A probabilidade por projeto (gold.score_estouro_30d, da noite 3) vem de uma rota
+   GET /api/score-estouro no servidor que responde {disponivel, linhas}.
 
 3. Telas (português, R$, índices com 2 casas, Number() em tudo que vem do warehouse):
    - Projetos em risco: 4 KPIs + tabela (situação com cor: crítico vermelho, atenção âmbar;
@@ -732,7 +705,7 @@ databricks-app-design.
 4. npm run typecheck, npm run lint, npm test, databricks apps validate.
    Depois: databricks bundle deploy --profile <perfil> (cria o app e o service principal).
    Crie scripts/conceder-acesso.sh (lê o service_principal_client_id com apps get e dá
-   USE CATALOG em lakehouse_vertice e USE SCHEMA + SELECT na gold), rode e faça
+   USE CATALOG em lakehouse_vertice e USE SCHEMA + SELECT na gold e na silver), rode e faça
    databricks apps deploy --profile <perfil>. Me mostre a URL.
 ```
 

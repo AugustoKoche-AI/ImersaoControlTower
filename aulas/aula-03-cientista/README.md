@@ -4,14 +4,16 @@
 
 **Ao fim desta noite**, toda segunda às 6h a Torre entrega ao dono uma lista dos 41 projetos em
 andamento com a **chance de cada um estourar nos próximos 30 dias** e o **motivo em português**.
-Hoje a Vértice só descobre o estouro depois que ele aconteceu. Com 40 dias de antecedência, dá
+Hoje a Vértice só descobre o estouro depois que ele aconteceu. Com 41 dias de antecedência, dá
 para pedir aditivo de horas, trocar gente de projeto ou renegociar o escopo antes de virar atraso.
 
 É a pergunta 4 do dono:
 
 > **"O que vai dar errado no próximo mês, e o que eu faço agora?"**
 
-> **Formato:** 3 prompts no Claude Code, 3 deploys. O mesmo bundle da terça: o job sai de 6 para **9 tarefas**.
+> **Formato:** 3 prompts no Claude Code, 3 deploys. O mesmo bundle da terça: o job sai de 5 para **8 tarefas**.
+> **Onde fica cada coisa:** o laboratório do cientista (features, métricas, modelo) mora no schema
+> `lakehouse_vertice.ml`; na `gold` entra só o resultado, `gold.score_estouro_30d`.
 > **Conexão:** a tabela de hoje (`gold.score_estouro_30d`) é o que o app da [noite 4](../aula-04-engenheiro-ia) mostra ao dono.
 > **Medo de ML?** Você não vai escrever código: vai escrever o pedido, conferir números e entender
 > cada decisão. Cada termo novo é explicado na primeira vez que aparece.
@@ -28,12 +30,14 @@ Para essa regra, o **PRJ-024 · Marketplace de sellers** está ok: SPI 0,91, CPI
 
 No fim da noite, o modelo vai dizer outra coisa:
 
-> **PRJ-024 · 49% de chance de cruzar 0,9 em 30 dias.** Motivo: *"a 0,01 do corte de 0,9
-> (índice 0,91); banco de horas ou crédito de cloud acaba em menos de 30 dias"*.
+> **PRJ-024 · 46% de chance de cruzar 0,9 em 30 dias.** Motivo: *"a 0,01 do corte de 0,9
+> (índice 0,91)"*.
 
-E tem mais: é o marketplace de um cliente de varejo. No freeze da Black Friday do ano passado,
-o SPI dele caiu de **0,99 para 0,70**. O de 2026 começa em **01/11**, daqui a 15 dias.
-O modelo não sabe do calendário; o agente da noite 4, que lê o manual, vai saber.
+O número diz "ok". O modelo diz "quase metade de chance de não estar ok daqui a um mês". E o
+calendário piora a conta: é o marketplace de um cliente de varejo, um e-commerce. No freeze da
+Black Friday do ano passado, o SPI dele caiu de **0,99 para 0,70**. O de 2026 começa em
+**01/11**, daqui a 15 dias, e trava deploy. O modelo não sabe do calendário; o agente da
+noite 4, que lê o manual, vai saber.
 
 Guarde esse projeto: é ele que a gente persegue a noite toda.
 
@@ -43,10 +47,10 @@ Guarde esse projeto: é ele que a gente persegue a noite toda.
 
 | Entrega | Onde | Prova de que funcionou |
 |---|---|---|
-| O rótulo e as features, sem olhar o futuro | `gold.features_projeto_semana` | 4.235 projetos×semana · taxa base **16,7%** |
+| O rótulo e as features, sem olhar o futuro | `ml.features_projeto_semana` | 4.235 projetos×semana · taxa base **16,7%** |
 | O baseline, antes do modelo | notebook `02-modelo` | a regra da folga faz AUC **0,872** |
-| O modelo no Unity Catalog | `gold.modelo_estouro_30d@prod` | AUC **0,922** · ganha da regra · 4 testes passam |
-| A métrica do dono | `gold.modelo_metricas` | **9 de 10** estouros avisados, **40 dias** antes |
+| O modelo no Unity Catalog | `ml.modelo_estouro_30d@prod` | AUC **0,92** · ganha da regra · 4 testes passam |
+| A métrica do dono | `ml.modelo_metricas` | **9 de 10** estouros avisados, **41 dias** antes |
 | A lista de segunda-feira | `gold.score_estouro_30d` | 41 projetos, com probabilidade e **motivo em português** |
 
 Os termos desta tabela (rótulo, feature, baseline, AUC, `@prod`) estão explicados logo abaixo,
@@ -78,15 +82,14 @@ Nada de repositório novo, notebook solto ou ambiente à parte. ML entra como
 
 ```
                               job vertice_farol (toda segunda às 6h)
- conferencia_bronze → medalhao ─┬→ testes_de_qualidade ─┐
-                                ├→ status_com_ia ───────┼→ metricas_governadas
-                                └→ postmortem_com_ia ───┘          │
+ conferencia_bronze → medalhao ─┬→ testes_de_qualidade ─┬→ metricas_governadas
+                                └→ status_com_ia ───────┘          │
                      noite 3 ──────────────────────────────────────┘
                      ml_features ──► ml_modelo ──────────► ml_score
                      (sql_task)      (notebook)             (notebook)
                      projeto×semana  baseline, treino,      a lista de hoje,
                      + rótulo        4 testes, MLflow,      com motivo
-                                     Unity Catalog @prod    ──► gold.score_estouro_30d ──► app (noite 4)
+                     schema ml       schema ml (@prod)      ──► gold.score_estouro_30d ──► app (noite 4)
 ```
 
 ---
@@ -126,14 +129,14 @@ inteira das noites 2 a 4 está em [`PROMPTS.md`](../../PROMPTS.md).
 
 ### Passo 1 · Features: o que descreve um projeto que vai estourar
 
-Cole o [prompt 1](prd/prompt-01-features.md). Ele cria `gold.features_projeto_semana`: uma linha
-por projeto e semana com **26 sinais que só olham para trás**:
+Cole o [prompt 1](prd/prompt-01-features.md). Ele cria o schema `ml` e a tabela
+`ml.features_projeto_semana`: uma linha por projeto e semana com **24 sinais que só olham para trás**:
 
 - **nível**: SPI, CPI e o menor dos dois;
 - **tendência**: quanto caíram em 4 e 8 semanas;
 - **ritmo do último mês**: `cpi_ultimas_4s`, quanto cada R$ gasto no mês entregou;
-- **gente e capacidade**: ociosidade, saídas do time, banco de horas acabando;
-- **incidentes** em produção;
+- **gente e custo**: ociosidade, saídas do time (quem apontou hora no projeto e se desligou),
+  peso da consultoria e da cloud no custo do mês;
 - **o texto do status semanal**, que a IA classificou na noite 2 (freeze, falta de SRE,
   consultoria, rotatividade, escopo). A noite 2 vira matéria-prima da noite 3.
 
@@ -161,8 +164,8 @@ Depois mostre o que cada regra vale no teste (580 semanas de projeto a partir de
 | a tendência das últimas 4 semanas | **0,48** — pior que jogar uma moeda |
 | só o CPI | 0,65 |
 | **a folga até o corte** (quem está mais perto de 0,9) | **0,872** |
-| o classificador sim/não (HistGradientBoostingClassifier) | 0,906 |
-| **o modelo que prevê o índice** (HistGradientBoostingRegressor) | **0,922** |
+| o classificador sim/não (HistGradientBoostingClassifier) | 0,90 |
+| **o modelo que prevê o índice** (HistGradientBoostingRegressor) | **0,92** |
 
 **A lição:** a regra de bolso é boa. O modelo só entra porque **ganha** dela. E isso é um teste
 (`assert`) que quebra a tarefa se um dia deixar de ser verdade. Os 4 testes, antes de registrar:
@@ -179,14 +182,16 @@ Depois dos testes, o modelo é registrado no MLflow e no Unity Catalog:
 *A execução no MLflow. Repare em: `auc` 0,9219, `auc_baseline_folga` 0,8716 e `auc_classificador`
 0,9061 (as três réguas da tabela acima), `antecedencia_media_dias` 40,4, e nos parâmetros: corte do
 treino em 2026-03-06, início do teste em 2026-04-03, 26 features. No topo, o link "Model registered":
-o treino virou modelo do catálogo.*
+o treino virou modelo do catálogo. (Print de 18/10, antes da simplificação: hoje são 24 features e
+41 dias de antecedência.)*
 
 ![Modelo no Unity Catalog com alias @prod](../../docs/img/noite3-modelo.jpg)
-*O modelo `lakehouse_vertice.gold.modelo_estouro_30d` no Catalog Explorer, ao lado das tabelas da
-gold. Repare na etiqueta `@prod` na versão mais nova: é ela que o score carrega. Cada execução do job
-cria uma versão; a etiqueta muda de lugar, o nome que o score usa não muda.*
+*O modelo no Catalog Explorer. Repare na etiqueta `@prod` na versão mais nova: é ela que o score
+carrega. Cada execução do job cria uma versão; a etiqueta muda de lugar, o nome que o score usa não
+muda. (Print de 18/10, quando o modelo ainda morava na gold; hoje é `lakehouse_vertice.ml.modelo_estouro_30d`,
+ao lado das features e das métricas.)*
 
-**Confira** em `gold.modelo_metricas`: AUC 0,92, **9 de 10** estouros avisados, 40 dias antes.
+**Confira** em `ml.modelo_metricas`: AUC 0,92, **9 de 10** estouros avisados, 41 dias antes.
 
 ### Passo 3 · O score: a lista de segunda-feira, com motivo
 
@@ -197,9 +202,10 @@ O Free Edition não tem endpoint de modelo próprio, então o modelo roda **em l
 dentro do job, e o resultado vira a tabela `gold.score_estouro_30d`. Quem já está abaixo de 0,9 hoje
 recebe 1,0 (a regra já acendeu; o modelo só explica por quê).
 
-![Job vertice_farol com as 9 tarefas](../../docs/img/noite2-job.jpg)
-*O job `vertice_farol` com as 9 tarefas, todas verdes. Repare nas três da direita, `ml_features →
-ml_modelo → ml_score`: são as de hoje, penduradas depois das métricas da noite 2. ML é mais uma camada.*
+![Job vertice_farol com as tarefas da noite 3](../../docs/img/noite2-job.jpg)
+*O job `vertice_farol`, todas as tarefas verdes. Repare nas três da direita, `ml_features →
+ml_modelo → ml_score`: são as de hoje, penduradas depois das métricas da noite 2. ML é mais uma camada.
+(Print de 18/10, com 9 tarefas; hoje são 8: a tarefa de postmortem saiu.)*
 
 ![Top 15 do score no SQL Editor](../../docs/img/noite3-score.jpg)
 *O topo de `gold.score_estouro_30d` no SQL Editor. Repare que as 15 primeiras linhas têm
@@ -211,18 +217,19 @@ A lista completa, com o caso da noite:
 
 | # | Projeto | Prob. | Faixa | Motivos |
 |---|---|---|---|---|
-| 1 | PRJ-016 · Integração com laboratórios | 1,00 | alto | já abaixo do corte: SPI 0,63; ritmo do último mês em 56% do planejado; rotatividade citada em 1 dos últimos 4 status |
-| 5 | PRJ-011 · Checkout e meios de pagamento | 1,00 | alto | já abaixo do corte: SPI 0,77; falta de SRE em 4 dos últimos 4 status; 2 incidentes em produção em 8 semanas |
+| 1 | PRJ-016 · Integração com laboratórios | 1,00 | alto | já abaixo do corte: SPI 0,63; ritmo do último mês em 56% do planejado; … |
+| 5 | PRJ-011 · Checkout e meios de pagamento | 1,00 | alto | já abaixo do corte: SPI 0,77; falta de SRE em 4 dos últimos 4 status; … |
 | 6 | PRJ-027 · Migração do mainframe | 1,00 | alto | já abaixo do corte: CPI 0,79; CPI caindo há 3 de 4 semanas (−0,009); cada R$ 1 gasto no último mês entregou R$ 0,67 |
 | … | | | | (17 projetos que a regra já vê) |
-| 18 | PRJ-013 · Gestão de estoque em tempo real | 0,88 | alto | pelo status semanal o índice já é 0,90: o cronograma da ferramenta diz 0,94 |
-| **19** | **PRJ-024 · Marketplace de sellers** | **0,49** | **medio** | **a 0,01 do corte de 0,9 (índice 0,91); banco de horas ou crédito de cloud acaba em menos de 30 dias** |
-| 20 | PRJ-026 · Telemedicina | 0,34 | medio | a 0,00 do corte de 0,9 (índice 0,90); consultoria atrasando em 2 dos últimos 4 status |
+| 18 | PRJ-013 · Gestão de estoque em tempo real | 0,89 | alto | pelo status semanal o índice já é 0,90: o cronograma da ferramenta diz 0,94 |
+| **19** | **PRJ-024 · Marketplace de sellers** | **0,46** | **medio** | **a 0,01 do corte de 0,9 (índice 0,91)** |
+| … | | | | (mais 3 projetos "ok" na faixa média; o resto, baixo) |
 
-**O momento "uau":** é aqui que o PRJ-024 aparece. Ok para a regra, 49% para o modelo, com o
-motivo escrito.
+**O momento "uau":** é aqui que o PRJ-024 aparece. Ok para a regra, 46% para o modelo, com o
+motivo escrito. E é um e-commerce a 15 dias do change freeze da Black Friday (01/11), que trava
+deploy: o número diz "ok", o modelo e o calendário dizem "olhe agora".
 
-**E a lição de qualidade do PRJ-013:** 88% de chance com SPI 0,94 na planilha. O status de sexta
+**E a lição de qualidade do PRJ-013:** 89% de chance com SPI 0,94 na planilha. O status de sexta
 diz 43% concluído; a planilha soma 45%, porque uma tarefa foi digitada com mais de 100% e a silver
 cortou em 100. O modelo aprendeu com o status, e o motivo avisa que as duas fontes não batem.
 **Qualidade de dado é feature.**
@@ -242,10 +249,10 @@ demonstração de vazamento.
 ## 💼 A frase para o dono (a métrica que não é AUC)
 
 > *"Dos 10 projetos que estouraram depois de abril, a Torre teria colocado **9** na
-> lista dos 5 mais arriscados da semana, em média **40 dias antes**. A regra de
+> lista dos 5 mais arriscados da semana, em média **41 dias antes**. A regra de
 > corte que usamos hoje avisou **zero** antes."*
 
-Quarenta dias é tempo de pedir aditivo de horas (leva 30), trocar gente de projeto
+Quarenta e um dias é tempo de pedir aditivo de horas (leva 30), trocar gente de projeto
 ou renegociar o escopo com o cliente antes de virar atraso.
 
 ---
@@ -254,23 +261,27 @@ ou renegociar o escopo com o cliente antes de virar atraso.
 
 | Métrica | Valor |
 |---|---|
-| `features_projeto_semana` · linhas de treino · taxa base | 4.235 · 1.643 · 16,7% |
+| `ml.features_projeto_semana` · linhas de treino · taxa base | 4.235 · 1.643 · 16,7% |
 | Teste (a partir de 03/04/2026) | 580 projetos×semana, 70 terminaram o mês abaixo de 0,9 |
-| AUC: regra da folga · classificador · **modelo** | 0,872 · 0,906 · **0,922** |
-| Erro médio do índice previsto · sigma | 0,016 · 0,021 |
-| Estouros avisados no top 5 · antecedência | **9 de 10** · **40,4 dias** |
-| Estouro previsto hoje dos projetos avisados | R$ 2,44 mi |
+| AUC: regra da folga · classificador · **modelo** | 0,87 · 0,90 · **0,92** |
+| Erro médio do índice previsto · sigma (ensaio de 18/10) | 0,016 · 0,021 |
+| Estouros avisados no top 5 · antecedência | **9 de 10** · **41 dias** |
+| Estouro previsto hoje dos projetos avisados (ensaio de 18/10) | R$ 2,44 mi |
 | Feature mais importante (permutação) | `pct_fisico` |
 | Score: alto · medio · baixo | 18 · 4 · 19 |
-| Projetos "ok" para a regra com risco alto ou médio | 5 (PRJ-013, PRJ-024, PRJ-026, PRJ-053, PRJ-056) |
-| O "uau" | **PRJ-024**, 49%: marketplace, colado no corte, e o freeze começa em 01/11 |
-| Vazamento: corte no tempo · aleatório · com índice do futuro | 0,922 · 0,917 · **0,991** (barrado pelo teste de 0,98) |
+| Todo projeto crítico ou em atenção com prob 1,0 | 17 |
+| Projetos "ok" para a regra com risco alto ou médio | 5 (entre eles PRJ-013, 0,89, e PRJ-024) |
+| O "uau" | **PRJ-024**, 46%: e-commerce a 0,01 do corte, e o freeze começa em 01/11 |
+| Vazamento: corte no tempo · aleatório · com índice do futuro | 0,922 · 0,917 · **0,991** (barrado pelo teste de 0,98)¹ |
+
+Números remedidos em 19/10, depois da simplificação (schema `ml`, 24 features).
+¹ O notebook do vazamento é de 18/10 (26 features) e não foi remedido: a 2ª casa pode variar.
 
 Tudo com `random_state=42` e seed 42: rodando de novo, dá igual (medido: três execuções
 do job completo em 18/10 gravaram as mesmas métricas).
 
-**Tempos medidos:** features ~20 s · modelo ~1 min · score ~45 s · job completo
-com as 9 tarefas **4 a 5 min**.
+**Tempos medidos (18/10):** features ~20 s · modelo ~1 min · score ~45 s · job completo
+**4 a 5 min** (na época com 9 tarefas; hoje são 8).
 
 ---
 
@@ -312,7 +323,7 @@ abrir notebook — a lista no SQL Editor, a pergunta no Genie e a leitura dos mo
 | Arquivo | Para que serve |
 |---|---|
 | `prd/prompt-01-features.md` · `prompt-02-modelo.md` · `prompt-03-score.md` | os 3 prompts, com roteiro e "se der errado" |
-| `prd/99-limpar-aula-03.sh` | apaga só a noite 3 (tabelas, modelo, experimento, `src/ml` do meu-vertice) |
+| `prd/99-limpar-aula-03.sh` | apaga só a noite 3 (tabelas e modelo do schema `ml`, o score da gold, experimento, `src/ml` do meu-vertice) |
 | `99-verificacao.sql` | 17 checagens esperado × obtido |
 | `notebooks/01-o-que-o-modelo-vale.sql` | conferência: métricas, lista de segunda e a curva do PRJ-024 |
 | `notebooks/02-o-vazamento-de-dado.py` | o mesmo modelo em 3 divisões: honesta, aleatória e com vazamento |

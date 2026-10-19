@@ -1,0 +1,958 @@
+<!-- titulo: Projeto Farol · Imersão Databricks + Claude Code -->
+
+<!-- ============================================================ ABERTURA -->
+
+<section class="slide hero">
+  <div class="kicker">Imersão Databricks + Claude Code · 19 a 22/10/2026</div>
+  <h1>Projeto Farol<br><span class="grad">a Torre de Controle</span></h1>
+  <p class="sub" style="margin-top:36px;">Quatro noites para sair de 60 projetos espalhados em Excel, ClickUp e MS Project e chegar numa torre que diz, toda segunda, quem atrasa, quanto custa, quem está parado e o que vai dar errado no próximo mês.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">O caso</div>
+  <h2>Você era engenheiro de dados. <span class="grad">Agora é o CTO da Vértice.</span></h2>
+  <div class="grid g4" style="margin-bottom:34px;">
+    <div class="card hl"><div class="num md">520</div><div class="lbl">pessoas</div></div>
+    <div class="card hl"><div class="num md">60</div><div class="lbl">projetos de clientes (41 em andamento)</div></div>
+    <div class="card"><div class="num md">R$ 305 mi</div><div class="lbl">de carteira contratada</div></div>
+    <div class="card"><div class="num md">3</div><div class="lbl">ferramentas: 20 no Excel, 25 no ClickUp, 15 no MS Project</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="tag">Como é hoje</div><ul class="list">
+      <li>cada gerente controla o projeto numa ferramenta diferente</li>
+      <li>o PMO junta tudo à mão, toda sexta</li>
+      <li>o farol do status semanal está quase todo verde</li></ul></div>
+    <div class="card"><div class="tag">O custo de não saber</div><ul class="list">
+      <li>o atraso aparece quando <b>o cliente reclama</b></li>
+      <li>escopo cresce e ninguém cobra aditivo</li>
+      <li>gente parada num projeto, faltando em outro</li></ul></div>
+  </div>
+  <p class="note" style="margin-top:24px;">Empresa fictícia, dado simulado com seed fixa: todo mundo chega exatamente nos mesmos números. "Hoje" no dataset é <b>16/10/2026</b>.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O pedido do dono</div>
+  <h2>Quatro perguntas, em português</h2>
+  <div class="grid g2" style="gap:24px;">
+    <div class="card hl"><div class="tag">1 · atraso · noite 1</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">Quais projetos estão atrasados, e de quais clientes?</div></div>
+    <div class="card hl"><div class="tag">2 · dinheiro · noite 1</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">Quanto esse atraso vai me custar?</div></div>
+    <div class="card"><div class="tag">3 · gente · noite 2</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">Tenho gente parada enquanto outro projeto pede gente?</div></div>
+    <div class="card"><div class="tag">4 · futuro · noite 3</div><div class="lbl" style="font-size:34px; color:#fff; font-weight:700; line-height:1.25;">O que vai dar errado no próximo mês?</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">A noite 4 junta tudo numa tela que o dono usa, com o contrato do fornecedor na conversa.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">O caminho das 4 noites</div>
+  <h2>Um projeto só, <span class="grad">uma camada por noite</span></h2>
+  <div class="diagrama"><pre class="mermaid">
+flowchart LR
+  A["Excel · ClickUp · MS Project<br/>+ PMO, RH, timesheet,<br/>financeiro, compras"] --> B["<b>Noite 1 · bronze</b><br/>9 tabelas como vieram<br/>SQL, dashboard, Genie"]
+  B --> C["<b>Noite 2 · silver + gold</b><br/>pipeline Lakeflow<br/>IA nos status, métrica,<br/>dashboard, Genie curado"]
+  C --> D["<b>Noite 3 · ml</b><br/>features, modelo,<br/>score de estouro em 30 dias"]
+  D --> E["<b>Noite 4 · app</b><br/>contratos com IA,<br/>Torre de Controle,<br/>decisão no Lakebase"]
+  </pre></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Onde o dado mora no fim</div>
+  <h2>Catálogo <span class="grad">lakehouse_vertice</span>: pouca tabela, de propósito</h2>
+  <div class="grid g4" style="gap:22px;">
+    <div class="card"><div class="tag">bronze · noite 1</div><div class="num sm">9</div><div class="lbl">tabelas, o dado como veio, sujeira inclusa<br>+ volume <b>raw</b> com os arquivos</div></div>
+    <div class="card"><div class="tag">silver · noite 2</div><div class="num sm">7</div><div class="lbl">tabelas limpas: as 3 ferramentas viraram <b>tarefas</b><br>(+ 2 dos contratos, noite 4)</div></div>
+    <div class="card hl"><div class="tag">gold · noites 2 a 4</div><div class="num sm">7</div><div class="lbl">uma por pergunta do dono, prontas para dashboard, Genie e app</div></div>
+    <div class="card"><div class="tag">ml · noite 3</div><div class="num sm">2</div><div class="lbl">features e métricas<br>+ o modelo registrado</div></div>
+  </div>
+  <table class="t" style="margin-top:30px; font-size:22px;">
+    <tr><th>Objeto da gold</th><th>Noite</th><th>Responde</th></tr>
+    <tr><td>projeto_situacao_atual</td><td>2</td><td>quem atrasa, de qual cliente, quanto custa (SPI, CPI, estouro, melancia)</td></tr>
+    <tr><td>fato_projeto_semana</td><td>2</td><td>a evolução semana a semana (base do modelo)</td></tr>
+    <tr><td>utilizacao_pessoa_semana · status_estruturado</td><td>2</td><td>gente parada × gente pedida · por que travou (IA)</td></tr>
+    <tr><td>mv_projetos · score_estouro_30d · contratos</td><td>2 · 3 · 4</td><td>a métrica governada · o que vem aí · o que o contrato diz</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<!-- ============================================================ NOITE 1 -->
+
+<section class="slide hero">
+  <div class="kicker">Noite 1 · segunda, 19/10 · analista</div>
+  <h1>Ler tudo,<br><span class="grad">sem converter nada</span></h1>
+  <p class="sub" style="margin-top:30px;">Só navegador. Planilha, JSON e XML viram tabela com o mesmo comando, e o SQL responde as perguntas 1 e 2.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · o que você entrega</div>
+  <h2>Seis entregas, <span class="grad">todas no navegador</span></h2>
+  <table class="t">
+    <tr><th>#</th><th>Entrega</th><th>Como você sabe que chegou lá</th></tr>
+    <tr><td>1</td><td>Ambiente no Databricks Free Edition</td><td>catálogo <b>lakehouse_vertice</b> com bronze, silver, gold e o volume <b>raw</b></td></tr>
+    <tr><td>2</td><td>Excel, JSON e XML lidos com o mesmo comando</td><td><b>9 tabelas</b> na bronze, contagens iguais às da verificação</td></tr>
+    <tr><td>3</td><td>A sujeira encontrada antes de virar decisão</td><td>os <b>12 achados</b> do exemplo 03</td></tr>
+    <tr><td>4</td><td>As 3 ferramentas numa fila só</td><td>SPI dos 41 projetos em andamento (exemplo 05)</td></tr>
+    <tr><td>5</td><td>O atraso em dinheiro, e o farol desmentido</td><td><b>R$ 6,47 mi</b> de estouro e <b>4 melancias</b> (exemplo 06)</td></tr>
+    <tr><td>6</td><td>Dashboard publicado e o Genie errando</td><td>o dashboard da bronze e as 4 perguntas no Genie sem curadoria</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · como rodar</div>
+  <h2>Quatro passos, <span class="grad">uns 12 minutos</span></h2>
+  <div class="flow" style="margin-bottom:30px;">
+    <div class="card hl"><div class="tag">1 · conta</div><div class="lbl">databricks.com/learn/free-edition<br>sem cartão, tudo serverless</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">2 · Git folder</div><div class="lbl">Workspace → Create → Git folder →<br>github.com/lvgalvao/ImersaoControlTower</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">3 · Run all</div><div class="lbl">aula-01 / <b>00-carregar-dados</b>: cria o catálogo e gera os arquivos no volume</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">4 · SQL Editor</div><div class="lbl"><b>01-ingestao-bronze.sql</b>: selecione tudo e rode</div></div>
+  </div>
+  <pre class="code"><span class="c">-- o mesmo comando para CSV, Excel, JSON e XML</span>
+<span class="k">CREATE OR REPLACE TABLE</span> lakehouse_vertice.bronze.excel_tarefas <span class="k">AS</span>
+<span class="k">SELECT</span> ... <span class="k">FROM</span> read_files(<span class="s">'/Volumes/lakehouse_vertice/bronze/raw/excel/'</span>,
+                       format => <span class="s">'excel'</span>, headerRows => 1, inferColumnTypes => false);</pre>
+  <p class="note" style="margin-top:20px;">Conferência: <b>99-verificacao.sql</b> mostra esperado × obtido. Hoje: <b>18 de 18 ok</b>.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · o volume raw</div>
+  <h2>Os arquivos, <span class="grad">do jeito que cada sistema exporta</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <pre class="code" style="font-size:21px;">/Volumes/lakehouse_vertice/bronze/raw
+├── pmo/         projetos · status_semanal
+├── excel/       20 planilhas .xlsx
+├── clickup/     25 exports .json
+├── msproject/   15 arquivos .xml
+├── rh/          colaboradores
+├── timesheet/   apontamentos
+├── financeiro/  custos
+├── compras/     entregas_fornecedor
+└── documentos/  8 contratos em PDF
+                 (lidos na noite 4)</pre>
+    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/noite1-volume-excel.jpg]]" alt="As planilhas no volume"><div class="small" style="margin-top:8px;">As 20 planilhas no volume: arquivo de verdade, um por projeto, cada gerente com o seu nome de arquivo.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · a bronze</div>
+  <h2>9 tabelas, <span class="grad">uma pergunta do dono por trás de cada uma</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Tabela</th><th class="r">Linhas</th><th>Fonte</th><th>Serve para</th></tr>
+    <tr><td>projetos · status_semanal</td><td class="r">60 · 3.911</td><td>PMO (CSV)</td><td>o cadastro e o farol de toda sexta</td></tr>
+    <tr class="cur"><td>excel_tarefas</td><td class="r">1.663</td><td>20 planilhas</td><td rowspan="1">pergunta 1: quem atrasa</td></tr>
+    <tr class="cur"><td>clickup_tarefas</td><td class="r">2.119</td><td>25 JSON</td><td>pergunta 1: quem atrasa</td></tr>
+    <tr class="cur"><td>msproject_tarefas</td><td class="r">1.260</td><td>15 XML</td><td>pergunta 1: quem atrasa</td></tr>
+    <tr><td>custos</td><td class="r">23.640</td><td>financeiro</td><td>pergunta 2: quanto custa</td></tr>
+    <tr><td>colaboradores · apontamentos</td><td class="r">523 · 30.883</td><td>RH · timesheet</td><td>pergunta 3: gente parada</td></tr>
+    <tr><td>entregas_fornecedor</td><td class="r">640</td><td>compras</td><td>a consultoria que atrasa (e a multa da noite 4)</td></tr>
+  </table>
+  <p class="note" style="margin-top:22px;">Tudo entra como texto (<b>inferColumnTypes => false</b>) no CSV e no Excel: se o Databricks adivinhasse o tipo, a sujeira sumiria antes de a gente ver.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 1 de 9 · bronze.projetos</div>
+  <h2>O cadastro do PMO: <span class="grad">em qual ferramenta cada projeto vive</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>60 linhas</b>, uma por projeto (41 em andamento, 19 concluídos)</li>
+      <li>cliente, segmento, tipo, valor do contrato, orçamento, início, fim previsto, gerente</li>
+      <li><b>ferramenta</b> e <b>codigo_ferramenta</b>: a chave para achar o cronograma no Excel, no ClickUp ou no Project</li>
+      <li>carteira de <b>R$ 305,2 mi</b> (R$ 208,6 mi em andamento)</li></ul></div>
+    <div class="card hl"><div class="tag">A sujeira</div><ul class="list">
+      <li><b>data_inicio</b> em 2 formatos: 2025-03-14 e 14/03/2025</li>
+      <li>ferramenta escrita de 8 jeitos: Excel, excel, Planilha, ClickUp, click up, Project…</li>
+      <li>2 projetos sem código da ferramenta</li></ul></div>
+  </div>
+  <pre class="code" style="margin-top:26px; font-size:19px;">projeto_id | cliente              | ferramenta | codigo_ferramenta                          | valor_contrato | data_inicio
+PRJ-001    | Fintech Pagar Fácil  | MS Project | PRJ-001_migracao_do_mainframe_para_clo.xml | 7957000.00     | 14/03/2025</pre>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 2 de 9 · bronze.status_semanal</div>
+  <h2>Toda sexta, o gerente escreve <span class="grad">o que aconteceu</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>3.911 linhas</b>: projeto × sexta-feira</li>
+      <li>farol (verde, amarelo, vermelho), % concluído e <b>texto livre</b> com entregas e bloqueios</li>
+      <li>é o único histórico de avanço que existe: as ferramentas só guardam o % de hoje</li></ul></div>
+    <div class="card hl"><div class="tag">A sujeira</div><ul class="list">
+      <li>o farol é do gerente, e gerente é otimista: <b>32 verdes hoje</b></li>
+      <li>farol escrito Verde, VERDE, verde</li>
+      <li>status vazio, "N/A", "ver ata da reunião", texto em CAIXA ALTA</li></ul></div>
+  </div>
+  <pre class="code" style="margin-top:26px; font-size:19px; white-space:pre-wrap;">PRJ-011 · 2026-10-16 · amarelo · "Bloqueios: Sem SRE alocado: pipeline de deploy quebrado e ninguém para corrigir. Impacto estimado: 1 semana."</pre>
+  <p class="note" style="margin-top:18px;">Na noite 2, a IA lê esse texto e devolve a causa como coluna (<b>gold.status_estruturado</b>).</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 3 de 9 · bronze.excel_tarefas</div>
+  <h2>20 planilhas, <span class="grad">cada gerente do seu jeito</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div><img class="shot" style="height:600px;" src="[[IMG:docs/img/ontem-excel-sujo.jpg]]" alt="Amostra da excel_tarefas"></div>
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>1.663 linhas</b>, uma por linha de planilha</li>
+      <li>o read_files aponta para a <b>pasta</b>: lê as 20 de uma vez</li>
+      <li>colunas renomeadas ("% Concluído" → pct_concluido), valor intocado</li></ul>
+      <div class="tag" style="margin-top:24px;">A sujeira</div><ul class="list">
+      <li>data como texto <b>ou</b> número de série (45700 = 13/02/2025)</li>
+      <li>% como "45%" ou 0.45, e 11 tarefas acima de 100%</li>
+      <li>uma <b>linha de TOTAL</b> no fim que soma tudo de novo</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 4 de 9 · bronze.clickup_tarefas</div>
+  <h2>25 exports da API, <span class="grad">lista dentro de lista</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div><img class="shot" style="height:600px;" src="[[IMG:docs/img/ontem-clickup-json.jpg]]" alt="Amostra da clickup_tarefas"></div>
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>2.119 linhas</b>: cada arquivo é uma lista (um projeto), <b>explode()</b> abre uma linha por tarefa</li>
+      <li>no JSON a gente <b>deixa inferir</b> o tipo: é o que mantém a estrutura aninhada</li></ul>
+      <div class="tag" style="margin-top:24px;">A sujeira</div><ul class="list">
+      <li>datas em <b>milissegundos</b> desde 1970</li>
+      <li>status escrito de 12 jeitos (to do, Em andamento, DONE…)</li>
+      <li>o % e a baseline escondidos numa lista de <b>custom_fields</b></li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 5 de 9 · bronze.msproject_tarefas</div>
+  <h2>15 cronogramas do Project, <span class="grad">uma &lt;Task&gt; por linha</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <div><img class="shot" style="height:600px;" src="[[IMG:docs/img/ontem-msproject-xml.jpg]]" alt="Amostra da msproject_tarefas"></div>
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>1.260 linhas</b> com <b>rowTag => 'Task'</b>: cada &lt;Task&gt; vira uma linha</li>
+      <li>baseline, início e fim reais e % concluído, tudo aninhado</li></ul>
+      <div class="tag" style="margin-top:24px;">A sujeira</div><ul class="list">
+      <li>horas no formato <b>PT40H0M0S</b></li>
+      <li><b>105 tarefas-resumo</b> (fases e o projeto inteiro) que somam as de baixo: contar tudo dobra as horas</li>
+      <li>a fase está na tarefa de cima, não na própria tarefa</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 6 de 9 · bronze.colaboradores</div>
+  <h2>As 520 pessoas: <span class="grad">papel, custo e quem saiu</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>523 linhas</b> do RH (deviam ser 520)</li>
+      <li>papel (dev, qa, sre, tech_lead…), senioridade, <b>custo/hora</b></li>
+      <li>admissão e <b>desligamento</b>: mostra os squads com rotatividade (PRJ-016 e PRJ-030)</li></ul></div>
+    <div class="card hl"><div class="tag">A sujeira</div><ul class="list">
+      <li><b>3 pessoas duplicadas</b>: mesmo id, nome e papel em CAIXA ALTA</li>
+      <li>DISTINCT não resolve, porque as linhas são diferentes</li></ul></div>
+  </div>
+  <pre class="code" style="margin-top:26px; font-size:20px;">colaborador_id | nome            | papel     | senioridade | custo_hora | data_admissao | data_desligamento
+COL0001        | Débora Pacheco  | tech_lead | pleno       | 155.47     | 2024-04-29    |</pre>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 7 de 9 · bronze.apontamentos</div>
+  <h2>O timesheet: <span class="grad">horas disponíveis × apontadas</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>30.883 linhas</b>: pessoa × projeto × semana</li>
+      <li>é quem diz onde cada pessoa está: dá para saber o squad de cada projeto sem outra planilha</li>
+      <li>ociosidade = disponível − apontado</li></ul></div>
+    <div class="card hl"><div class="tag">A história escondida</div><ul class="list">
+      <li>os SREs <b>COL0017</b> e <b>COL0018</b> apontam de 2% a 9% no PRJ-007, que ainda está no discovery</li>
+      <li>enquanto isso, o PRJ-011 reclama de falta de SRE há 12 semanas</li>
+      <li>apontar mais que o disponível é hora extra: legítimo</li></ul></div>
+  </div>
+  <pre class="code" style="margin-top:26px; font-size:20px;">colaborador_id | projeto_id | semana_inicio | horas_disponiveis | horas_apontadas
+COL0017        | PRJ-007    | 2026-10-12    | 40.0              | 2.4</pre>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 8 de 9 · bronze.custos</div>
+  <h2>Cada real gasto, <span class="grad">lançamento por lançamento</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>23.640 lançamentos</b>: pessoal, consultoria, cloud, licenças</li>
+      <li>custo real total de <b>R$ 193,35 mi</b></li>
+      <li>com o CPI, diz se cada real gasto entregou um real de trabalho</li></ul></div>
+    <div class="card hl"><div class="tag">A sujeira</div><ul class="list">
+      <li><b>671 valores com vírgula decimal</b> (1245,78)</li>
+      <li>um <b>try_cast</b> ingênuo transforma em nulo e some com <b>R$ 5,41 mi</b> (dá R$ 187,94 mi)</li>
+      <li>estornos negativos, que são legítimos</li></ul></div>
+  </div>
+  <pre class="code" style="margin-top:26px; font-size:20px;">lancamento_id | projeto_id | data       | categoria | descricao                                 | valor
+L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 semana 2025-01-06   | 1245.78</pre>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Bronze · 9 de 9 · bronze.entregas_fornecedor</div>
+  <h2>O que a consultoria prometeu, <span class="grad">e quando entregou</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que é</div><ul class="list">
+      <li><b>640 entregas</b> de 5 fornecedores: pedido, prometido, entregue, valor</li>
+      <li>prazo real ÷ prometido mostra quem cumpre</li>
+      <li>na noite 4 vira <b>multa cobrável</b>, cruzando com o contrato em PDF</li></ul></div>
+    <div class="card hl"><div class="tag">A história escondida</div><ul class="list">
+      <li>a <b>CodeForge</b> entrega com prazo <b>×1,41</b> e 0% no prazo</li>
+      <li>e vem escrita de <b>4 jeitos</b>: sem normalizar, vira 4 fornecedores medianos e some do ranking</li>
+      <li>5 entregas em atraso hoje, todas dela</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · a bronze pronta</div>
+  <h2 style="margin-bottom:20px;">As 9 tabelas no <span class="grad">Catalog Explorer</span></h2>
+  <img class="shot" style="height:700px;" src="[[IMG:docs/img/noite1-catalogo-bronze.jpg]]" alt="A bronze no Catalog Explorer">
+  <div class="small" style="margin-top:10px;">São 10 itens porque o exemplo 05 cria a view <b>rascunho_tarefas</b>. Logo depois da ingestão você vê 9.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · os 6 exemplos SQL</div>
+  <h2>Do primeiro SELECT <span class="grad">à resposta do dono</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Exemplo</th><th>Conceito</th><th>O que ele mostra</th></tr>
+    <tr><td>01 · primeiro SELECT</td><td>SELECT, FROM, LIMIT, COUNT</td><td>60 projetos, 41 em andamento</td></tr>
+    <tr><td>02 · ORDER BY e DISTINCT</td><td>ORDER BY, DISTINCT, CAST, SUM</td><td>carteira de R$ 305,2 mi; a ferramenta escrita de 8 jeitos</td></tr>
+    <tr><td>03 · WHERE e a sujeira</td><td>WHERE, LIKE, IS NULL, FILTER</td><td>os <b>12 achados</b> de sujeira, antes de virarem decisão</td></tr>
+    <tr><td>04 · GROUP BY</td><td>date_trunc, try_cast, replace</td><td>custo por mês; o try_cast que perde 671 lançamentos</td></tr>
+    <tr class="cur"><td>05 · UNION</td><td>CTE, UNION ALL, CASE, JOIN</td><td><b>as 3 ferramentas numa fila só</b> → SPI de cada projeto</td></tr>
+    <tr class="cur"><td>06 · quanto custa</td><td>CTE encadeada, KPI, janela</td><td><b>R$ 6,47 mi</b> de estouro; 7 críticos; 4 melancias</td></tr>
+  </table>
+  <p class="note" style="margin-top:22px;">Cada exemplo existe em dois notebooks: <b>em branco</b> (você digita) e <b>resolvido</b> (para conferir).</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · exemplo 05 · pergunta 1</div>
+  <h2>Quem atrasa: <span class="grad">os 7 críticos</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Projeto</th><th>Cliente</th><th class="r">SPI</th><th class="r">CPI</th><th class="r">Estouro</th></tr>
+    <tr><td>PRJ-016 · Integração com laboratórios</td><td>Operadora Bem Cuidar</td><td class="r bad">0,63</td><td class="r">0,92</td><td class="r">R$ 257 mil</td></tr>
+    <tr><td>PRJ-030 · APIs de Open Finance</td><td>Seguradora Porto Firme</td><td class="r bad">0,69</td><td class="r">0,90</td><td class="r">R$ 363 mil</td></tr>
+    <tr><td>PRJ-039 · Antifraude em tempo real</td><td>Banco Meridiano</td><td class="r bad">0,75</td><td class="r">0,95</td><td class="r">R$ 130 mil</td></tr>
+    <tr><td>PRJ-009 · Prontuário eletrônico</td><td>Rede Diagnóstica Vida</td><td class="r">0,94</td><td class="r bad">0,77</td><td class="r">R$ 518 mil</td></tr>
+    <tr><td>PRJ-011 · Checkout e meios de pagamento</td><td>Supermercados Bom Preço</td><td class="r bad">0,77</td><td class="r">0,92</td><td class="r">R$ 310 mil</td></tr>
+    <tr><td>PRJ-027 · Migração do mainframe</td><td>Corretora Valor Real</td><td class="r">0,95</td><td class="r bad">0,79</td><td class="r">R$ 497 mil</td></tr>
+    <tr><td>PRJ-054 · Migração do mainframe</td><td>Seguradora Porto Firme</td><td class="r bad">0,80</td><td class="r">0,93</td><td class="r">R$ 410 mil</td></tr>
+  </table>
+  <p class="note" style="margin-top:20px;">SPI = trabalho entregue ÷ trabalho que devia estar pronto. <b>Abaixo de 0,8 é crítico</b>; abaixo de 0,9, atenção (mais 10 projetos).</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · exemplo 06 · pergunta 2</div>
+  <h2>Quanto custa: <span class="grad">R$ 6,47 mi</span>, e o farol mente</h2>
+  <div class="grid g3" style="margin-bottom:30px;">
+    <div class="card hl"><div class="num md">R$ 6,47 mi</div><div class="lbl">de estouro previsto: EAC − orçamento, só de quem estoura</div></div>
+    <div class="card hl"><div class="num md">17</div><div class="lbl">projetos em risco: 7 críticos e 10 em atenção, de 41</div></div>
+    <div class="card"><div class="num md">4</div><div class="lbl">melancias: farol verde do gerente com SPI abaixo de 0,9</div></div>
+  </div>
+  <div class="card"><div class="tag">As melancias: verdes por fora, vermelhas por dentro</div>
+    <div class="lbl" style="font-size:26px; color:#fff;">PRJ-012 · PRJ-028 · PRJ-034 · PRJ-042: o gerente publicou verde na sexta; o número diz atraso. A regra da Vértice é verde só com SPI ≥ 0,95.</div></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · entrega 6 · dashboard</div>
+  <h2 style="margin-bottom:20px;">Dashboard da bronze, <span class="grad">publicado</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite1-dashboard.jpg]]" alt="Dashboard da noite 1">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite1-dashboard-graficos.jpg]]" alt="Gráficos do dashboard da noite 1">
+  </div>
+  <div class="small" style="margin-top:10px;">"Projeto Farol · Noite 1 (bronze)": funciona, mas cada gráfico repete o CASE, o replace e a conversão de data. Na noite 2 isso some.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 1 · entrega 6 · Genie sem curadoria</div>
+  <h2 style="margin-bottom:20px;">O Genie na bronze <span class="grad">erra as 4 perguntas</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite1-genie-erra.jpg]]" alt="Genie errando">
+    <div class="card"><div class="tag">Por que erra</div><ul class="list">
+      <li>não sabe que hoje é 16/10/2026</li>
+      <li>soma a linha de TOTAL do Excel e as tarefas-resumo do Project</li>
+      <li>vê 4 CodeForges diferentes</li>
+      <li>responde com confiança: "nenhum atraso custa nada"</li></ul>
+      <p class="note" style="margin-top:24px;">O modelo de IA é o mesmo da noite 2. O que muda é o que está embaixo dele.</p></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- ============================================================ NOITE 2 -->
+
+<section class="slide hero">
+  <div class="kicker">Noite 2 · terça, 20/10 · engenheiro de dados</div>
+  <h1>Integrar<br><span class="grad">uma vez, para sempre</span></h1>
+  <p class="sub" style="margin-top:30px;">Seis prompts no Claude Code viram um projeto de verdade: pipeline, testes, IA nos textos, métrica governada, dashboard e Genie, tudo em código.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · como rodar</div>
+  <h2>Claude Code + o bundle <span class="grad">vertice</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">Uma vez</div><ul class="list">
+      <li>instalar a CLI do Databricks e o Claude Code</li>
+      <li><b>databricks auth login</b> no seu workspace</li>
+      <li>abrir o Claude Code na pasta da noite 2</li></ul>
+      <div class="tag" style="margin-top:24px;">A cada prompt</div>
+      <pre class="code" style="font-size:20px; margin-top:6px;">databricks bundle deploy --profile SEU-PERFIL
+databricks bundle run vertice_farol --profile SEU-PERFIL</pre></div>
+    <table class="t" style="font-size:21px;">
+      <tr><th>Prompt</th><th>O que nasce</th></tr>
+      <tr><td>1</td><td>bundle + conferência da bronze</td></tr>
+      <tr><td>2</td><td>silver: as 3 ferramentas viram uma</td></tr>
+      <tr><td>3</td><td>gold + testes de qualidade</td></tr>
+      <tr><td>4</td><td>IA no status semanal</td></tr>
+      <tr><td>5</td><td>a métrica governada (mv_projetos)</td></tr>
+      <tr><td>6</td><td>dashboard e Genie como código</td></tr>
+    </table>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · o job vertice_farol</div>
+  <h2>A ordem <span class="grad">não é sugestão</span></h2>
+  <div class="diagrama"><pre class="mermaid">
+flowchart LR
+  A["conferencia_bronze<br/>9 tabelas inteiras?"] --> B["medalhao<br/>pipeline Lakeflow<br/>silver + gold"]
+  B --> C["testes_de_qualidade<br/>10 testes"]
+  B --> D["status_com_ia<br/>ai_classify + ai_extract"]
+  C --> E["metricas_governadas<br/>mv_projetos"]
+  D --> E
+  E --> F["ml_features"] --> G["ml_modelo"] --> H["ml_score"]
+  classDef n3 fill:#1b2a4a,stroke:#22C2F4,color:#fff
+  class F,G,H n3
+  </pre></div>
+  <p class="note" style="margin-top:18px;">5 tarefas na noite 2; a noite 3 pendura as 3 do modelo no mesmo job (em azul). Se a conferência falha, nada roda.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · o pipeline vertice_medalhao</div>
+  <h2>Você declara <span class="grad">o que cada tabela é</span>; o Lakeflow acha a ordem</h2>
+  <div class="diagrama"><pre class="mermaid">
+flowchart LR
+  subgraph bronze
+    b1[projetos] ; b2[excel_tarefas] ; b3[clickup_tarefas] ; b4[msproject_tarefas]
+    b5[status_semanal] ; b6[custos] ; b7[colaboradores] ; b8[apontamentos] ; b9[entregas_fornecedor]
+  end
+  subgraph silver
+    s1[projetos] ; s2[tarefas] ; s3[status_semanal] ; s4[custos] ; s5[colaboradores] ; s6[apontamentos] ; s7[entregas_fornecedor]
+  end
+  subgraph gold
+    g1[projeto_situacao_atual] ; g2[fato_projeto_semana] ; g3[utilizacao_pessoa_semana]
+  end
+  b1-->s1 ; b2-->s2 ; b3-->s2 ; b4-->s2 ; b5-->s3 ; b6-->s4 ; b7-->s5 ; b8-->s6 ; b9-->s7
+  s1-->g1 ; s2-->g1 ; s4-->g1 ; s3-->g1
+  s1-->g2 ; s2-->g2 ; s3-->g2 ; s4-->g2 ; s6-->g2
+  s6-->g3 ; s5-->g3 ; g1-->g3 ; g2-->g3
+  </pre></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · o pipeline no workspace</div>
+  <h2 style="margin-bottom:20px;">O grafo que o Lakeflow desenha <span class="grad">sozinho</span></h2>
+  <img class="shot" style="height:720px; object-fit:contain;" src="[[IMG:docs/img/noite2-pipeline-v2.jpg]]" alt="Grafo do pipeline vertice_medalhao">
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · silver</div>
+  <h2>7 tabelas limpas: <span class="grad">a sujeira resolvida uma vez</span></h2>
+  <table class="t" style="font-size:21px;">
+    <tr><th>silver</th><th class="r">Linhas</th><th>O que a limpeza fez</th></tr>
+    <tr class="cur"><td>tarefas</td><td class="r">4.917</td><td><b>as 3 ferramentas viram uma</b>: sem linha de TOTAL, sem tarefa-resumo, data de série e milissegundo convertidas (Excel 1.643 · ClickUp 2.119 · Project 1.155)</td></tr>
+    <tr><td>projetos</td><td class="r">60</td><td>data em 2 formatos unificada; ferramenta de 8 jeitos vira excel, clickup ou msproject</td></tr>
+    <tr><td>status_semanal</td><td class="r">3.911</td><td>farol em minúsculas; status vazio sinalizado</td></tr>
+    <tr><td>custos</td><td class="r">23.640</td><td>vírgula decimal recuperada: os 671 lançamentos voltam (R$ 193,35 mi)</td></tr>
+    <tr><td>colaboradores</td><td class="r">520</td><td>3 duplicatas do RH removidas</td></tr>
+    <tr><td>apontamentos</td><td class="r">30.883</td><td>semana alinhada à sexta do status; hora extra sinalizada</td></tr>
+    <tr><td>entregas_fornecedor</td><td class="r">640</td><td>CodeForge de 4 jeitos vira 1; atraso calculado</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · silver.tarefas</div>
+  <h2 style="margin-bottom:20px;">Excel, ClickUp e Project <span class="grad">na mesma tabela</span></h2>
+  <img class="shot" style="height:680px;" src="[[IMG:docs/img/agora-silver-tarefas.jpg]]" alt="silver.tarefas">
+  <div class="small" style="margin-top:10px;">Mesmas colunas, mesmo tipo, mesma régua, não importa de onde veio. É aqui que o "juntar à mão" da noite 1 vira código testado.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 1 de 5 · gold.projeto_situacao_atual</div>
+  <h2>A fotografia de hoje: <span class="grad">perguntas 1 e 2</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">Uma linha por projeto (60)</div><ul class="list">
+      <li>o cadastro: cliente, segmento, ferramenta, gerente, contrato, prazo</li>
+      <li>PV, EV, AC calculados sobre as <b>tarefas das 3 ferramentas</b></li>
+      <li>SPI, CPI, EAC, <b>estouro previsto</b>, margem, atraso projetado</li>
+      <li>situação: ok, atenção, crítico</li>
+      <li>farol do gerente × farol calculado, e a coluna <b>melancia</b></li></ul></div>
+    <div class="card hl"><div class="tag">Hoje</div>
+      <div class="num sm">7 · 10 · 4</div><div class="lbl">críticos · em atenção · melancias</div>
+      <div class="num sm" style="margin-top:24px;">R$ 6,47 mi</div><div class="lbl">de estouro previsto, o mesmo da noite 1</div>
+      <div class="num sm" style="margin-top:24px;">0,92 · 0,97</div><div class="lbl">SPI e CPI da carteira · margem projetada 20,4%</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 2 de 5 · gold.fato_projeto_semana</div>
+  <h2>A evolução: <span class="grad">projeto × semana</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">4.235 linhas</div><ul class="list">
+      <li>PV, EV e AC <b>acumulados</b> até cada sexta</li>
+      <li>SPI, CPI e EAC semana a semana; farol do gerente vigente</li>
+      <li>horas disponíveis, apontadas e ociosas da equipe</li>
+      <li>o EV histórico vem do status semanal: as ferramentas só guardam o % de hoje</li></ul></div>
+    <div class="card hl"><div class="tag">Para que serve</div><ul class="list">
+      <li>a linha do SPI e do CPI da carteira no dashboard</li>
+      <li>"qual era o SPI do PRJ-016 em setembro?" no Genie</li>
+      <li><b>a base do modelo da noite 3</b>: cada linha é um "momento" do projeto</li></ul></div>
+  </div>
+  <p class="note" style="margin-top:24px;">Cuidado que vira teste: PV, EV e AC já são acumulados. Somar semanas do mesmo projeto conta duas vezes.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 3 de 5 · gold.utilizacao_pessoa_semana</div>
+  <h2>Pergunta 3: <span class="grad">gente parada × gente pedida</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <img class="shot" style="height:600px;" src="[[IMG:docs/img/noite2-pessoas.jpg]]" alt="Página Pessoas do dashboard">
+    <div class="card"><div class="tag">Pessoa × projeto × semana</div><ul class="list">
+      <li>utilização = apontado ÷ disponível; custo da hora parada</li>
+      <li>e o SPI do projeto na mesma semana</li></ul>
+      <div class="tag" style="margin-top:24px;">A resposta</div><ul class="list">
+      <li><b>COL0017</b> e <b>COL0018</b>, SREs seniores, a ~5,5% no PRJ-007</li>
+      <li>o PRJ-011 está sem SRE há <b>12 semanas</b>: 57 dias de impacto no status</li>
+      <li>a decisão óbvia vira simulação na noite 4</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 4 de 5 · gold.status_estruturado · a função de IA</div>
+  <h2>O texto livre <span class="grad">vira coluna</span></h2>
+  <pre class="code" style="font-size:19px;"><span class="k">ai_classify</span>(texto_status, <span class="s">'["change_freeze","falta_sre","dependencia_fornecedor","rotatividade",
+                            "mudanca_escopo","bug_retrabalho","aprovacao_cliente","sem_bloqueio"]'</span>)
+<span class="k">ai_extract</span>(texto_status, <span class="s">'{"bloqueio": ..., "quem_destrava": ..., "dias_impacto": {"type": "number"}}'</span>)</pre>
+  <div class="grid g3" style="margin-top:26px;">
+    <div class="card"><div class="tag">Regra · custo zero</div><div class="num sm">2.954</div><div class="lbl">"sem bloqueios" e status vazio: não precisa de IA</div></div>
+    <div class="card hl"><div class="tag">IA · últimos 90 dias</div><div class="num sm">163</div><div class="lbl">status com bloqueio, em ~2 minutos</div></div>
+    <div class="card"><div class="tag">Palavra-chave · histórico</div><div class="num sm">794</div><div class="lbl">onde a IA custaria caro e não muda decisão</div></div>
+  </div>
+  <p class="note" style="margin-top:22px;">Causas nos últimos 90 dias: escopo 42 · bug 37 · aprovação do cliente 35 · fornecedor 28 · <b>falta de SRE 12</b> · rotatividade 9. O MERGE só processa status novo: IA cobra por chamada.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 4 de 5 · a IA no dashboard</div>
+  <h2 style="margin-bottom:20px;">Por que travou, <span class="grad">projeto a projeto</span></h2>
+  <img class="shot" style="height:700px; object-fit:contain;" src="[[IMG:docs/img/noite2-bloqueios-ia.jpg]]" alt="Causas de bloqueio extraídas por IA">
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 5 de 5 · gold.mv_projetos · a métrica governada</div>
+  <h2>O SPI definido <span class="grad">uma vez só</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <pre class="code" style="font-size:19px;"><span class="k">CREATE VIEW</span> gold.mv_projetos <span class="k">WITH METRICS</span>
+<span class="k">LANGUAGE YAML AS</span> $$
+source: gold.projeto_situacao_atual
+filter: status = 'em_andamento'
+measures:
+  - name: spi
+    expr: SUM(ev) / SUM(pv)
+  - name: estouro_previsto
+    expr: SUM(estouro_previsto)
+  - name: projetos_em_risco
+    expr: COUNT(1) FILTER (WHERE
+          situacao IN ('atenção','crítico'))
+$$</pre>
+    <div class="card"><div class="tag">Por que importa</div><ul class="list">
+      <li>dashboard, Genie e app pedem <b>MEASURE(spi)</b> e recebem a mesma fórmula</li>
+      <li>ninguém reescreve SPI num CASE escondido dentro de um gráfico</li>
+      <li>uma metric view só, de propósito: é a dos números da diretoria</li></ul>
+      <pre class="code" style="font-size:20px; margin-top:20px;"><span class="k">SELECT</span> MEASURE(spi), MEASURE(estouro_previsto)
+<span class="k">FROM</span> gold.mv_projetos
+<span class="c">-- 0,92 · R$ 6.465.127</span></pre></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · testes de qualidade</div>
+  <h2>Melhor o dado de ontem <span class="grad">que o dado errado de hoje</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">10 testes, depois do medalhão</div><ul class="list">
+      <li>os 60 projetos têm cronograma na silver</li>
+      <li>cada projeto veio da ferramenta do cadastro</li>
+      <li>horas da silver = linha de TOTAL de cada planilha</li>
+      <li>uma linha por pessoa; CodeForge virou 1</li>
+      <li>a limpeza não mudou o custo total</li>
+      <li>EV do status bate com o das ferramentas (&lt; 1%)</li></ul></div>
+    <div class="card hl"><div class="tag">Como quebra</div>
+      <pre class="code" style="font-size:19px; background:transparent; border:none; padding:0;">CASE WHEN passou THEN 'ok'
+     ELSE raise_error('Teste ' || n
+                      || ' falhou') END</pre>
+      <div class="lbl" style="margin-top:16px;">raise_error interrompe o job antes de o dashboard mostrar meio dado com cara de dado inteiro. Verificação da noite: <b>20 de 20 ok</b>.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · dashboard como código · Portfólio</div>
+  <h2 style="margin-bottom:20px;">"Projeto Farol · Portfólio", <span class="grad">agora sobre a gold</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite2-dashboard.jpg]]" alt="Portfólio: KPIs">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite2-dashboard-graficos.jpg]]" alt="Portfólio: gráficos">
+  </div>
+  <div class="small" style="margin-top:10px;">Três páginas: Portfólio, Pessoas e Fornecedores. É um JSON no Git, gerado por script e publicado pelo bundle: tem diff, revisão e rollback.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · dashboard · Fornecedores</div>
+  <h2 style="margin-bottom:20px;">Quem promete <span class="grad">e não cumpre</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <img class="shot" style="height:620px; object-fit:contain;" src="[[IMG:docs/img/noite2-fornecedores.jpg]]" alt="Página Fornecedores">
+    <table class="t" style="font-size:22px;">
+      <tr><th>Fornecedor</th><th class="r">Real ÷ prometido</th></tr>
+      <tr class="cur"><td>CodeForge (4 grafias)</td><td class="r bad">1,41</td></tr>
+      <tr><td>QualiTest Brasil</td><td class="r">0,98</td></tr>
+      <tr><td>DataPrime Analytics</td><td class="r">0,98</td></tr>
+      <tr><td>SecureOps Segurança</td><td class="r">0,98</td></tr>
+      <tr><td>Pixel Design Studio</td><td class="r">0,98</td></tr>
+    </table>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · Genie curado · "Farol · Diretoria"</div>
+  <h2 style="margin-bottom:20px;">O mesmo modelo de IA, <span class="grad">agora acerta</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:620px;" src="[[IMG:docs/img/noite2-genie.jpg]]" alt="Genie Diretoria">
+    <img class="shot" style="height:620px;" src="[[IMG:docs/img/noite2-genie-recomendacao.jpg]]" alt="Genie com recomendação">
+  </div>
+  <div class="small" style="margin-top:10px;">Gold com COMMENT em toda tabela, a metric view, instruções de negócio ("hoje é 16/10/2026", as regras de corte) e 9 SQLs de exemplo. Também é código no bundle.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · o que mudou da noite 1 para cá</div>
+  <h2>Os mesmos números, <span class="grad">agora sem ninguém juntar à mão</span></h2>
+  <table class="t">
+    <tr><th></th><th>Noite 1 · bronze</th><th>Noite 2 · gold</th></tr>
+    <tr><td>Integração</td><td>uma view com CASE, replace e conversão de data</td><td>silver.tarefas, testada, num pipeline</td></tr>
+    <tr><td>KPI</td><td>fórmula repetida em cada query e gráfico</td><td>mv_projetos: uma fórmula para todos</td></tr>
+    <tr><td>Por que atrasou</td><td>ler 3.911 textos</td><td>causa como coluna (IA)</td></tr>
+    <tr><td>Genie</td><td>erra as 4 perguntas</td><td>acerta, com instrução e exemplo</td></tr>
+    <tr><td>Atualizar</td><td>rodar tudo de novo</td><td>job toda segunda às 6h</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<!-- ============================================================ NOITE 3 -->
+
+<section class="slide hero">
+  <div class="kicker">Noite 3 · quarta, 21/10 · cientista de dados</div>
+  <h1>Ver o atraso<br><span class="grad">antes de ele acontecer</span></h1>
+  <p class="sub" style="margin-top:30px;">Pergunta 4: o que vai dar errado no próximo mês? Um modelo, treinado com o passado de cada projeto, que avisa 40 dias antes.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · como rodar</div>
+  <h2>Três prompts, <span class="grad">três tarefas a mais no mesmo job</span></h2>
+  <div class="flow" style="margin-bottom:30px;">
+    <div class="card hl"><div class="tag">Prompt 1 · features</div><div class="lbl">ml.features_projeto_semana: uma linha por projeto e semana, só olhando para trás</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">Prompt 2 · modelo</div><div class="lbl">treino, comparação com as regras de hoje, MLflow e registro no Unity Catalog (@prod)</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">Prompt 3 · score</div><div class="lbl">gold.score_estouro_30d: probabilidade, ranking, faixa e motivos em português</div></div>
+  </div>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O laboratório: schema ml</div><div class="lbl">features, métricas e o modelo moram fora da gold. Na gold fica só a resposta: o score.</div></div>
+    <div class="card"><div class="tag">Rodar</div><pre class="code" style="font-size:19px; margin-top:6px;">databricks bundle deploy --profile SEU-PERFIL
+databricks bundle run vertice_farol --profile SEU-PERFIL</pre><div class="lbl">8 tarefas, 4 a 5 minutos.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · as features</div>
+  <h2>O que descreve um projeto <span class="grad">que vai estourar</span></h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card"><div class="tag">Onde está</div><ul class="list"><li>SPI, CPI e o pior dos dois</li><li>% físico × % do prazo</li></ul></div>
+    <div class="card"><div class="tag">Para onde vai</div><ul class="list"><li>variação em 4 e 8 semanas</li><li>semanas com CPI caindo</li><li>SPI e CPI do último mês</li></ul></div>
+    <div class="card"><div class="tag">Gente e custo</div><ul class="list"><li>ociosidade da equipe</li><li>% do custo em consultoria e cloud</li><li>saídas do squad em 12 semanas</li></ul></div>
+  </div>
+  <div class="card hl" style="margin-top:22px;"><div class="tag">O texto do gerente, já classificado pela IA da noite 2</div><div class="lbl" style="color:#fff;">quantos dos últimos 4 status citaram freeze, falta de SRE, fornecedor, rotatividade, escopo, retrabalho</div></div>
+  <div class="grid g3" style="margin-top:22px;">
+    <div class="card"><div class="num sm">4.235</div><div class="lbl">linhas (projeto × semana)</div></div>
+    <div class="card"><div class="num sm">1.643</div><div class="lbl">linhas de treino, com rótulo</div></div>
+    <div class="card"><div class="num sm">16,7%</div><div class="lbl">taxa base: estoura em 30 dias</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · o modelo</div>
+  <h2>Vale mais que <span class="grad">a regra de hoje?</span></h2>
+  <table class="t">
+    <tr><th>Quem prevê</th><th class="r">AUC</th><th>Leitura</th></tr>
+    <tr><td>a regra atual (SPI ou CPI &lt; 0,9)</td><td class="r">0,50</td><td>só vê o que já aconteceu</td></tr>
+    <tr><td>a regra da folga (quem está mais perto de 0,9)</td><td class="r">0,87</td><td>o baseline honesto</td></tr>
+    <tr class="cur"><td>o modelo (HistGradientBoosting)</td><td class="r ok">0,92</td><td>ganha da folga, sem vazamento (assert &lt; 0,98)</td></tr>
+  </table>
+  <div class="grid g3" style="margin-top:30px;">
+    <div class="card hl"><div class="num md">9 de 10</div><div class="lbl">estouros do teste apareceram no top 5 da semana</div></div>
+    <div class="card hl"><div class="num md">41 dias</div><div class="lbl">de antecedência, em média</div></div>
+    <div class="card"><div class="num md">corte no tempo</div><div class="lbl">treina até mar/2026, testa a partir de abr/2026: o futuro nunca entra no treino</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · MLflow e Unity Catalog</div>
+  <h2 style="margin-bottom:20px;">Cada treino registrado, <span class="grad">o melhor em @prod</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite3-mlflow.jpg]]" alt="Experimento no MLflow">
+    <img class="shot" style="height:640px; object-fit:contain;" src="[[IMG:docs/img/noite3-modelo-ml.jpg]]" alt="Modelo ml.modelo_estouro_30d no Unity Catalog">
+  </div>
+  <div class="small" style="margin-top:10px;">O modelo <b>lakehouse_vertice.ml.modelo_estouro_30d</b> tem versão, alias @prod e linhagem até a bronze. O score em lote roda no job, e o resultado vai para a gold.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · gold.score_estouro_30d</div>
+  <h2>A lista que o dono abre <span class="grad">na segunda</span></h2>
+  <table class="t" style="font-size:20px;">
+    <tr><th>#</th><th>Projeto</th><th class="r">Prob.</th><th>Faixa</th><th>Motivos (em português)</th></tr>
+    <tr><td>1</td><td>PRJ-016</td><td class="r">1,00</td><td class="bad">alto</td><td>já abaixo do corte: SPI 0,63; ritmo do último mês em 56% do planejado</td></tr>
+    <tr><td>5</td><td>PRJ-011</td><td class="r">1,00</td><td class="bad">alto</td><td>já abaixo do corte: SPI 0,77; falta de SRE em 4 dos últimos 4 status; 38% das horas paradas</td></tr>
+    <tr class="cur"><td>18</td><td>PRJ-013</td><td class="r">0,89</td><td class="bad">alto</td><td>pelo status semanal o índice já é 0,90: o cronograma da ferramenta diz 0,94</td></tr>
+    <tr class="cur"><td>19</td><td>PRJ-024</td><td class="r">0,46</td><td class="warn">médio</td><td>a 0,01 do corte de 0,9 (índice 0,91)</td></tr>
+    <tr><td>20</td><td>PRJ-026</td><td class="r">0,35</td><td class="warn">médio</td><td>a 0,00 do corte; consultoria atrasando em 2 dos últimos 4 status</td></tr>
+    <tr><td>21</td><td>PRJ-053</td><td class="r">0,32</td><td class="warn">médio</td><td>ritmo do último mês em 74%; squad perdendo gente: 2 saídas em 12 semanas</td></tr>
+  </table>
+  <div class="grid g3" style="margin-top:22px;">
+    <div class="card"><div class="num sm">18 · 4 · 19</div><div class="lbl">alto · médio · baixo, dos 41 em andamento</div></div>
+    <div class="card"><div class="num sm">17</div><div class="lbl">já críticos ou em atenção: probabilidade 1,0</div></div>
+    <div class="card hl"><div class="num sm">5</div><div class="lbl">"ok" para a regra, mas com risco alto ou médio</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · o "uau"</div>
+  <h2>PRJ-024: <span class="grad">ok hoje, 46% de estourar</span></h2>
+  <div class="grid g3" style="margin-bottom:30px;">
+    <div class="card"><div class="tag">O número de hoje</div><div class="num md ok">SPI 0,91</div><div class="lbl">a regra diz ok</div></div>
+    <div class="card hl"><div class="tag">O modelo</div><div class="num md">46%</div><div class="lbl">de cruzar 0,9 nos próximos 30 dias</div></div>
+    <div class="card"><div class="tag">O calendário</div><div class="num md warn">01/11</div><div class="lbl">começa o change freeze da Black Friday: marketplace sem deploy até 10/01</div></div>
+  </div>
+  <div class="card"><div class="tag">E a lição de qualidade: PRJ-013</div><div class="lbl" style="font-size:26px; color:#fff;">O status de sexta diz 43%; a planilha diz 45%. O modelo usa o boletim e vê índice 0,90; a ferramenta diz 0,94. Quando as fontes não batem, o modelo avisa antes de o número "melhorar" no papel.</div></div>
+  [[RODAPE]]
+</section>
+
+<!-- ============================================================ NOITE 4 -->
+
+<section class="slide hero">
+  <div class="kicker">Noite 4 · quinta, 22/10 · engenheiro de IA</div>
+  <h1>Do dado<br><span class="grad">à decisão do dono</span></h1>
+  <p class="sub" style="margin-top:30px;">A IA lê os contratos em PDF, a Torre vira um app, e a decisão fica gravada com nome e hora.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · como rodar</div>
+  <h2>Três prompts e <span class="grad">um script que sobe tudo</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Prompt</th><th>O que nasce</th></tr>
+    <tr><td>1 · agente de contratos</td><td>ai_parse_document + ai_extract nos 8 PDFs → <b>gold.contratos</b>; Genie "Farol · Diretoria + Contratos"</td></tr>
+    <tr><td>2 · o app</td><td><b>farol-torre</b> (AppKit): Projetos em risco, Simulador, Perguntar</td></tr>
+    <tr><td>3 · aprovação</td><td>a aba Decisões, gravando no <b>Lakebase</b> (Postgres) com o usuário e o horário</td></tr>
+  </table>
+  <pre class="code" style="margin-top:26px; font-size:20px;"><span class="c"># do zero, na ordem que funciona: Lakebase → contratos → Genie → app</span>
+bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh SEU-PERFIL</pre>
+  <p class="note" style="margin-top:20px;">O app é um usuário do Unity Catalog: <b>conceder-acesso.sh</b> dá USE e SELECT na gold e na silver antes do build. O primeiro acesso pede "Authorize", feito por uma pessoa.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · o agente que lê contrato</div>
+  <h2>8 PDFs, <span class="grad">uma tabela na gold</span></h2>
+  <div class="diagrama"><pre class="mermaid">
+flowchart LR
+  A["8 contratos em PDF<br/>volume raw/documentos"] -->|ai_parse_document| B["silver.documentos_elementos<br/>título e texto, uma vez"]
+  B -->|agrupar por seção| C["silver.contratos_clausulas<br/>72 cláusulas"]
+  C -->|ai_extract com JSON schema| D["<b>gold.contratos</b><br/>1 linha por contrato,<br/>colunas tipadas"]
+  D --> E["multa da CodeForge"]
+  D --> F["avisos prévios vencendo"]
+  D --> G["Genie + app"]
+  </pre></div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · a lição do ai_extract</div>
+  <h2>Sem schema, texto. <span class="grad">Com schema, dado.</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">Sem schema</div><pre class="code" style="font-size:18px; white-space:pre-wrap;">{"multa_atraso": "0,2% do valor da entrega
+  atrasada por dia corrido, limitada a 5%",
+ "renovacao_automatica": "renovado
+  automaticamente por mais 12 meses"}</pre><div class="lbl">Não dá para somar nem comparar.</div></div>
+    <div class="card hl"><div class="tag">Com JSON schema tipado</div><pre class="code" style="font-size:18px; white-space:pre-wrap;">multa_atraso_pct_dia  0.5     (number)
+teto_multa_pct        10.0    (number)
+renovacao_automatica  true    (boolean)
+aviso_previo_dias     90      (integer)
+data_fim_vigencia     2026-12-31</pre><div class="lbl">Vira coluna: filtra, soma, cruza com as entregas.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · gold.contratos · o que o contrato diz</div>
+  <h2>Dinheiro na mesa <span class="grad">e prazo vencendo</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Multa cobrável da CodeForge</div><div class="num md">R$ 1,12 mi</div>
+      <div class="lbl">120 entregas atrasadas na vigência atual × 0,5% ao dia, com teto de 10% por entrega (cláusula 6). Dá para descontar das próximas faturas.</div></div>
+    <div class="card"><div class="tag">Aviso prévio</div>
+      <table class="t" style="font-size:20px;">
+        <tr><td>NuvemSul Cloud</td><td class="bad">venceu há 14 dias</td></tr>
+        <tr><td>DataPrime Analytics</td><td class="bad">venceu há 15 dias</td></tr>
+        <tr><td>Observa360</td><td class="warn">vence em 15 dias</td></tr>
+        <tr><td>QualiTest Brasil</td><td class="warn">46 dias · não renova sozinho</td></tr>
+      </table>
+      <div class="lbl">NuvemSul e DataPrime renovaram sozinhos: <b>R$ 21,4 mi/ano</b>.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · app farol-torre · aba 1 de 4</div>
+  <h2 style="margin-bottom:20px;">Projetos em risco</h2>
+  <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.6fr 1fr;">
+    <img class="shot" style="height:660px;" src="[[IMG:docs/img/noite4-app-projetos.jpg]]" alt="Aba Projetos em risco">
+    <div class="card"><div class="tag">O que mostra</div><ul class="list">
+      <li><b>17 de 41</b> em risco (7 críticos, 4 melancias)</li>
+      <li><b>R$ 6,5 mi</b> de estouro previsto</li>
+      <li><b>R$ 1,2 mi</b> de multa a cobrar de fornecedor</li>
+      <li><b>18</b> com alto risco em 30 dias (modelo da noite 3)</li>
+      <li>cada projeto com SPI, CPI, farol, estouro, atraso, a causa que a IA leu e a probabilidade</li></ul>
+      <p class="note" style="margin-top:20px;">Lê a gold pelo SQL warehouse: os mesmos números do dashboard e do Genie.</p></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · app farol-torre · aba 2 de 4</div>
+  <h2 style="margin-bottom:20px;">Simulador: <span class="grad">e se eu mover essa pessoa?</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.6fr 1fr;">
+    <img class="shot" style="height:660px;" src="[[IMG:docs/img/noite4-app-simulador.jpg]]" alt="Aba Simulador">
+    <div class="card"><div class="tag">COL0017 → PRJ-011</div><ul class="list">
+      <li>SRE sênior a 6% no PRJ-007, que ainda está no discovery</li>
+      <li><b>151 h</b> paradas viram produção no mês</li>
+      <li><b>19 dias</b> de cronograma recuperados no PRJ-011</li>
+      <li>R$ 30.123 de ociosidade a menos − R$ 7.992 de mobilização</li>
+      <li><b>saldo de R$ 22.131/mês</b></li></ul>
+      <p class="note" style="margin-top:20px;">Os dias recuperados vêm do que a IA leu no status: 57 dias de impacto por falta de SRE.</p></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · app farol-torre · aba 3 de 4</div>
+  <h2 style="margin-bottom:20px;">Decisões: <span class="grad">gravadas no Lakebase</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <img class="shot" style="height:420px; object-fit:contain;" src="[[IMG:docs/img/noite4-app-decisoes.jpg]]" alt="Aba Decisões">
+    <div class="card"><div class="tag">Como funciona</div><ul class="list">
+      <li>no simulador, o dono escreve a justificativa e aprova ou recusa</li>
+      <li>a decisão vai para <b>torre.decisoes</b> num Postgres do Lakebase, com o usuário do login e o horário</li>
+      <li>a aba lista o histórico: quem decidiu o quê, quando e por quê</li>
+      <li>analítico na gold (warehouse); transação no Lakebase (Postgres)</li></ul></div>
+  </div>
+  <img class="shot" style="height:250px; margin-top:24px; object-fit:contain;" src="[[IMG:docs/img/recurso-lakebase-tabela.jpg]]" alt="Tabela de decisões no Lakebase">
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · app farol-torre · aba 4 de 4</div>
+  <h2 style="margin-bottom:20px;">Perguntar: <span class="grad">o Genie dentro da Torre</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.6fr 1fr;">
+    <img class="shot" style="height:660px;" src="[[IMG:docs/img/noite4-app-perguntar.jpg]]" alt="Aba Perguntar">
+    <div class="card"><div class="tag">"Farol · Diretoria + Contratos"</div><ul class="list">
+      <li>projetos, causa do atraso, gente parada, risco em 30 dias e o contrato</li>
+      <li>"Quanto dá para cobrar de multa da CodeForge?" → <b>R$ 1.122.967,66</b>, 120 entregas</li>
+      <li>mostra a SQL que rodou: dá para conferir</li>
+      <li>benchmark: <b>10 de 10</b> certas</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · o pitch</div>
+  <h2>Quanto a Torre <span class="grad">vale no ano 1</span></h2>
+  <div class="grid g3" style="margin-bottom:30px;">
+    <div class="card hl"><div class="num md">≈ R$ 3,0 mi</div><div class="lbl">de valor no ano 1: multa cobrada, atraso evitado, gente realocada</div></div>
+    <div class="card"><div class="num md">R$ 0,4 mi</div><div class="lbl">de custo para construir e manter</div></div>
+    <div class="card"><div class="num md">4 noites</div><div class="lbl">do Excel espalhado à decisão gravada</div></div>
+  </div>
+  <div class="card"><div class="tag">O que o dono ganhou</div><ul class="list">
+    <li>toda segunda: quem atrasa, quanto custa, quem está parado, o que vem aí</li>
+    <li>um farol que segue o número, não a percepção do gerente</li>
+    <li>o contrato na conversa: multa cobrada e renovação decidida, não automática</li></ul></div>
+  [[RODAPE]]
+</section>
+
+<!-- ============================================================ FECHAMENTO -->
+
+<section class="slide">
+  <div class="kicker">Todos os entregáveis</div>
+  <h2>O que existe no workspace <span class="grad">no fim da quinta</span></h2>
+  <table class="t" style="font-size:21px;">
+    <tr><th>Noite</th><th>Entregáveis</th></tr>
+    <tr><td>1 · analista</td><td>catálogo e volume · 9 tabelas na bronze · 6 exemplos SQL · dashboard "Projeto Farol · Noite 1 (bronze)" · Genie "Farol · Noite 1 (bronze, sem curadoria)"</td></tr>
+    <tr><td>2 · engenheiro</td><td>bundle vertice · job vertice_farol · pipeline vertice_medalhao · silver (7) · gold (5) · IA nos status · mv_projetos · 10 testes · dashboard "Projeto Farol · Portfólio" · Genie "Farol · Diretoria"</td></tr>
+    <tr><td>3 · cientista</td><td>ml.features_projeto_semana · experimento MLflow · modelo ml.modelo_estouro_30d @prod · gold.score_estouro_30d</td></tr>
+    <tr><td>4 · engenheiro de IA</td><td>job farol_contratos · gold.contratos · Genie "Farol · Diretoria + Contratos" · app farol-torre (4 abas) · Lakebase farol-torre · pitch</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Números de referência</div>
+  <h2>Se o seu número bateu, <span class="grad">você chegou</span></h2>
+  <div class="grid g4" style="gap:20px;">
+    <div class="card"><div class="tag">noite 1</div><div class="num sm">18/18</div><div class="lbl">verificação · R$ 6,47 mi · 7 críticos · 4 melancias</div></div>
+    <div class="card"><div class="tag">noite 2</div><div class="num sm">20/20</div><div class="lbl">verificação · 4.917 tarefas · 163 status com IA · CodeForge ×1,41</div></div>
+    <div class="card"><div class="tag">noite 3</div><div class="num sm">0,92</div><div class="lbl">AUC · 9 de 10 avisados · 41 dias antes · PRJ-024 em 46%</div></div>
+    <div class="card"><div class="tag">noite 4</div><div class="num sm">10/10</div><div class="lbl">Genie · R$ 1,12 mi de multa · 19 dias e R$ 22,1 mil/mês no simulador</div></div>
+  </div>
+  <p class="note" style="margin-top:30px;">Cada noite tem um <b>99-verificacao.sql</b> com esperado × obtido. "CONFIRA" quer dizer que o problema está na carga ou na query, não no dado: a seed é fixa.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide hero">
+  <div class="kicker">Projeto Farol</div>
+  <h1>Bora <span class="grad">construir</span></h1>
+  <p class="sub" style="margin-top:30px;">github.com/lvgalvao/ImersaoControlTower · uma pasta por noite, com README, roteiro e verificação.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>

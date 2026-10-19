@@ -11,8 +11,10 @@
 #       referência aulas/aula-02-engenheiro/vertice guarda o src/ml de propósito).
 #
 # O que apaga:
-#   1. as tabelas de ML da gold (features, métricas, score)
-#   2. as versões do modelo e o modelo registrado no Unity Catalog
+#   1. as tabelas da noite 3: ml.features_projeto_semana, ml.modelo_metricas e
+#      gold.score_estouro_30d (+ as da versão antiga, quando tudo morava na gold)
+#   2. as versões e o modelo registrado no Unity Catalog: ml.modelo_estouro_30d
+#      (+ gold.modelo_estouro_30d, da versão antiga)
 #   3. o experimento do MLflow (/Users/<você>/vertice)
 #   4. no seu bundle (meu-vertice): a pasta src/ml e as tarefas ml_* do job; e o redeploy
 #   5. a conferência: sai com erro se sobrou alguma coisa
@@ -24,12 +26,15 @@ GABARITO="${3:-}"
 CATALOGO="${CATALOGO:-lakehouse_vertice}"
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
 BUNDLE="$RAIZ/aulas/aula-02-engenheiro/meu-vertice"
-TABELAS=(features_projeto_semana modelo_metricas score_estouro_30d)
-MODELO="$CATALOGO.gold.modelo_estouro_30d"
+# a versão atual: laboratório no schema ml, só o resultado na gold
+TABELAS=(ml.features_projeto_semana ml.modelo_metricas gold.score_estouro_30d
+         gold.features_projeto_semana gold.modelo_metricas)   # as duas últimas: versão antiga (tudo na gold)
+MODELOS=("$CATALOGO.ml.modelo_estouro_30d"
+         "$CATALOGO.gold.modelo_estouro_30d")                 # o segundo: versão antiga
 
 echo "profile:  $PROFILE"
 echo "tabelas:  ${TABELAS[*]}"
-echo "modelo:   $MODELO"
+echo "modelos:  ${MODELOS[*]}"
 [ "$GABARITO" = "--gabarito" ] && echo "bundle:   (gabarito: nenhum arquivo é tocado)" || echo "bundle:   $BUNDLE (src/ml e tarefas ml_*)"
 echo
 if [ "$CONFIRMA" != "--apagar" ]; then
@@ -40,15 +45,17 @@ fi
 sql() { printf '%s' "$1" > /tmp/_limpar_n3.sql; python3 "$RAIZ/scripts/run_sql.py" /tmp/_limpar_n3.sql --profile "$PROFILE" --quiet --continuar >/dev/null; }
 
 echo "→ tabelas de ML..."
-for t in "${TABELAS[@]}"; do sql "DROP TABLE IF EXISTS $CATALOGO.gold.$t"; done
+for t in "${TABELAS[@]}"; do sql "DROP TABLE IF EXISTS $CATALOGO.$t"; done
 
 # O delete do modelo RECUSA enquanto houver versão viva ("is not empty").
 # E um registro que falhou no meio deixa versão órfã: apague todas.
-echo "→ versões do modelo..."
-VERSOES=$(databricks model-versions list "$MODELO" --profile "$PROFILE" -o json 2>/dev/null \
-          | grep -oE '"version": *[0-9]+' | grep -oE '[0-9]+' | sort -u || true)
-for v in $VERSOES; do databricks model-versions delete "$MODELO" "$v" --profile "$PROFILE" >/dev/null 2>&1 || true; done
-databricks registered-models delete "$MODELO" --profile "$PROFILE" >/dev/null 2>&1 || echo "   (modelo não existia)"
+echo "→ versões e modelos..."
+for MODELO in "${MODELOS[@]}"; do
+  VERSOES=$(databricks model-versions list "$MODELO" --profile "$PROFILE" -o json 2>/dev/null \
+            | grep -oE '"version": *[0-9]+' | grep -oE '[0-9]+' | sort -u || true)
+  for v in $VERSOES; do databricks model-versions delete "$MODELO" "$v" --profile "$PROFILE" >/dev/null 2>&1 || true; done
+  databricks registered-models delete "$MODELO" --profile "$PROFILE" >/dev/null 2>&1 || echo "   ($MODELO não existia)"
+done
 
 echo "→ experimento do MLflow..."
 EU=$(databricks current-user me --profile "$PROFILE" -o json | python3 -c 'import sys,json;print(json.load(sys.stdin)["userName"])')
@@ -75,11 +82,17 @@ fi
 
 echo
 echo "── conferindo ──────────────────────────────────────────────"
-RESTO=$(databricks tables list "$CATALOGO" gold --profile "$PROFILE" -o json 2>/dev/null \
-        | grep -cE '"name": *"(features_projeto_semana|modelo_metricas|score_estouro_30d)"' || true)
-MODELOS=$(databricks registered-models list --catalog-name "$CATALOGO" --schema-name gold --profile "$PROFILE" -o json 2>/dev/null \
-          | grep -c 'modelo_estouro_30d' || true)
-echo "  tabelas da noite 3 que sobraram: ${RESTO:-0}"
-echo "  modelos da noite 3 que sobraram: ${MODELOS:-0}"
-if [ "${RESTO:-0}" != "0" ] || [ "${MODELOS:-0}" != "0" ]; then echo "Sobrou coisa. NÃO comece a noite 3 assim."; exit 1; fi
+RESTO=0; SOBRA_MODELO=0
+for esquema in ml gold; do
+  n=$(databricks tables list "$CATALOGO" "$esquema" --profile "$PROFILE" -o json 2>/dev/null \
+      | grep -cE '"name": *"(features_projeto_semana|modelo_metricas|score_estouro_30d)"' || true)
+  RESTO=$((RESTO + ${n:-0}))
+  m=$(databricks registered-models list --catalog-name "$CATALOGO" --schema-name "$esquema" --profile "$PROFILE" -o json 2>/dev/null \
+      | grep -c 'modelo_estouro_30d' || true)
+  SOBRA_MODELO=$((SOBRA_MODELO + ${m:-0}))
+done
+echo "  tabelas da noite 3 que sobraram: $RESTO"
+echo "  modelos da noite 3 que sobraram: $SOBRA_MODELO"
+# o schema ml fica (vazio): o prompt 1 recria tudo com CREATE SCHEMA IF NOT EXISTS
+if [ "$RESTO" != "0" ] || [ "$SOBRA_MODELO" != "0" ]; then echo "Sobrou coisa. NÃO comece a noite 3 assim."; exit 1; fi
 echo "Zerado. Os três prompts têm que reconstruir tudo do nada: comece por prd/prompt-01-features.md."

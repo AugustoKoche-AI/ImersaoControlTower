@@ -33,12 +33,16 @@ WITH v AS (
           WHERE status = 'em_andamento')
   UNION ALL SELECT 11, 'melancias (farol verde, SPI < 0,9)', 4,
          (SELECT COUNT_IF(melancia) FROM lakehouse_vertice.gold.projeto_situacao_atual)
-  UNION ALL SELECT 12, 'rupturas de capacidade previstas hoje', 15,
-         (SELECT COUNT_IF(ruptura_prevista) FROM lakehouse_vertice.gold.cobertura_capacidade)
+  -- fornecedor: direto da silver, que já tem o nome normalizado
+  UNION ALL SELECT 12, 'CodeForge: % das entregas feitas no prazo', 0,
+         (SELECT CAST(ROUND(100 * AVG(CASE WHEN data_entrega <= data_prometida THEN 1.0 ELSE 0.0 END)) AS INT)
+          FROM lakehouse_vertice.silver.entregas_fornecedor
+          WHERE fornecedor = 'CodeForge Consultoria Ltda' AND data_entrega IS NOT NULL)
   UNION ALL SELECT 13, 'entregas de fornecedor em atraso hoje', 5,
-         (SELECT COUNT(*) FROM lakehouse_vertice.gold.entregas_em_atraso)
+         (SELECT COUNT_IF(em_atraso) FROM lakehouse_vertice.silver.entregas_fornecedor)
   UNION ALL SELECT 14, 'CodeForge: prazo real ÷ prometido (×100)', 141,
-         (SELECT CAST(ROUND(fator_atraso * 100) AS INT) FROM lakehouse_vertice.gold.desempenho_fornecedor
+         (SELECT CAST(ROUND(AVG(prazo_real_dias / prazo_prometido_dias) * 100) AS INT)
+          FROM lakehouse_vertice.silver.entregas_fornecedor
           WHERE fornecedor = 'CodeForge Consultoria Ltda')
   UNION ALL SELECT 15, 'SREs < 20% de uso nas últimas 12 semanas', 2,
          (SELECT COUNT(*) FROM (SELECT colaborador_id FROM lakehouse_vertice.gold.utilizacao_pessoa_semana
@@ -50,11 +54,10 @@ WITH v AS (
   UNION ALL SELECT 17, 'semanas do PRJ-011 com falta de SRE (90 dias)', 12,
          (SELECT COUNT(*) FROM lakehouse_vertice.gold.status_estruturado
           WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio = 'falta_sre')
-  UNION ALL SELECT 18, 'postmortems estruturados', 101,
-         (SELECT COUNT(*) FROM lakehouse_vertice.gold.postmortem_estruturado)
-  UNION ALL SELECT 19, 'metric views criadas (mv_*)', 5,
-         (SELECT COUNT(*) FROM lakehouse_vertice.information_schema.tables
-          WHERE table_schema = 'gold' AND table_name LIKE 'mv\_%' AND table_type = 'METRIC_VIEW')
+  UNION ALL SELECT 18, 'status classificados pela IA (últimos 90 dias, com bloqueio)', 163,
+         (SELECT COUNT_IF(metodo = 'ia') FROM lakehouse_vertice.gold.status_estruturado)
+  UNION ALL SELECT 19, 'margem projetada da carteira pela metric view (×1000)', 204,
+         (SELECT CAST(ROUND(MEASURE(margem_projetada) * 1000) AS INT) FROM lakehouse_vertice.gold.mv_projetos)
   UNION ALL SELECT 20, 'projetos críticos pela metric view', 7,
          (SELECT CAST(MEASURE(projetos_criticos) AS INT) FROM lakehouse_vertice.gold.mv_projetos)
 )

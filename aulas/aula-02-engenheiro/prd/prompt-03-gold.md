@@ -1,7 +1,7 @@
 # Prompt 3 · Gold — o produto de dados e as perguntas do dono
 
-**Entrega:** a gold no mesmo pipeline (`fato_projeto_semana`, `projeto_situacao_atual`
-e as tabelas de consumo) e a tarefa `testes_de_qualidade`, que quebra o job se algo
+**Entrega:** a gold no mesmo pipeline, com três tabelas (`fato_projeto_semana`,
+`projeto_situacao_atual` e `utilizacao_pessoa_semana`), e a tarefa `testes_de_qualidade`, que quebra o job se algo
 estiver errado. **Deploy nº 3.**
 
 ---
@@ -29,8 +29,8 @@ fato semanal usa o % do status, e a fotografia de hoje usa as tarefas.
   seguintes: `last_value(pct, true) OVER (...)`.
 - **O farol do gerente vira coluna, e o farol pelo número também.** Lado a lado, eles
   respondem o bônus do dono: *posso confiar no farol?*
-- **Ruptura de capacidade é uma pergunta de tempo.** Não é "saldo baixo"; é "o saldo
-  acaba antes de dar tempo de aprovar mais?". Aprovar aditivo leva 30 dias.
+- **Uma tabela por pergunta, nem uma a mais.** Fornecedor não ganha tabela gold: a
+  `silver.entregas_fornecedor` já tem o nome normalizado e responde direto.
 - **Teste que quebra o job.** `raise_error()` dentro de `CASE WHEN`. Melhor o
   dashboard ficar com o dado da semana passada do que com o dado errado de hoje.
 
@@ -56,16 +56,14 @@ Uma linha por projeto e semana (sexta-feira), da semana do início até
 - spi = ev/pv, cpi = ev/ac (try_divide, 4 casas), eac = orcamento / cpi
 - farol_do_gerente (o último farol publicado)
 - horas_disponiveis, horas_apontadas e horas_ociosas da semana (apontamentos)
-- rupturas_capacidade: contratos do projeto com consumo_previsto_dia > 0 e
-  saldo / consumo_previsto_dia < 30 naquela semana.
 - EXPECT pv >= 0 e ev <= orcamento, FAIL UPDATE.
 
-src/gold/02-dim-e-marts.sql
-- dim_projeto: projeto (projeto_id · nome), cliente, segmento, tipo_projeto,
-  ferramenta, contrato, orçamento, datas, duracao_baseline_dias, status, gerente.
+src/gold/02-situacao-e-pessoas.sql
 - projeto_situacao_atual: a fotografia de 2026-10-16 de cada projeto (60
-  linhas), calculada sobre silver.tarefas (o % de hoje das ferramentas):
-  pv, ev, ac, spi, cpi, eac, estouro_previsto = greatest(eac - orcamento, 0),
+  linhas). Traz o cadastro (projeto = projeto_id · nome, cliente, segmento,
+  tipo_projeto, ferramenta, gerente_projeto, valor_contrato, orcamento,
+  data_inicio, data_fim_baseline, duracao_baseline_dias, status) e os KPIs
+  calculados sobre silver.tarefas (o % de hoje das ferramentas): pv, ev, ac, spi, cpi, eac, estouro_previsto = greatest(eac - orcamento, 0),
   margem_projetada, atraso_projetado_dias, termino_projetado, situacao
   ('concluído' se status <> em_andamento; 'crítico' se SPI ou CPI < 0,8;
   'atenção' se < 0,9; senão 'ok'), farol_do_gerente (status de hoje),
@@ -74,13 +72,8 @@ src/gold/02-dim-e-marts.sql
 - utilizacao_pessoa_semana: pessoa × projeto × semana com nome, papel,
   senioridade, horas disponíveis, apontadas, ociosas, utilizacao,
   custo_ocioso (horas ociosas × custo_hora) e o spi_do_projeto naquela semana.
-- desempenho_fornecedor: por fornecedor normalizado: entregas,
-  grafias_no_cadastro, prazo prometido e real médios, fator_atraso
-  (real/prometido), pct_no_prazo, entregas_em_atraso, valor_contratado.
-- cobertura_capacidade: contrato × hoje dos projetos em andamento: saldo,
-  consumo previsto, cobertura_dias, data_prevista_fim_saldo e
-  ruptura_prevista (cobertura < 30 dias).
-- entregas_em_atraso: entregas em aberto com data prometida antes de hoje.
+Não crie dim_projeto nem tabela gold de fornecedor: o cadastro já está na
+projeto_situacao_atual, e fornecedor é lido direto da silver.entregas_fornecedor.
 
 src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
  1 os 60 projetos têm cronograma na silver.tarefas
@@ -127,7 +120,7 @@ GROUP BY ALL ORDER BY utilizacao LIMIT 5;
 ```
 
 > *"O dono perguntou se tem gente parada. Tem: duas SREs seniores, mais de 450 horas
-> paradas cada uma em 12 semanas. E amanhã a IA vai mostrar quem está pedindo SRE."*
+> paradas cada uma em 12 semanas. E no próximo prompt a IA vai mostrar quem está pedindo SRE."*
 
 ---
 

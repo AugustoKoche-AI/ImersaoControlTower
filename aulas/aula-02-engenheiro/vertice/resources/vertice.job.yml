@@ -6,7 +6,7 @@
 #   prompt 1  conferencia_bronze
 #   prompt 2  + medalhao (pipeline Lakeflow: silver, as 3 ferramentas viram uma)
 #   prompt 3  + (o mesmo pipeline ganha a gold) + testes_de_qualidade
-#   prompt 4  + status_com_ia + postmortem_com_ia
+#   prompt 4  + status_com_ia
 #   prompt 5  + metricas_governadas
 #   noite 3   + ml_features → ml_modelo → ml_score
 #
@@ -18,7 +18,7 @@ resources:
   jobs:
     vertice_farol:
       name: vertice_farol
-      description: Projeto Farol da Vértice Tecnologia — conferência, medalhão (Excel + ClickUp + MS Project), IA nos status e postmortems, testes e métricas governadas.
+      description: Projeto Farol da Vértice Tecnologia — conferência, medalhão (Excel + ClickUp + MS Project), IA nos status semanais, testes, métrica governada e o modelo de estouro.
 
       # Toda segunda às 6h, depois do status de sexta (pausado em dev pelo preset do databricks.yml).
       schedule:
@@ -55,19 +55,11 @@ resources:
             file:
               path: ../src/ia/status_estruturado.sql
 
-        - task_key: postmortem_com_ia
-          depends_on: [{ task_key: medalhao }]
-          sql_task:
-            warehouse_id: ${var.warehouse_id}
-            file:
-              path: ../src/ia/postmortem_estruturado.sql
-
-        # ── 5. os KPIs definidos uma vez só ───────────────────────────
+        # ── 5. o KPI definido uma vez só ───────────────────────────
         - task_key: metricas_governadas
           depends_on:
             - { task_key: testes_de_qualidade }
             - { task_key: status_com_ia }
-            - { task_key: postmortem_com_ia }
           sql_task:
             warehouse_id: ${var.warehouse_id}
             file:

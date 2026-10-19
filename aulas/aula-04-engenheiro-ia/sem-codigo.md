@@ -2,18 +2,17 @@
 
 Para quem é de gestão, PMO, financeiro ou jurídico: o mesmo resultado da noite, pela interface.
 
-## 1. O agente que lê contrato e manual, pelo Genie (15 min)
+## 1. O agente que lê contrato, pelo Genie (15 min)
 
-O instrutor (ou o `subir-tudo.sh`) já criou as tabelas de contrato e do manual. Abra
+O instrutor (ou o `subir-tudo.sh`) já criou a tabela de contratos (`gold.contratos`). Abra
 **Genie Agents → Farol · Diretoria + Contratos**, ligue o modo **Agent** e pergunte, nesta ordem:
 
-1. *Por que o PRJ-011 atrasou e o que o manual manda fazer?*
-   → falta de SRE em 12 semanas; seção 5 do manual: todo projeto em testes ou implantação precisa de um SRE.
+1. *Por que o PRJ-011 atrasou?* → falta de SRE em 12 semanas de status, 57 dias de impacto.
 2. *Tenho SRE parado que poderia ir para o PRJ-011?* → COL0017 e COL0018 no PRJ-007, uso de 6%.
 3. *Quanto a Vértice pode cobrar de multa da CodeForge?* → R$ 1,12 mi na vigência atual (120 entregas atrasadas).
 4. *Quais contratos precisam de decisão por causa do aviso prévio?* → DataPrime e NuvemSul já renovaram sozinhos;
    Observa360 vence em 31/10; QualiTest em 01/12 e **não renova sozinha**.
-5. *O que o manual diz sobre o change freeze?* → seção 4: nada de deploy em e-commerce de 01/11 a 10/01.
+5. *Quais contratos não têm multa por atraso?* → 3 contratos, que só têm SLA.
 
 Clique em **"Show code"** em cada resposta: o Genie mostra o SQL. É assim que se audita um agente.
 

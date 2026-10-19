@@ -31,7 +31,7 @@ dbutils.library.restartPython()
 dbutils.widgets.text("catalog", "lakehouse_vertice")
 catalog = dbutils.widgets.get("catalog")
 
-MODELO = f"{catalog}.gold.modelo_estouro_30d"
+MODELO = f"{catalog}.ml.modelo_estouro_30d"
 HOJE = "2026-10-16"
 CORTE = 0.9
 
@@ -43,7 +43,7 @@ import pandas as pd
 FEATURES = [
     "spi", "cpi", "indice_min", "d_indice_min_4s", "pct_fisico", "pct_prazo",
     "d_spi_4s", "d_cpi_4s", "d_spi_8s", "d_cpi_8s", "semanas_cpi_caindo", "cpi_ultimas_4s", "spi_ultimas_4s",
-    "ociosidade_4s", "rupturas_capacidade", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s", "incidentes_8s",
+    "ociosidade_4s", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s",
     "status_freeze_4s", "status_falta_sre_4s", "status_fornecedor_4s", "status_rotatividade_4s",
     "status_escopo_4s", "status_retrabalho_4s", "status_com_bloqueio_4s",
 ]
@@ -51,14 +51,14 @@ FEATURES = [
 mlflow.set_registry_uri("databricks-uc")
 # sklearn.load_model + pandas: spark_udf não roda no serverless (InvalidVersion)
 modelo = mlflow.sklearn.load_model(f"models:/{MODELO}@prod")
-sigma = float(spark.table(f"{catalog}.gold.modelo_metricas").first()["sigma"])
+sigma = float(spark.table(f"{catalog}.ml.modelo_metricas").first()["sigma"])
 
 # A fotografia de hoje (gold.projeto_situacao_atual, sobre as tarefas das 3 ferramentas) é a régua oficial
 # de "já está abaixo do corte": é a mesma que o dashboard e o Genie usam.
 hoje = spark.sql(f"""
     SELECT f.*, p.nome_projeto, p.cliente, p.tipo_projeto,
            least(p.spi, p.cpi) AS indice_min_hoje, p.spi AS spi_hoje, p.cpi AS cpi_hoje
-    FROM {catalog}.gold.features_projeto_semana f
+    FROM {catalog}.ml.features_projeto_semana f
     JOIN {catalog}.gold.projeto_situacao_atual p USING (projeto_id)
     WHERE f.semana = DATE'{HOJE}' AND p.status = 'em_andamento'
 """).toPandas()
@@ -138,12 +138,8 @@ def motivos(r):
         sinais.append((4, f"escopo crescendo sem aditivo em {int(r['status_escopo_4s'])} dos últimos 4 status"))
     if r["status_fornecedor_4s"] >= 2:
         sinais.append((3, f"consultoria atrasando em {int(r['status_fornecedor_4s'])} dos últimos 4 status"))
-    if r["incidentes_8s"] >= 2:
-        sinais.append((3, f"{int(r['incidentes_8s'])} incidentes em produção em 8 semanas"))
     if not pd.isna(r["ociosidade_4s"]) and r["ociosidade_4s"] >= 0.25:
         sinais.append((3, f"{br(100 * r['ociosidade_4s'], 0)}% das horas da equipe paradas"))
-    if r["rupturas_capacidade"] >= 1:
-        sinais.append((2, "banco de horas ou crédito de cloud acaba em menos de 30 dias"))
     if not sinais:
         return "sem sinal de piora: índices estáveis e acima do corte"
     sinais.sort(key=lambda s: -s[0])

@@ -65,8 +65,8 @@ export function ProjetosPage() {
             <Kpi titulo="Estouro previsto" valor={milhoes(k.estouro_previsto)} detalhe="EAC − orçamento, só quem estoura" alerta />
             <Kpi titulo="Multa a cobrar de fornecedor" valor={milhoes(k.multa_a_cobrar)}
                  detalhe="entregas atrasadas na vigência atual dos contratos" />
-            <Kpi titulo="Rupturas de capacidade" valor={String(num(k.rupturas_capacidade))}
-                 detalhe="banco de horas ou cloud acabando em < 30 dias" />
+            <Kpi titulo="Alto risco em 30 dias" valor={String(num(k.alto_risco_30d))}
+                 detalhe="ok hoje, mas o modelo da noite 3 prevê estouro" />
           </>
         )}
       </div>

@@ -19,12 +19,17 @@
 -- Ela existe em TODAS as semanas (IA nos últimos 90 dias, palavra-chave no histórico), então
 -- a feature significa a mesma coisa no treino e no score.
 
-CREATE OR REPLACE TABLE lakehouse_vertice.gold.features_projeto_semana
+-- As features moram no schema ml, o laboratório do cientista: são passo intermediário,
+-- não resposta para a diretoria. Na gold fica só o resultado (gold.score_estouro_30d).
+CREATE SCHEMA IF NOT EXISTS lakehouse_vertice.ml
+  COMMENT 'Laboratório de ML: features, métricas e o modelo registrado. Noite 3.';
+
+CREATE OR REPLACE TABLE lakehouse_vertice.ml.features_projeto_semana
 COMMENT 'Noite 3: features por projeto e semana (só olham para trás) + rótulo estoura_30d (SPI ou CPI cruza 0,9 em até 4 semanas). Hoje = 2026-10-16.'
 AS
 WITH base AS (
   SELECT f.projeto_id, f.semana, f.orcamento, f.pv, f.ev, f.ac, f.spi, f.cpi,
-         f.horas_disponiveis, f.horas_ociosas, f.rupturas_capacidade, f.farol_do_gerente,
+         f.horas_disponiveis, f.horas_ociosas, f.farol_do_gerente,
          d.data_inicio, d.duracao_baseline_dias, d.segmento,
          -- o que o projeto fez nas últimas 4 semanas: a "velocidade" atual, não a média da vida toda
          f.ev - lag(f.ev, 4) OVER w AS ev_4s,
@@ -41,7 +46,7 @@ WITH base AS (
          MIN(least(f.spi, f.cpi)) OVER (PARTITION BY f.projeto_id ORDER BY f.semana ROWS BETWEEN 1 FOLLOWING AND 4 FOLLOWING) AS _pior_indice_futuro,
          COUNT(*)                 OVER (PARTITION BY f.projeto_id ORDER BY f.semana ROWS BETWEEN 1 FOLLOWING AND 4 FOLLOWING) AS _semanas_futuro
   FROM lakehouse_vertice.gold.fato_projeto_semana f
-  JOIN lakehouse_vertice.gold.dim_projeto d USING (projeto_id)
+  JOIN lakehouse_vertice.gold.projeto_situacao_atual d USING (projeto_id)
   WINDOW w AS (PARTITION BY f.projeto_id ORDER BY f.semana)
 ),
 sequencia AS (   -- quantas das últimas 4 semanas o CPI caiu
@@ -71,17 +76,13 @@ status_4s AS (   -- o que o gerente escreveu no status das últimas 4 semanas (l
     ON s.projeto_id = b.projeto_id AND s.data_status > date_sub(b.semana, 28) AND s.data_status <= b.semana
   GROUP BY b.projeto_id, b.semana
 ),
-incidentes_8s AS (   -- incidentes em produção nas últimas 8 semanas
-  SELECT b.projeto_id, b.semana, COUNT(*) AS incidentes_8s
-  FROM base b
-  JOIN lakehouse_vertice.gold.postmortem_estruturado i
-    ON i.projeto_id = b.projeto_id AND i.data > date_sub(b.semana, 56) AND i.data <= b.semana
-  GROUP BY b.projeto_id, b.semana
+squad AS (   -- quem passou pelo projeto: quem apontou hora nele (o timesheet diz onde a pessoa está)
+  SELECT DISTINCT projeto_id, colaborador_id FROM lakehouse_vertice.silver.apontamentos
 ),
 saidas_12s AS (   -- gente que saiu da empresa estando no projeto, nas últimas 12 semanas
   SELECT b.projeto_id, b.semana, COUNT(*) AS saidas_12s
   FROM base b
-  JOIN lakehouse_vertice.silver.alocacoes a ON a.projeto_id = b.projeto_id
+  JOIN squad q ON q.projeto_id = b.projeto_id
   JOIN lakehouse_vertice.silver.colaboradores c USING (colaborador_id)
   WHERE c.data_desligamento > date_sub(b.semana, 84) AND c.data_desligamento <= b.semana
   GROUP BY b.projeto_id, b.semana
@@ -104,13 +105,11 @@ SELECT s.projeto_id,
        s.semanas_cpi_caindo,
        CAST(try_divide(s.ev_4s, s.ac_4s) AS DOUBLE)                        AS cpi_ultimas_4s,
        CAST(try_divide(s.ev_4s, s.pv_4s) AS DOUBLE)                        AS spi_ultimas_4s,
-       -- gente, capacidade e custo
+       -- gente e custo
        try_divide(s.ociosas_4s, s.disponiveis_4s)                          AS ociosidade_4s,
-       s.rupturas_capacidade,
        cc.pct_consultoria_4s,
        cc.pct_cloud_4s,
        coalesce(sa.saidas_12s, 0)                                          AS saidas_12s,
-       coalesce(i.incidentes_8s, 0)                                        AS incidentes_8s,
        -- o texto do status semanal, já classificado
        coalesce(st.status_freeze_4s, 0)       AS status_freeze_4s,
        coalesce(st.status_falta_sre_4s, 0)    AS status_falta_sre_4s,
@@ -130,7 +129,6 @@ FROM sequencia s
 JOIN lakehouse_vertice.silver.projetos p USING (projeto_id)
 LEFT JOIN custo_categoria cc USING (projeto_id, semana)
 LEFT JOIN status_4s st USING (projeto_id, semana)
-LEFT JOIN incidentes_8s i USING (projeto_id, semana)
 LEFT JOIN saidas_12s sa USING (projeto_id, semana);
 
 -- conferência rápida: a taxa base e o tamanho da tabela
@@ -138,4 +136,4 @@ SELECT COUNT(*)                                           AS linhas,
        COUNT_IF(elegivel = 1 AND estoura_30d IS NOT NULL) AS linhas_de_treino,
        ROUND(AVG(CASE WHEN elegivel = 1 THEN estoura_30d END), 4) AS taxa_base,
        COUNT_IF(semana = DATE'2026-10-16')                AS linhas_de_hoje
-FROM lakehouse_vertice.gold.features_projeto_semana;
+FROM lakehouse_vertice.ml.features_projeto_semana;

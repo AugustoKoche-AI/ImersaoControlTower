@@ -4,9 +4,21 @@
 #   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>            # SIMULA: só lista o que sairia
 #   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar   # apaga de verdade
 #
-# O que sai:   job vertice_farol, pipeline vertice_medalhao (e com ele todas as tabelas
-#              silver e gold que ele criou), dashboard e Genie da noite 2,
-#              gold.status_estruturado, gold.postmortem_estruturado e as metric views gold.mv_*.
+# O que sai:   job vertice_farol, pipeline vertice_medalhao, dashboard e Genie da noite 2,
+#              e TUDO o que estiver nos schemas silver e gold (varrido pelo information_schema):
+#                silver  projetos, tarefas, status_semanal, custos, colaboradores,
+#                        apontamentos, entregas_fornecedor            (materialized views)
+#                gold    fato_projeto_semana, projeto_situacao_atual,
+#                        utilizacao_pessoa_semana                     (materialized views)
+#                        status_estruturado                           (tabela da IA)
+#                        mv_projetos                                  (metric view)
+#              Versão antiga (podem ainda existir em workspaces antigos e saem na mesma varredura):
+#                silver  alocacoes, contratos_capacidade, consumo_capacidade, postmortems
+#                gold    dim_projeto, desempenho_fornecedor, cobertura_capacidade,
+#                        entregas_em_atraso, postmortem_estruturado,
+#                        mv_evolucao, mv_pessoas, mv_capacidade, mv_fornecedores
+#              Atenção: a varredura também leva o que as noites 3 e 4 gravaram na gold
+#              (gold.score_estouro_30d e as tabelas de contratos). O schema ml não é tocado.
 # O que FICA:  o catálogo lakehouse_vertice, a BRONZE e o volume com os arquivos
 #              (são da noite 1). Este script nunca toca na bronze.
 #

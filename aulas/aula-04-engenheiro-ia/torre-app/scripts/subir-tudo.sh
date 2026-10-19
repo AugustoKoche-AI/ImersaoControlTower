@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sobe a noite 4 inteira do zero, na ordem que funciona (é o gabarito dos 3 prompts):
 #   1. Lakebase (projeto farol-torre), se ainda não existe
-#   2. contratos e manual: PDF → elementos → cláusulas e seções → resumo tipado → multa e avisos (SQL)
+#   2. contratos: PDF → elementos → cláusulas (silver) → gold.contratos tipado (SQL)
 #   3. Genie "Farol · Diretoria + Contratos" (e o id vai para o databricks.yml)
 #   4. app: bundle deploy → GRANT para o service principal → apps deploy (o build falha sem GRANT)
 #
@@ -22,13 +22,13 @@ else
   databricks postgres create-project farol-torre --profile "$PERFIL" >/dev/null && echo "projeto farol-torre criado"
 fi
 
-passo "2. Contratos e manual (ai_parse_document + ai_extract com schema)"
+passo "2. Contratos (ai_parse_document + ai_extract com schema)"
 python3 "$RAIZ/scripts/run_sql.py" "$APP_DIR/agente/01-contratos.sql" --profile "$PERFIL" --quiet | grep -E "FALHOU|statement" || true
 
 passo "3. Genie da diretoria"
 python3 "$APP_DIR/agente/gerar_genie.py" --profile "$PERFIL"
 SAIDA=$(python3 "$RAIZ/scripts/genie.py" publicar "$APP_DIR/agente/diretoria-contratos-genie.json" \
-          --titulo "$GENIE" --descricao "O dono pergunta em português sobre os projetos, os contratos de fornecedor e o manual da Vértice." \
+          --titulo "$GENIE" --descricao "O dono pergunta em português sobre os projetos, o risco de estouro e os contratos de fornecedor." \
           --profile "$PERFIL")
 echo "$SAIDA"
 SID=$(echo "$SAIDA" | sed -E 's/.*\(([0-9a-f]{32})\).*/\1/')

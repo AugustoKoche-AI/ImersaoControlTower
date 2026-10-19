@@ -2,7 +2,8 @@
 # Apaga SÓ o que a noite 4 cria, para ensaiar de novo do zero:
 #   · o app (e o job farol_contratos) do bundle
 #   · o projeto Lakebase (com a tabela torre.decisoes)
-#   · as tabelas gold.documentos_elementos, gold.contratos_*, gold.manual_secoes e as views de multa e avisos
+#   · as tabelas do agente: silver.documentos_elementos, silver.contratos_clausulas e gold.contratos
+#     (e as da versão antiga, se o workspace ainda tiver)
 #   · o Genie "Farol · Diretoria + Contratos"
 # NÃO toca na bronze, silver, gold das noites 2 e 3, nem no Genie "Farol · Diretoria" (noite 2).
 #
@@ -29,6 +30,10 @@ rodar databricks postgres delete-project "projects/$LAKEBASE" --purge --profile 
 # 3. tabelas de contrato
 TMP=$(mktemp)
 cat > "$TMP" <<SQL
+DROP TABLE IF EXISTS lakehouse_vertice.gold.contratos;
+DROP TABLE IF EXISTS lakehouse_vertice.silver.contratos_clausulas;
+DROP TABLE IF EXISTS lakehouse_vertice.silver.documentos_elementos;
+-- versão antiga (com o manual e as views de multa e avisos): podem existir em workspaces antigos
 DROP VIEW  IF EXISTS lakehouse_vertice.gold.contratos_avisos;
 DROP VIEW  IF EXISTS lakehouse_vertice.gold.contratos_multa_fornecedor;
 DROP TABLE IF EXISTS lakehouse_vertice.gold.contratos_resumo;

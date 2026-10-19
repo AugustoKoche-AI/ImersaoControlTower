@@ -1,7 +1,8 @@
 # Prompt 2 · Modelo e MLflow — o baseline primeiro
 
-**Entrega:** o modelo `gold.modelo_estouro_30d` no Unity Catalog com alias
-`@prod`, a tabela `gold.modelo_metricas` e a tarefa `ml_modelo`. **Deploy nº 8.**
+**Entrega:** o modelo `ml.modelo_estouro_30d` no Unity Catalog com alias
+`@prod`, a tabela `ml.modelo_metricas` e a tarefa `ml_modelo`. **Deploy nº 8.**
+Tudo no schema `ml`, ao lado das features: o laboratório do cientista.
 
 ---
 
@@ -29,7 +30,7 @@ existir se ganhar dela — e esse é um dos `assert` que quebram a tarefa.
   diante: 4 semanas de folga, que é o horizonte do rótulo. Com divisão aleatória,
   a semana 20 do projeto vai para o treino e a semana 21 para o teste: o modelo
   pode "colar", e você não tem como saber se colou.
-- **Prever o número, não o sim/não.** O classificador sim/não fica em 0,906. O que
+- **Prever o número, não o sim/não.** O classificador sim/não fica em 0,90. O que
   vai melhor é prever **o pior índice das próximas 4 semanas** (um regressor) e
   tirar a probabilidade do erro dele. Bônus: o dono ganha uma frase que entende,
   *"o SPI deste projeto vai a 0,87 em 30 dias"*.
@@ -60,7 +61,8 @@ ARMADILHAS MEDIDAS NO FREE EDITION (siga todas):
   com SyntaxError na linha do texto.
 
 O notebook, nesta ordem:
-1. Lê gold.features_projeto_semana. Teste = elegíveis com rótulo e semana >=
+1. Lê ml.features_projeto_semana (24 features: todas as colunas do prompt 1
+   menos segmento, farol_do_gerente, elegivel e os dois alvos). Teste = elegíveis com rótulo e semana >=
    2026-04-03. Treino = rotulados com semana <= 2026-03-06 e pct_prazo > 0,15
    (inclui projetos já abaixo de 0,9: eles ensinam como um projeto afunda).
 2. BASELINES no teste, impressos antes de qualquer treino: regra de corte
@@ -82,8 +84,8 @@ O notebook, nesta ordem:
    disso é vazamento); AUC >= a folga até o corte (senão, use a regra);
    avisados >= 70% dos estouros.
 7. Retreine com TODOS os rotulados, registre em
-   lakehouse_vertice.gold.modelo_estouro_30d com input_example, alias @prod.
-8. Grave gold.modelo_metricas (uma linha: versão, auc, todas as réguas,
+   lakehouse_vertice.ml.modelo_estouro_30d com input_example, alias @prod.
+8. Grave ml.modelo_metricas (uma linha: versão, auc, todas as réguas,
    sigma, estouros, avisados e quais, antecedência, estouro avisado,
    feature principal).
 
@@ -100,12 +102,12 @@ Rode e me mostre a saída:
 SELECT versao, ROUND(auc, 4) AS auc, ROUND(auc_baseline_folga, 4) AS regra,
        ROUND(auc_classificador, 4) AS sim_nao, estouros_avisados, estouros_teste,
        antecedencia_media_dias, ROUND(estouro_previsto_avisado / 1e6, 2) AS mi
-FROM lakehouse_vertice.gold.modelo_metricas;
--- 0,9219 · 0,8716 · 0,9061 · 9 de 10 · 40,4 dias · R$ 2,44 mi
+FROM lakehouse_vertice.ml.modelo_metricas;
+-- AUC 0,92 · regra 0,87 · sim/não 0,90 · 9 de 10 · 41 dias · R$ 2,44 mi (medido em 19/10)
 ```
 
 **A frase para o dono:** *"dos 10 projetos que estouraram depois de abril, a
-Torre teria colocado 9 na lista dos 5 mais arriscados da semana, em média 40 dias
+Torre teria colocado 9 na lista dos 5 mais arriscados da semana, em média 41 dias
 antes. Hoje, a regra de corte avisa zero antes."*
 
 ---

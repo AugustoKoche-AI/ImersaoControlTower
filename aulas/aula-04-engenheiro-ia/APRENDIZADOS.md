@@ -7,7 +7,7 @@ as armadilhas da plataforma. A segunda é do case da Vértice (18/10/2026).
 
 | # | O que aconteceu | Mensagem | Solução adotada |
 |---|---|---|---|
-| 1 | Knowledge Assistant e Supervisor Agent | `... is now a legacy feature. New instances can no longer be created ... use Genie Agents instead` | Agente = Genie Agent + cláusulas e seções do manual em tabelas (`ai_parse_document`) |
+| 1 | Knowledge Assistant e Supervisor Agent | `... is now a legacy feature. New instances can no longer be created ... use Genie Agents instead` | Agente = Genie Agent + contratos em tabela (`ai_parse_document` + `ai_extract` → `gold.contratos`) |
 | 2 | Extração estruturada sem descrição dos campos | campo inteiro veio 0 em metade dos documentos (edição de agosto, com `ai_query`) | `description` em cada campo do JSON schema |
 | 3 | `typegen` local | todas as queries `OFFLINE` em 0,00 s | `set -a; . ./.env; set +a` e `npm run typegen -- --wait` |
 | 4 | Query de `config/queries` com tabela de outra noite | `apps validate`: `TABLE_OR_VIEW_NOT_FOUND` (o build faz typegen `--wait`) | Score da noite 3 lido por rota do servidor (`routes/score.ts`) que responde `{disponivel:false}` |
@@ -29,8 +29,8 @@ as armadilhas da plataforma. A segunda é do case da Vértice (18/10/2026).
 | 1 | `ai_extract` **sem schema** (lista de nomes) devolve frase: `"0,2% do valor da entrega atrasada por dia corrido, limitada a 5%"` | É a lição da aula: com o JSON schema tipado (versão 2.0), sai `0.2` e `5.0` |
 | 2 | Com schema, o SLA da CodeVault veio em italiano ("disponibilità mensal") | `"description": "... copiado do contrato, em português"` |
 | 3 | Cortar cláusula por regex de título falha quando o texto começa com "A CONTRATADA" (maiúsculas) | Usar o `type = 'section_header'` que o `ai_parse_document` já devolve |
-| 4 | Multa da CodeForge: R$ 3,24 mi no histórico desde 2024 | Separar `na_vigencia_atual` (R$ 1,12 mi): é o que dá para descontar das próximas faturas |
-| 5 | Benchmark do Genie de contratos | **10/10** de primeira, com instrução "a Vértice é a CONTRATANTE" e "na vigência atual = na_vigencia_atual" |
+| 4 | Multa da CodeForge: R$ 3,24 mi no histórico desde 2024 | Contar só o prometido na vigência atual (`data_prometida > add_months(data_fim_vigencia, -12)`): R$ 1,12 mi, o que dá para descontar das próximas faturas |
+| 5 | Benchmark do Genie de contratos | **10/10** de primeira no ensaio de 18/10 (desenho antigo), com instrução "a Vértice é a CONTRATANTE" e a regra da vigência atual escrita na instrução |
 
 ## O que funciona
 
@@ -40,7 +40,7 @@ as armadilhas da plataforma. A segunda é do case da Vértice (18/10/2026).
 | App + Lakebase (plugin `lakebase()`, recurso `postgres`) | ✅ o app cria o schema `torre` e grava; o dono do projeto lê pelo psycopg |
 | `ai_parse_document` em PDF | ✅ elementos com tipo (`title`, `section_header`, `text`) |
 | `ai_extract` versão 2.0 com JSON schema | ✅ número, booleano e inteiro tipados; 8/8 contratos certos |
-| Genie com cláusulas e manual citando a fonte | ✅ benchmark **10/10** |
+| Genie com contratos citando a cláusula | ✅ benchmark **10/10** no ensaio de 18/10 (desenho antigo, com o manual); rodar de novo com `gold.contratos` |
 | AppKit `apps init --features analytics,lakebase,genie` | ✅ ~10 s |
 | Header `x-forwarded-email` com o usuário do SSO | ✅ gravado em `torre.decisoes.usuario` |
 
@@ -48,7 +48,7 @@ as armadilhas da plataforma. A segunda é do case da Vértice (18/10/2026).
 
 | Etapa | Tempo |
 |---|---|
-| SQL dos contratos e do manual (9 PDFs: parse + extração) | ~1 min |
+| SQL dos contratos (8 PDFs: parse + extração) | ~1 min |
 | Lakebase `create-project` | 7 s |
 | Benchmark de 10 perguntas | ~3 min |
 | `apps init` | ~10 s (edição de agosto) |

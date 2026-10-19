@@ -21,9 +21,9 @@ Uma pasta por noite, autocontida (README, roteiro, verificação), no mesmo esqu
 | Pasta | Noite |
 |---|---|
 | `aulas/aula-01-analista/` | 1 · navegador: setup, bronze (CSV, Excel, JSON, XML), 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
-| `aulas/aula-02-engenheiro/` | 2 · prompts no Claude Code: bundle `vertice`, pipeline Lakeflow que integra as 3 ferramentas, ai_classify + ai_extract nos status e postmortems, Metric Views, Genie curado |
+| `aulas/aula-02-engenheiro/` | 2 · prompts no Claude Code: bundle `vertice`, pipeline Lakeflow que integra as 3 ferramentas, ai_classify + ai_extract nos status semanais, a metric view mv_projetos, Genie curado |
 | `aulas/aula-03-cientista/` | 3 · prompts: features projeto × semana, modelo de estouro em 30 dias, score por projeto |
-| `aulas/aula-04-engenheiro-ia/` | 4 · prompts: agente de contratos e do manual (ai_parse_document + ai_extract), app da Torre (AppKit) + Lakebase, pitch |
+| `aulas/aula-04-engenheiro-ia/` | 4 · prompts: agente de contratos (ai_parse_document + ai_extract → gold.contratos), app da Torre (AppKit) + Lakebase, pitch |
 | `material/` | PRD, gerador do dataset, validador dos padrões, writer de PDF |
 | `scripts/` | `run_sql.py`, `genie.py`, `gerar_notebooks.py`, `gerar_slides.py`, `gerar_prompts.py` |
 | `slides/` | `_modelo.html` (motor dos slides do jornada-ops, com Mermaid) + `aula-NN.slides.html` → `aula-NN.html` |
@@ -99,29 +99,32 @@ lê as 3 ferramentas em Python). Um `random.Random` por assunto (`f"{seed}:{nome
 - **Seed fixa.** Mudou o gerador? Rode o validador, regere, recarregue a bronze e atualize os números esperados
   em `aulas/aula-01-analista/99-verificacao.sql`, nos READMEs e nos slides, nessa ordem.
 - Fontes: `pmo/` (projetos, status_semanal com texto livre e farol), `excel/` (20 .xlsx), `clickup/` (25 .json),
-  `msproject/` (15 .xml MSPDI), `rh/`, `timesheet/`, `financeiro/`, `compras/` (entregas de fornecedor, contratos e
-  consumo de capacidade), `incidentes/postmortems.csv`, `documentos/` (8 contratos de fornecedor/SaaS e o manual de
-  tecnologias em PDF).
+  `msproject/` (15 .xml MSPDI), `rh/`, `timesheet/`, `financeiro/`, `compras/` (entregas de fornecedor), `documentos/`
+  (8 contratos de fornecedor/SaaS e o manual de tecnologias em PDF; o agente da noite 4 lê só os contratos).
+- **Caso enxuto (19/10):** 9 tabelas na bronze, 7 na silver (+2 dos contratos), 7 objetos na gold (projeto_situacao_atual,
+  fato_projeto_semana, utilizacao_pessoa_semana, status_estruturado, mv_projetos, score_estouro_30d, contratos) e o schema
+  `ml` (features, métricas e o modelo). Saíram alocações, capacidade/cloud e postmortems: história paralela às 4 perguntas.
+  As alocações ainda são calculadas por dentro do gerador (o timesheet depende delas), mas não viram arquivo.
 - Padrões que os KPIs precisam mostrar: CPI caindo a partir do 6º mês em `PRJ-002 005 009 014 018 021 027 033`
   (escopo sem aditivo); change freeze da Black Friday (01/11 a 10/01) em `PRJ-003 011 024` (e-commerce);
   consultoria CodeForge com prazo ×1,41 e escrita de 4 jeitos; SREs `COL0017`/`COL0018` a 2–9% no `PRJ-007`
   (ainda no discovery) enquanto o `PRJ-011` pede SRE nos status; squads com rotatividade em `PRJ-016 030`.
   Bônus: 4 projetos "melancia" (farol verde, SPI < 0,9): `PRJ-012 028 034 042`.
-- Ruptura de capacidade = saldo ÷ consumo previsto/dia < 30 dias (prazo de aditivo). Dá **15** hoje.
 
 ## Números de referência
 
 Noite 2 (gold): os mesmos 7 críticos, 10 em atenção, 4 melancias e R$ 6,47 mi da noite 1 (a fotografia de hoje faz a
 mesma conta sobre silver.tarefas) · SPI/CPI da carteira 0,92/0,97 · margem projetada 20,4% · 4.917 tarefas na silver
-(Excel 1.643, ClickUp 2.119, Project 1.155) · 15 rupturas de capacidade (de 56 contratos) · 5 entregas em atraso, todas
+(Excel 1.643, ClickUp 2.119, Project 1.155) · 5 entregas em atraso, todas
 da CodeForge (×1,41, 0% no prazo) · SREs COL0017/COL0018 a ~5,5% no PRJ-007 · PRJ-011: falta_sre 12 semanas, 57 dias ·
-IA: 163 status (2 min) e 101 postmortems (1 min) · Genie "Farol · Diretoria" 20/20 · verificação 20/20.
+IA: 163 status (2 min) · Genie "Farol · Diretoria" 20/20 · verificação 20/20. Pergunta 4 na noite 2: entregas atrasadas +
+freeze; a resposta completa é o score da noite 3.
 
-Noite 3: features_projeto_semana 4.235 linhas · AUC 0,92 (regra atual 0,50; folga 0,87) · 9 de 10 estouros do teste no
-top 5, 40 dias antes · score: 18 alto, 4 médio, 19 baixo · "uau": PRJ-024 ok hoje (SPI 0,91) com prob 0,49 (freeze +
-cloud acabando) · vazamento: corte no tempo 0,92, aleatório 0,92, índice do futuro 0,99 · assert antivazamento < 0,98 ·
-job vertice_farol com 9 tarefas, 4 a 5 min. PRJ-013 tem status (43%) e planilha (45%) que não batem: lição de qualidade.
-Noite 4: 8 contratos, 72 cláusulas, 10 seções do manual · multa cobrável da CodeForge R$ 1,12 mi (vigência atual) ·
+Noite 3 (schema `ml`): ml.features_projeto_semana 4.235 linhas · AUC 0,92 (regra atual 0,50; folga 0,87) · 9 de 10 estouros do teste no
+top 5, 41 dias antes · score: 18 alto, 4 médio, 19 baixo · "uau": PRJ-024 ok hoje (SPI 0,91) com prob 0,46 e o freeze da
+Black Friday começando em 01/11 · vazamento: corte no tempo 0,92, aleatório 0,92, índice do futuro 0,99 · assert antivazamento < 0,98 ·
+job vertice_farol com 8 tarefas, 4 a 5 min. PRJ-013 tem status (43%) e planilha (45%) que não batem: lição de qualidade.
+Noite 4: 8 contratos, 72 cláusulas (silver), gold.contratos com 8 linhas · multa cobrável da CodeForge R$ 1,12 mi (vigência atual) ·
 NuvemSul e DataPrime renovaram sozinhos (R$ 21,4 mi/ano) · Genie "Farol · Diretoria + Contratos" 10/10 · simulador
 COL0017 → PRJ-011: 19 dias e R$ 22,1 mil/mês de saldo · ROI ≈ R$ 3,0 mi no ano 1 contra R$ 0,4 mi · app `farol-torre`
 publicado em 18/10 (bundle deploy falha no 1º build → conceder-acesso.sh → apps deploy: RUNNING).

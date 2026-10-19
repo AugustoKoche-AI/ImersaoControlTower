@@ -7,7 +7,7 @@ conferência da bronze. **Deploy nº 1.**
 
 ## O que mostrar antes
 
-Abra o Catalog Explorer na `lakehouse_vertice.bronze`: as 13 tabelas que a turma
+Abra o Catalog Explorer na `lakehouse_vertice.bronze`: as 9 tabelas que a turma
 subiu ontem, clicando, e o rascunho das três ferramentas feito à mão no exemplo 05.
 Pergunte: *"sexta que vem os gerentes atualizam as planilhas, o ClickUp e o Project.
 Quem roda tudo de novo? Na mão?"* Hoje o projeto vira código: versionado, revisável,
@@ -70,14 +70,13 @@ CONTEXTO DO WORKSPACE
      ${var.warehouse_id} com o arquivo ../src/conferencia/00-conferencia-bronze.sql
    - comentário no topo listando as tarefas que os próximos prompts vão
      acrescentar (medalhao, testes_de_qualidade, status_com_ia,
-     postmortem_com_ia, metricas_governadas)
+     metricas_governadas)
 
 3. src/conferencia/00-conferencia-bronze.sql
-   Confere as 13 tabelas da bronze contra a contagem esperada (seed 42):
+   Confere as 9 tabelas da bronze contra a contagem esperada (seed 42):
    projetos 60 · status_semanal 3911 · excel_tarefas 1663 · clickup_tarefas 2119 ·
-   msproject_tarefas 1260 · colaboradores 523 · alocacoes 517 ·
-   apontamentos 30883 · custos 23640 · entregas_fornecedor 640 ·
-   contratos_capacidade 93 · consumo_capacidade 6070 · postmortems 101
+   msproject_tarefas 1260 · colaboradores 523 · apontamentos 30883 ·
+   custos 23640 · entregas_fornecedor 640
    Uma linha por tabela com esperado e obtido; se alguma divergir, chame
    raise_error() com uma mensagem que diga qual tabela e o que fazer
    (rodar de novo o 00-carregar-dados e o 01-ingestao-bronze da noite 1).
@@ -96,7 +95,7 @@ Rode e me mostre a saída de cada um:
 databricks bundle summary --profile <perfil>     # o job vertice_farol aparece, com URL
 ```
 
-Abra o job no workspace: **uma caixa no DAG**, verde. Clique na tarefa: as 13
+Abra o job no workspace: **uma caixa no DAG**, verde. Clique na tarefa: as 9
 linhas com `ok`. Esse desenho vai crescer a noite inteira.
 
 **A prova de que a conferência tem dente:** troque um número esperado (por

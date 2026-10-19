@@ -1,5 +1,5 @@
--- silver.colaboradores, silver.alocacoes e silver.apontamentos: as 520 pessoas,
--- onde cada uma está e quanto trabalhou.
+-- silver.colaboradores e silver.apontamentos: as 520 pessoas e quanto cada uma
+-- trabalhou em cada projeto, semana a semana (o timesheet diz onde a pessoa está).
 --
 -- A sujeira: 3 pessoas cadastradas duas vezes no RH (mesmo colaborador_id, nome e
 -- papel em CAIXA ALTA). DISTINCT não resolve, porque as linhas são diferentes.
@@ -31,16 +31,6 @@ SELECT colaborador_id,
        linhas_no_rh > 1                                    AS cadastro_duplicado
 FROM ordenado
 WHERE ordem = 1;
-
-CREATE OR REFRESH MATERIALIZED VIEW alocacoes
-COMMENT 'Quem está alocado em qual projeto, de quando até quando (data_fim nula = alocação em aberto), com o % da semana dedicado ao projeto.'
-AS SELECT
-  colaborador_id,
-  projeto_id,
-  CAST(data_inicio AS DATE)                      AS data_inicio,
-  try_to_date(data_fim, 'yyyy-MM-dd')            AS data_fim,
-  CAST(pct_alocacao AS INT)                      AS pct_alocacao
-FROM lakehouse_vertice.bronze.alocacoes;
 
 CREATE OR REFRESH MATERIALIZED VIEW apontamentos (
   CONSTRAINT horas_nao_negativas EXPECT (horas_apontadas >= 0 AND horas_disponiveis > 0) ON VIOLATION FAIL UPDATE

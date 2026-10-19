@@ -37,8 +37,9 @@ SELECT projeto_id, projeto, cliente, segmento, ferramenta, situacao, spi, cpi, e
 FROM projeto_situacao_atual
 WHERE status = 'em_andamento'"""),
     "ds_evolucao": ("Evolução semanal da carteira", """
-SELECT semana, MEASURE(spi) AS spi, MEASURE(cpi) AS cpi, MEASURE(horas_ociosas) AS horas_ociosas
-FROM mv_evolucao
+-- PV, EV e AC já vêm acumulados por projeto: somar os projetos de UMA semana é válido.
+SELECT semana, SUM(ev) / SUM(pv) AS spi, SUM(ev) / SUM(ac) AS cpi, SUM(horas_ociosas) AS horas_ociosas
+FROM fato_projeto_semana
 WHERE semana >= DATE'2025-03-07'
 GROUP BY semana
 ORDER BY semana"""),
@@ -63,21 +64,21 @@ FROM status_estruturado s JOIN projeto_situacao_atual p USING (projeto_id)
 WHERE s.data_status >= DATE'2026-07-18' AND s.causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado')
   AND p.status = 'em_andamento'
 GROUP BY ALL"""),
-    "ds_capacidade": ("Capacidade contratada hoje", """
-SELECT projeto, fornecedor, tipo, unidade, saldo, consumo_previsto_dia, cobertura_dias, data_prevista_fim_saldo,
-       CASE WHEN ruptura_prevista THEN 1 ELSE 0 END AS ruptura
-FROM cobertura_capacidade"""),
-    "ds_rupturas": ("Contratos com ruptura prevista", """
-SELECT projeto, COUNT(*) AS rupturas
-FROM cobertura_capacidade
-WHERE ruptura_prevista
-GROUP BY projeto
-ORDER BY rupturas DESC"""),
     "ds_fornecedores": ("Desempenho de fornecedor", """
-SELECT fornecedor, entregas, grafias_no_cadastro, prazo_prometido_medio, prazo_real_medio,
-       fator_atraso, pct_no_prazo, entregas_em_atraso
-FROM desempenho_fornecedor
+-- Direto da silver: o nome da CodeForge já foi normalizado (4 grafias viraram 1).
+SELECT fornecedor, COUNT(*) AS entregas, COUNT(DISTINCT fornecedor_como_veio) AS grafias_no_cadastro,
+       AVG(prazo_real_dias / prazo_prometido_dias) AS fator_atraso,
+       AVG(CASE WHEN data_entrega <= data_prometida THEN 1.0 ELSE 0.0 END) FILTER (WHERE data_entrega IS NOT NULL) AS pct_no_prazo,
+       COUNT_IF(em_atraso) AS entregas_em_atraso
+FROM lakehouse_vertice.silver.entregas_fornecedor
+GROUP BY fornecedor
 ORDER BY fator_atraso DESC"""),
+    "ds_atrasadas": ("Entregas em atraso hoje", """
+SELECT e.projeto_id, e.fornecedor, e.item, e.valor, e.data_prometida,
+       datediff(DATE'2026-10-16', e.data_prometida) AS dias_de_atraso
+FROM lakehouse_vertice.silver.entregas_fornecedor e
+WHERE e.em_atraso
+ORDER BY dias_de_atraso DESC"""),
 }
 
 
@@ -184,28 +185,25 @@ def montar() -> dict:
            "frame": {"showTitle": True, "title": "Por que travou: causas no status semanal (últimos 90 dias)"}},
           pos(0, 10, 12, 9)),
     ]
-    capacidade = [
-        texto("titulo-cap", "# Capacidade e fornecedores\n\n**O que vai dar errado no próximo mês?** Ruptura prevista = o "
-              "banco de horas da consultoria ou o crédito de cloud acaba em menos de 30 dias, o prazo para aprovar um aditivo.",
+    fornecedores = [
+        texto("titulo-forn", "# Fornecedores\n\n**Quem promete e não cumpre?** Prazo real ÷ prometido de cada consultoria. "
+              "A CodeForge veio escrita de 4 jeitos no cadastro de compras: sem normalizar, ela sumia do ranking.",
               pos(0, 0, 12, 2)),
-        barra_h("rupturas-projeto", "ds_rupturas", "projeto", "sum(rupturas)", "SUM(`rupturas`)",
-                "Contratos com ruptura prevista por projeto", {"type": "number-plain"}, pos(0, 2, 6, 8)),
         tabela("fornecedores", "ds_fornecedores", [
             ("fornecedor", "Fornecedor"), ("grafias_no_cadastro", "Grafias"), ("entregas", "Entregas"),
             ("fator_atraso", "Real ÷ prometido", NUM2), ("pct_no_prazo", "No prazo", PCT),
-            ("entregas_em_atraso", "Em atraso hoje")], "Fornecedores: quem promete e não cumpre", pos(6, 2, 6, 8)),
-        tabela("capacidade", "ds_capacidade", [
-            ("projeto", "Projeto"), ("fornecedor", "Fornecedor"), ("tipo", "Tipo"), ("saldo", "Saldo"),
-            ("unidade", "Unidade"), ("cobertura_dias", "Cobertura (dias)"),
-            ("data_prevista_fim_saldo", "Saldo acaba em"), ("ruptura", "Ruptura prevista")],
-               "Banco de horas e créditos de cloud por projeto", pos(0, 10, 12, 8)),
+            ("entregas_em_atraso", "Em atraso hoje")], "Fornecedores: do que mais atrasa ao que menos atrasa", pos(0, 2, 12, 6)),
+        tabela("atrasadas", "ds_atrasadas", [
+            ("projeto_id", "Projeto"), ("fornecedor", "Fornecedor"), ("item", "Item"), ("valor", "Valor", BRL),
+            ("data_prometida", "Prometida para"), ("dias_de_atraso", "Dias de atraso")],
+               "Entregas em atraso hoje", pos(0, 8, 12, 6)),
     ]
     pagina = lambda n, t, l: {"name": n, "displayName": t, "pageType": "PAGE_TYPE_CANVAS",
                               "layoutVersion": "GRID_V1", "layout": l}
     return {
         "datasets": [ds(n) for n in DATASETS],
         "pages": [pagina("portfolio", "Portfólio", portfolio), pagina("pessoas", "Pessoas", pessoas),
-                  pagina("capacidade", "Capacidade e fornecedores", capacidade)],
+                  pagina("fornecedores", "Fornecedores", fornecedores)],
         "uiSettings": {"theme": {
             "canvasBackgroundColor": {"light": "#F5F6FC", "dark": "#14141A"},
             "widgetBackgroundColor": {"light": "#FFFFFF", "dark": "#1E1E24"},

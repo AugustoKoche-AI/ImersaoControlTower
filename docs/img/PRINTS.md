@@ -21,7 +21,7 @@ Workspace: `https://dbc-84cd5511-fa25.cloud.databricks.com` (o `?o=1253341796019
 | Arquivo | O que mostrar | Onde |
 |---|---|---|
 | `noite2-pipeline.jpg` | o grafo do pipeline com as 3 visões desaguando em `silver.tarefas` | `/pipelines/1786b2c7-f994-4582-8418-df46337245a1` |
-| `noite2-job.jpg` | o DAG do job verde, com as 9 tarefas | `/jobs/409863010487260` → última execução |
+| `noite2-job.jpg` | o DAG do job verde, com as 8 tarefas | `/jobs/409863010487260` → última execução |
 | `noite2-dashboard.jpg` | a página Portfólio (KPIs, estouro por projeto, SPI × CPI) | `/dashboardsv3/01f1cb4e13141255a1daf9dcb8be8448/published` |
 | `noite2-genie.jpg` | a resposta para *Tenho gente parada enquanto outro projeto pede gente?* (as duas SREs) | Genie Agents → **Farol · Diretoria** (`/genie/rooms/01f1cb4e131b18adb111de397e84664b`) |
 

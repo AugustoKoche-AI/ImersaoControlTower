@@ -19,7 +19,7 @@ O dono fez **quatro perguntas**. A Torre responde as quatro:
 1. **Quais projetos estão atrasados, e de quais clientes?** (SPI, CPI, situação)
 2. **Quanto esse atraso vai me custar?** (EAC, estouro previsto, margem)
 3. **Tenho gente parada enquanto outro projeto pede gente?** (utilização do timesheet + causa no status)
-4. **O que vai dar errado no próximo mês?** (ruptura de capacidade, entregas atrasadas, change freeze; o modelo vem na noite 3)
+4. **O que vai dar errado no próximo mês?** (hoje: entregas de consultoria atrasadas e o change freeze da Black Friday; a resposta completa é o modelo da noite 3)
 
 Regras de corte: SPI ou CPI **< 0,9 = atenção**, **< 0,8 = crítico**.
 
@@ -33,7 +33,6 @@ Regras de corte: SPI ou CPI **< 0,9 = atenção**, **< 0,8 = crítico**.
 | Atraso projetado (dias) | duração baseline ÷ SPI − duração baseline |
 | Farol calculado | regra do manual da Vértice: verde com SPI ≥ 0,95; amarelo ≥ 0,90; vermelho abaixo |
 | Melancia | farol do gerente verde e SPI < 0,9 |
-| Ruptura de capacidade | saldo do contrato ÷ consumo previsto por dia < 30 dias (o prazo de aprovar um aditivo) |
 
 **O "hoje" do dataset é 16/10/2026 (sexta).** Nunca use `current_date()`: o número
 mudaria todo dia e não bateria com o de ninguém. Escreva `DATE'2026-10-16'`.
@@ -44,7 +43,7 @@ mudaria todo dia e não bateria com o de ninguém. Escreva `DATE'2026-10-16'`.
 
 Catálogo **`lakehouse_vertice`**, criado na noite 1 (pelo notebook `00-carregar-dados` ou por
 `aulas/aula-01-analista/00-setup-catalogo.sql`). Schemas `bronze`, `silver`, `gold`
-e o volume `bronze.raw` já existem. **A bronze já está carregada** (13 tabelas, com a
+e o volume `bronze.raw` já existem. **A bronze já está carregada** (9 tabelas, com a
 sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
 
 | Tabela bronze | Linhas | O que é |
@@ -55,13 +54,9 @@ sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
 | `clickup_tarefas` | 2.119 | as tarefas das 25 listas: `list_id`, `list_name`, `status` (struct), datas em ms, `custom_fields` (lista) |
 | `msproject_tarefas` | 1.260 | as `<Task>` dos 15 XML: `UID`, `OutlineLevel`, `Summary`, `Work`, `PercentComplete`, `Baseline` (struct), `arquivo` |
 | `colaboradores` | 523 | as 520 pessoas (3 duplicadas): papel, senioridade, custo/hora, admissão, desligamento |
-| `alocacoes` | 517 | quem está em qual projeto e quando |
 | `apontamentos` | 30.883 | timesheet semanal: horas disponíveis × apontadas por pessoa e projeto |
 | `custos` | 23.640 | lançamentos de custo real (pessoal, consultoria, cloud, licenças, despesas) |
 | `entregas_fornecedor` | 640 | entregas das consultorias: prometido × entregue |
-| `contratos_capacidade` | 93 | banco de horas de consultoria e créditos de cloud por projeto |
-| `consumo_capacidade` | 6.070 | saldo semanal de cada contrato e consumo previsto por dia |
-| `postmortems` | 101 | postmortem de cada incidente em produção, em texto livre |
 
 ## 3. A sujeira é proposital — a limpeza e a integração são o conteúdo da noite
 
@@ -83,9 +78,8 @@ sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
 | 14 | Estorno como valor negativo | `custos` | **manter** (custo é líquido) e sinalizar `estorno` |
 | 15 | A mesma consultoria com 4 grafias | `entregas_fornecedor.fornecedor` | normalizar para `CodeForge Consultoria Ltda` |
 | 16 | Pessoa cadastrada duas vezes | `colaboradores` (COL0102, COL0257, COL0433) | manter o cadastro com `papel` em minúsculas |
-| 17 | Saldo negativo | `consumo_capacidade.saldo` | vira 0 e ganha flag |
-| 18 | Farol `'Verde'`, `'VERDE'` | `status_semanal.farol` | `lower(trim())` |
-| 19 | Status vazio (`''`, `N/A`, `ver ata da reunião`) | `status_semanal.texto_status` (51) | **não descartar**: flag `status_vazio` |
+| 17 | Farol `'Verde'`, `'VERDE'` | `status_semanal.farol` | `lower(trim())` |
+| 18 | Status vazio (`''`, `N/A`, `ver ata da reunião`) | `status_semanal.texto_status` (51) | **não descartar**: flag `status_vazio` |
 
 **O teste de uma boa limpeza:** o custo total não muda (R$ 193,35 mi na bronze com
 `replace` = R$ 193,35 mi na silver), e as horas de cada planilha batem com a linha de TOTAL.
@@ -96,12 +90,19 @@ sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
 bronze (noite 1)
    │
    ▼  job vertice_farol
-conferencia_bronze ── medalhao (pipeline Lakeflow) ──┬── testes_de_qualidade ──┐
-   sql_task            silver ×13  →  gold ×7        ├── status_com_ia ─────────┼── metricas_governadas
-                       (silver.tarefas = as 3        └── postmortem_com_ia ─────┘   (5 metric views)
+conferencia_bronze ── medalhao (pipeline Lakeflow) ──┬── testes_de_qualidade ──┬── metricas_governadas
+   sql_task            silver ×7  →  gold ×3         └── status_com_ia ─────────┘   (1 metric view: mv_projetos)
+                       (silver.tarefas = as 3            (ai_classify + ai_extract)
                         ferramentas num modelo só)
    dashboard_portfolio (bundle) · genie_farol (bundle)
 ```
+
+**Pouca tabela, de propósito.** Silver: `projetos`, `tarefas`, `status_semanal`, `custos`,
+`colaboradores`, `apontamentos`, `entregas_fornecedor`. Gold: `fato_projeto_semana`,
+`projeto_situacao_atual` (que já traz o cadastro: cliente, segmento, tipo, ferramenta,
+gerente, contrato, prazo), `utilizacao_pessoa_semana`, mais `status_estruturado` (a IA) e
+`mv_projetos` (a métrica governada). Fornecedor não tem tabela gold: lê-se direto da
+`silver.entregas_fornecedor`. Não crie `dim_projeto` nem outras metric views.
 
 - **Um bundle só**, chamado `vertice`, em `aulas/aula-02-engenheiro/meu-vertice/`.
   A pasta `aulas/aula-02-engenheiro/vertice/` é o **gabarito**: não copie dela, a
@@ -153,11 +154,11 @@ conferencia_bronze ── medalhao (pipeline Lakeflow) ──┬── testes_de
 | SPI / CPI da carteira | 0,92 / 0,97 |
 | Melancias (farol verde, SPI < 0,9) | 4: PRJ-012, PRJ-028, PRJ-034, PRJ-042 |
 | Custo real total | R$ 193,35 mi |
-| Rupturas de capacidade hoje | 15 de 56 contratos (11 de cloud, 4 de banco de horas) |
 | Entregas em atraso | 5, todas da CodeForge |
 | CodeForge: prazo real ÷ prometido | 1,41 (0% no prazo) |
 | SREs com < 20% de uso (12 semanas) | COL0017 e COL0018, no PRJ-007 (5,8% e 5,5%) |
 | PRJ-011: causa no status (90 dias) | falta de SRE, 12 semanas, 57 dias de impacto declarado |
+| Status classificados pela IA | 163 (últimos 90 dias, com bloqueio) |
 | Genie | 20/20 no `prd/genie-benchmark.json` |
 
 A conferência completa está em `prd/99-verificacao.sql`.

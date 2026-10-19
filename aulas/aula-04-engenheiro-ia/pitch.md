@@ -19,17 +19,17 @@ explícitas**: troque pelas da sua empresa.
 
 ### 0:30 – 1:15 · A solução
 > "Juntamos as três ferramentas e os sistemas de RH, timesheet, financeiro e compras num lugar só, com os
-> KPIs definidos uma vez: SPI, CPI, estouro, ruptura de capacidade. A IA lê os status semanais e os
-> postmortems para achar a causa do atraso, e lê os contratos de fornecedor e o manual da empresa para
-> dizer o que a gente pode cobrar e o que a nossa regra manda fazer. Um modelo avisa quais projetos vão
+> KPIs definidos uma vez: SPI, CPI, estouro, margem. A IA lê os status semanais para achar a causa do
+> atraso, e lê os contratos de fornecedor para dizer o que a gente pode cobrar e qual contrato vai renovar
+> sozinho. Um modelo avisa quais projetos vão
 > estourar nos próximos 30 dias. E tudo isso cabe numa tela que o senhor abre no celular."
 
 ### 1:15 – 2:15 · A demo (ao vivo, uma pergunta)
 Abra o app → **Perguntar** e digite:
-> *"Por que o PRJ-011 atrasou e o que o manual manda fazer?"*
+> *"Por que o PRJ-011 atrasou?"*
 
-Leia a resposta em voz alta: **falta de SRE em 12 semanas seguidas** (57 dias de impacto declarados);
-pela **seção 5 do manual**, todo projeto em implantação precisa de um SRE. Depois:
+Leia a resposta em voz alta: **falta de SRE em 12 semanas seguidas** (57 dias de impacto declarados nos
+status). Depois:
 *"Tenho SRE parado que poderia ir para o PRJ-011?"* → **duas SREs seniores a 6% de uso no PRJ-007**, um
 projeto que ainda está no desenho: **R$ 179 mil** pagos em 12 semanas sem produzir.
 Vá ao **Simulador**, COL0017 → PRJ-011, mostre os **19 dias** de cronograma recuperados e clique **Aprovar**.
@@ -47,10 +47,9 @@ Vá ao **Simulador**, COL0017 → PRJ-011, mostre os **19 dias** de cronograma r
 | Custo do projeto | | premissa: plataforma + 1 engenheiro de dados por 6 meses | R$ 0,4 mi |
 
 > "R$ 3 milhões de ganho para R$ 0,4 milhão de custo, e isso sem contar o que a Torre já está avisando:
-> **15 contratos de capacidade** (banco de horas e cloud) acabam em menos de 30 dias, o **freeze da Black
-> Friday começa em 01/11** e trava o PRJ-011, o PRJ-003 e o PRJ-024, e o modelo já marcou o **PRJ-024**
-> (situação ok hoje, SPI 0,91) com **49% de chance** de estourar no próximo mês: no freeze do ano passado o
-> SPI dele foi de 0,99 a 0,70, e o crédito de cloud dele acaba em 19 dias. E dois contratos (NuvemSul e
+> o **freeze da Black Friday começa em 01/11** e trava o PRJ-011, o PRJ-003 e o PRJ-024, e o modelo já
+> marcou o **PRJ-024** (situação ok hoje, SPI 0,91) com **49% de chance** de estourar no próximo mês: no
+> freeze do ano passado o SPI dele foi de 0,99 a 0,70. E dois contratos (NuvemSul e
 > DataPrime, R$ 21,4 mi por ano) renovaram sozinhos em outubro porque ninguém viu o aviso prévio."
 
 ### 2:50 – 3:00 · O pedido
@@ -63,8 +62,7 @@ Vá ao **Simulador**, COL0017 → PRJ-011, mostre os **19 dias** de cronograma r
 
 - **Um número por frase.** "R$ 6,5 milhões" fica; "SPI de 0,77" só se alguém perguntar.
 - **A demo é UMA pergunta.** Ensaie. Se o Genie demorar, fale do problema enquanto ele pensa.
-- **Diga de onde vem cada número.** "Está no status de sexta", "está na seção 5 do manual", "está na
-  cláusula 6 do contrato". Confiança é rastreabilidade.
+- **Diga de onde vem cada número.** "Está no status de sexta", "está na cláusula 6 do contrato". Confiança é rastreabilidade.
 - **Premissa é premissa.** Diga "se recuperarmos 50%", nunca "vamos recuperar".
 - **Dia de cronograma não é real.** Os 19 dias recuperados no PRJ-011 entram no discurso, não na conta de
   ROI: sem uma multa ou uma receita atrelada, eles não viram dinheiro.

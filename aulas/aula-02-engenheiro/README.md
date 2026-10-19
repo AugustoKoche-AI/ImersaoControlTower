@@ -25,9 +25,9 @@ custa nada"), porque olhava dado sujo e espalhado. Hoje ele acerta as quatro, e 
 | 1. Quais projetos estão atrasados, e de quais clientes? | prompt 3 (gold) | 7 críticos, 10 em atenção, 4 "melancias" |
 | 2. Quanto esse atraso vai custar? | prompt 3 (gold) + prompt 5 (métricas) | R$ 6,47 mi de estouro previsto |
 | 3. Tenho gente parada enquanto outro projeto pede gente? | prompt 3 (timesheet) + prompt 4 (IA no status) | 2 SREs a ~5% no PRJ-007; o PRJ-011 pede SRE há 12 semanas |
-| 4. O que vai dar errado no próximo mês? | prompt 3 (capacidade e fornecedores) | 15 contratos com ruptura prevista, 5 entregas da CodeForge atrasadas |
+| 4. O que vai dar errado no próximo mês? | silver (fornecedores) + Genie (prompt 6) | 5 entregas da CodeForge atrasadas e o change freeze da Black Friday (01/11 a 10/01) nos projetos de e-commerce |
 
-A pergunta 4 ganha um modelo de previsão amanhã. Hoje ela já tem os sinais.
+A pergunta 4 ganha um modelo de previsão amanhã (`gold.score_estouro_30d`, noite 3). Hoje ela já tem os sinais.
 
 ---
 
@@ -68,10 +68,10 @@ linha, com o projeto (`PRJ-019`) e a ferramenta de origem ao lado.
 ## 🏗️ O desenho do que você vai construir
 
 ```
- bronze (noite 1)  ──►  pipeline vertice_medalhao  ──►  IA nos textos  ──►  metric views  ──►  dashboard + Genie
- 13 tabelas:            silver: limpa e junta            status semanal       5 mv_*             "Projeto Farol · Portfólio"
- CSV, Excel,            as 3 ferramentas                 e postmortems                           "Farol · Diretoria"
- JSON, XML              gold: os KPIs
+ bronze (noite 1)  ──►  pipeline vertice_medalhao  ──►  IA no texto  ──►  metric view  ──►  dashboard + Genie
+ 9 tabelas:             silver (7): limpa e junta        status semanal     mv_projetos        "Projeto Farol · Portfólio"
+ CSV, Excel,            as 3 ferramentas                                                      "Farol · Diretoria"
+ JSON, XML              gold (3): os KPIs
 
  └──────────────────────── tudo dentro do job vertice_farol, toda segunda às 6h ────────────────────────┘
 ```
@@ -85,14 +85,13 @@ linha, com o projeto (`PRJ-019`) e a ferramenta de origem ao lado.
  │                                                                                    │
  │  conferencia_bronze ──► medalhao ──┬──► testes_de_qualidade ──┐                    │
  │  (sql_task)             (pipeline) │    (sql_task, 10 testes) │                    │
- │  13 contagens           silver ×11 ├──► status_com_ia ────────┼──► metricas_       │
- │  ou raise_error         gold ×7    │    (regra + ai_classify  │    governadas      │
- │                         EXPECT     │     + ai_extract, MERGE) │    (5 metric       │
- │                                    └──► postmortem_com_ia ────┘     views)         │
+ │  9 contagens            silver ×7  └──► status_com_ia ────────┴──► metricas_       │
+ │  ou raise_error         gold ×3         (regra + ai_classify       governadas      │
+ │                         EXPECT           + ai_extract, MERGE)      (mv_projetos)   │
  └────────────────────────────────────────────────────────────────────────────────────┘
         ▲                                                                  │
-   bronze (noite 1)                      dashboard_portfolio ◄── gold + mv_* ──► genie_farol
-   13 tabelas: CSV, Excel, JSON, XML      (bundle, 3 páginas)                    (bundle, 20 perguntas)
+   bronze (noite 1)                 dashboard_portfolio ◄── gold + mv_projetos ──► genie_farol
+   9 tabelas: CSV, Excel, JSON, XML  (bundle, 3 páginas)                          (bundle, 20 perguntas)
 ```
 
 ```
@@ -104,11 +103,9 @@ bronze.status_semanal ───► silver.status_semanal ───────�
 bronze.custos ───────────► silver.custos ─────────────────────────┤
 bronze.apontamentos ─────► silver.apontamentos ──┐                │
 bronze.colaboradores ────► silver.colaboradores ─┴────────────────┴─► gold.utilizacao_pessoa_semana
-bronze.entregas_forn. ───► silver.entregas_fornecedor ──────────────► gold.desempenho_fornecedor · gold.entregas_em_atraso
-bronze.contratos_cap. ───► silver.contratos_capacidade ─┐
-bronze.consumo_cap. ─────► silver.consumo_capacidade ───┴───────────► gold.cobertura_capacidade
-bronze.postmortems ──────► silver.postmortems ──(job: postmortem_com_ia)──► gold.postmortem_estruturado
+bronze.entregas_forn. ───► silver.entregas_fornecedor ──────────────► (lida direto pelo dashboard e pelo Genie)
                            silver.status_semanal ──(job: status_com_ia)───► gold.status_estruturado
+                           gold.projeto_situacao_atual ──(job: metricas_governadas)──► gold.mv_projetos
 ```
 
 </details>
@@ -195,16 +192,16 @@ Pronto. Agora é prompt a prompt.
 Cada prompt termina com um **deploy**. Enquanto o Claude Code trabalha, o professor explica o
 conceito: o tempo de espera vira aula. O texto exato de cada prompt está no arquivo (copie e cole);
 a sequência inteira está em [`PROMPTS.md`](../../PROMPTS.md). Antes de cada um, o Claude Code lê
-[`prd/CLAUDE.md`](prd/CLAUDE.md): o negócio, as 19 sujeiras do dado, a arquitetura e as armadilhas
+[`prd/CLAUDE.md`](prd/CLAUDE.md): o negócio, as 18 sujeiras do dado, a arquitetura e as armadilhas
 do Free Edition já medidas.
 
 | # | Arquivo | O que entrega | Tempo medido |
 |---|---|---|---|
 | 1 | [`prompt-01-bundle.md`](prd/prompt-01-bundle.md) | bundle + job + conferência da bronze | ~40 s |
-| 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline, `silver.tarefas` + 10 tabelas | ~2 min |
-| 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | fato projeto × semana + 6 tabelas gold + 10 testes | ~3 min |
-| 4 | [`prompt-04-texto-com-ia.md`](prd/prompt-04-texto-com-ia.md) | `status_estruturado` e `postmortem_estruturado` | ~2 min |
-| 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | 5 metric views | ~20 s |
+| 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline, `silver.tarefas` + 6 tabelas | ~2 min |
+| 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | 3 tabelas gold (fotografia, filme, pessoas) + 10 testes | ~3 min |
+| 4 | [`prompt-04-texto-com-ia.md`](prd/prompt-04-texto-com-ia.md) | `status_estruturado` (ai_classify + ai_extract) | ~2 min |
+| 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | a metric view `mv_projetos` | ~10 s |
 | 6 | [`prompt-06-dashboard-e-genie.md`](prd/prompt-06-dashboard-e-genie.md) | dashboard + Genie + benchmark | ~6 min |
 
 Se um prompt não entregar, o **gabarito** está em [`vertice/`](vertice): compare o arquivo.
@@ -212,7 +209,7 @@ Se um prompt não entregar, o **gabarito** está em [`vertice/`](vertice): compa
 ### Prompt 1 · O projeto vira código
 
 **O que você pede:** criar o bundle `vertice` em `meu-vertice/`, com o job `vertice_farol` e uma
-primeira tarefa que só **confere** a bronze: as 13 tabelas da noite 1 têm o número de linhas
+primeira tarefa que só **confere** a bronze: as 9 tabelas da noite 1 têm o número de linhas
 esperado? Se não, o job para com uma mensagem dizendo o que fazer.
 
 **A ideia:** sexta que vem os gerentes atualizam tudo de novo. Quem roda? Na mão? Com o bundle, o
@@ -220,7 +217,7 @@ projeto fica no Git (tem histórico e revisão) e o `bundle deploy` sobe tudo ig
 qualquer pessoa. E antes de calcular qualquer KPI, a gente confere se o dado chegou inteiro: melhor
 o dashboard com o dado da semana passada do que com meio dado.
 
-**O que conferir:** abra o job no workspace. Uma caixa só, verde, com 13 linhas `ok`. Esse desenho
+**O que conferir:** abra o job no workspace. Uma caixa só, verde, com 9 linhas `ok`. Esse desenho
 vai crescer a noite inteira.
 
 ![Pasta .bundle/vertice/dev/files/src no workspace](../../docs/img/recurso-workspace-bundle.jpg)
@@ -262,7 +259,7 @@ SELECT ROUND(SUM(valor) / 1e6, 2) FROM lakehouse_vertice.silver.custos;   -- 193
 ```
 
 ![Pipeline vertice_medalhao concluído, com o grafo e a lista de tabelas](../../docs/img/noite2-pipeline.jpg)
-*O grafo que o Lakeflow desenhou sozinho: `tarefas_excel`, `tarefas_clickup` e `tarefas_msproject` desaguando em `tarefas`. Embaixo, cada tabela com a duração e as linhas gravadas (`dim_projeto` = 60). Clique numa tabela e abra **Data quality** para ver os `EXPECT`.*
+*O grafo que o Lakeflow desenhou sozinho: `tarefas_excel`, `tarefas_clickup` e `tarefas_msproject` desaguando em `tarefas`. Embaixo, cada tabela com a duração e as linhas gravadas. (O print é do ensaio, antes da simplificação: ainda aparecem tabelas que saíram, como `dim_projeto`.) Clique numa tabela e abra **Data quality** para ver os `EXPECT`.*
 
 ![Jobs & Pipelines filtrado por "vertice"](../../docs/img/recurso-jobs-pipelines.jpg)
 *Em **Jobs & Pipelines**, busque `vertice`: o job `vertice_farol` (agendamento **Paused**, de propósito no ambiente de desenvolvimento) e o pipeline `vertice_medalhao`. As bolinhas vermelhas são execuções que falharam no ensaio: faz parte.*
@@ -272,14 +269,16 @@ SELECT ROUND(SUM(valor) / 1e6, 2) FROM lakehouse_vertice.silver.custos;   -- 193
 
 ### Prompt 3 · A gold responde às perguntas do dono
 
-**O que você pede:** no mesmo pipeline, as tabelas gold. As duas principais:
+**O que você pede:** no mesmo pipeline, três tabelas gold, uma por pergunta:
 
-- `projeto_situacao_atual`: a **fotografia de hoje** (16/10/2026), uma linha por projeto, com SPI,
-  CPI, estouro previsto e a situação (crítico, atenção, ok).
+- `projeto_situacao_atual`: a **fotografia de hoje** (16/10/2026), uma linha por projeto, com o
+  cadastro (cliente, segmento, tipo, ferramenta, gerente, contrato, prazo), SPI, CPI, estouro
+  previsto e a situação (crítico, atenção, ok).
 - `fato_projeto_semana`: o **filme**, projeto × semana, para ver quem está piorando.
+- `utilizacao_pessoa_semana`: as **pessoas**, do timesheet, para achar quem está parado.
 
-E mais as tabelas de pessoas (utilização do timesheet), fornecedores e capacidade, e uma tarefa de
-**10 testes** que quebra o job se algum número não fechar.
+E uma tarefa de **10 testes** que quebra o job se algum número não fechar. Fornecedor não ganha
+tabela gold: a `silver.entregas_fornecedor` já tem o nome normalizado e responde direto.
 
 **A pergunta para a turma antes do prompt:** de onde vem o histórico? Excel, ClickUp e Project só
 guardam o % de *hoje*. O único lugar com o % de cada semana é o **status semanal** que o gerente
@@ -298,19 +297,18 @@ duas SREs paradas aparecem no timesheet: COL0017 e COL0018, a ~5% no PRJ-007, qu
 desenho. É meia pergunta 3 do dono respondida (a outra metade vem no prompt 4).
 
 ![Schema gold no Catalog Explorer](../../docs/img/agora-gold.jpg)
-*A gold no Catalog Explorer, com a descrição do schema. Repare nas tabelas da noite: `cobertura_capacidade`, `desempenho_fornecedor`, `dim_projeto`, `entregas_em_atraso`, `fato_projeto_semana`. (As de `contratos_*`, `features_*` e `manual_*` são das noites 3 e 4.)*
+*A gold no Catalog Explorer, com a descrição do schema. As tabelas desta noite são `fato_projeto_semana`, `projeto_situacao_atual`, `utilizacao_pessoa_semana`, `status_estruturado` e a metric view `mv_projetos`. (O print é do ensaio, antes da simplificação: ainda mostra tabelas que saíram, como `dim_projeto` e `cobertura_capacidade`, e as das noites 3 e 4.)*
 
 ![Linhagem da projeto_situacao_atual](../../docs/img/recurso-lineage-grafo.jpg)
-*Aba **Lineage** › **See lineage graph**: a `projeto_situacao_atual` nasce de quatro tabelas silver (`dim_projeto`, `tarefas`, `status_semanal`, `custos`) e alimenta a `mv_projetos`. Ninguém desenhou isso: o Unity Catalog anota sozinho.*
+*Aba **Lineage** › **See lineage graph**: a `projeto_situacao_atual` nasce de quatro tabelas silver (`projetos`, `tarefas`, `status_semanal`, `custos`) e alimenta a `mv_projetos`. (No print, do ensaio, ainda aparece a antiga `dim_projeto` no lugar de `projetos`.) Ninguém desenhou isso: o Unity Catalog anota sozinho.*
 
 > **"Melancia"** é o projeto verde por fora e vermelho por dentro: o gerente marca farol verde, mas o
 > SPI está abaixo de 0,9. São 4: PRJ-012, PRJ-028, PRJ-034, PRJ-042.
 
 ### Prompt 4 · O texto vira coluna, com IA
 
-**O que você pede:** duas tabelas novas. A `status_estruturado` lê o texto livre do status semanal e
-tira a **causa do bloqueio**, o bloqueio, quem destrava e os dias de impacto. A
-`postmortem_estruturado` faz o mesmo com os 101 relatórios de incidente.
+**O que você pede:** uma tabela nova, a `status_estruturado`. Ela lê o texto livre do status
+semanal e tira a **causa do bloqueio**, o bloqueio, quem destrava e os dias de impacto.
 
 **A ideia:**
 
@@ -342,8 +340,9 @@ PRJ-011 pede SRE no status há 12 semanas.**
 
 ### Prompt 5 · O KPI definido uma vez só
 
-**O que você pede:** 5 metric views (`mv_projetos`, `mv_evolucao`, `mv_pessoas`, `mv_capacidade`,
-`mv_fornecedores`) e a última tarefa do job, `metricas_governadas`.
+**O que você pede:** uma metric view, a `mv_projetos`, e a última tarefa do job,
+`metricas_governadas`. Uma só, de propósito: é a dos números da diretoria. Evolução, pessoas e
+fornecedores o Genie responde direto nas tabelas.
 
 **A ideia:** ontem o mesmo CPI do PRJ-009 deu 0,77 no SQL e 1,9 no Genie (que inventou a fórmula).
 Quando o dono recebe dois números, não confia em nenhum. A metric view guarda a **fórmula**
@@ -364,7 +363,7 @@ FROM lakehouse_vertice.gold.mv_projetos;
 *A `mv_projetos` no catálogo: 11 medidas, cada uma com o seu comentário em português ("Abaixo de 1 é atraso"). É esse texto que o Genie lê para entender o KPI.*
 
 ![DAG do job vertice_farol com todas as tarefas verdes](../../docs/img/noite2-job.jpg)
-*O job depois do prompt 5: `conferencia_bronze` → `medalhao` → três tarefas **em paralelo** (`postmortem_com_ia`, `status_com_ia`, `testes_de_qualidade`) → `metricas_governadas`. Hoje o seu termina aí, com seis caixas; as três de `ml_` à direita entram amanhã, na noite 3.*
+*O job depois do prompt 5: `conferencia_bronze` → `medalhao` → duas tarefas **em paralelo** (`status_com_ia`, `testes_de_qualidade`) → `metricas_governadas`. Hoje o seu termina aí, com cinco caixas; as três de `ml_` entram amanhã, na noite 3 (8 tarefas no total). O print é do ensaio: ainda mostra a antiga `postmortem_com_ia`.*
 
 ### Prompt 6 · O dono pergunta em português
 
@@ -387,8 +386,8 @@ as 20 perguntas de novo.
 ![Página Pessoas: custo da hora parada](../../docs/img/noite2-pessoas.jpg)
 *Página **Pessoas**, a pergunta 3: as duas barras maiores são as SREs do PRJ-007 (`sre · PRJ-007`). Repare que logo abaixo vêm várias pessoas do PRJ-011: o projeto que pede SRE.*
 
-![Página Capacidade e fornecedores](../../docs/img/noite2-capacidade.jpg)
-*Página **Capacidade e fornecedores**, a pergunta 4: contratos com ruptura prevista por projeto e a tabela de fornecedores. Repare na CodeForge: 4 grafias no cadastro, prazo real 1,41 vez o prometido, 0% no prazo.*
+![Página Fornecedores](../../docs/img/noite2-capacidade.jpg)
+*Página **Fornecedores**, metade da pergunta 4: a tabela por fornecedor e as entregas em atraso hoje, lidas direto da `silver.entregas_fornecedor`. Repare na CodeForge: 4 grafias no cadastro, prazo real 1,41 vez o prometido, 0% no prazo, 5 entregas em atraso. (O print é do ensaio, quando a página ainda se chamava "Capacidade e fornecedores" e tinha um gráfico de contratos.)*
 
 **O Genie:**
 
@@ -404,8 +403,8 @@ as 20 perguntas de novo.
 **O que conferir:**
 
 - As quatro perguntas do dono certas: 17 projetos de 13 clientes · R$ 6,47 mi de estouro · as duas
-  SREs paradas · os contratos com ruptura, as entregas da CodeForge e o freeze de 01/11 nos projetos
-  de e-commerce.
+  SREs paradas · as entregas atrasadas da CodeForge e o freeze de 01/11 nos projetos de e-commerce
+  (a previsão de verdade é o modelo da noite 3).
 - O benchmark passa de **16/20**. No ensaio de 18/10: 18/20 na primeira rodada e **20/20** depois de
   duas instruções a mais.
 
@@ -438,13 +437,11 @@ python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --pro
 | Estouro previsto (em andamento) | **R$ 6,47 mi** (o mesmo do rascunho da noite 1) |
 | Margem projetada da carteira | 20,4% |
 | Melancias (farol verde, SPI < 0,9) | 4: PRJ-012, PRJ-028, PRJ-034, PRJ-042 |
-| Rupturas de capacidade previstas | 15 de 56 contratos (11 de cloud, 4 de banco de horas) |
 | Entregas em atraso | 5, todas da CodeForge |
 | CodeForge: prazo real ÷ prometido | 1,41 (0% no prazo) |
 | SREs com < 20% de uso (12 semanas) | COL0017 e COL0018, no PRJ-007, ~450 h paradas cada |
 | PRJ-011 nos últimos 90 dias | falta de SRE: 12 semanas, 57 dias de impacto |
 | Status classificados por IA / regra / palavra-chave | 163 / 2.954 / 794 |
-| Postmortems estruturados | 101 (deploy sem teste é a causa nº 1: 44) |
 
 **Por que o estouro é igual ao de ontem?** Porque a fotografia de hoje faz a mesma conta do
 rascunho, sobre as mesmas tarefas. O que muda é que agora o número tem **contrato, teste e roda
@@ -486,7 +483,7 @@ A bronze e o volume nunca são apagados (são da noite 1).
 ```bash
 cd aulas/aula-02-engenheiro/vertice
 databricks bundle deploy --profile <perfil>
-databricks bundle run vertice_farol --profile <perfil>    # silver, gold, IA, testes, métricas e (noite 3) o modelo
+databricks bundle run vertice_farol --profile <perfil>    # 8 tarefas: silver, gold, IA, testes, métrica e (noite 3) o modelo
 databricks bundle deploy --profile <perfil>               # 2º deploy: o Genie precisa das tabelas
 python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 ```

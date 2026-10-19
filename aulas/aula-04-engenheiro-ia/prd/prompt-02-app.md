@@ -50,18 +50,18 @@ databricks-app-design.
 
 2. config/queries (apague os exemplos do template):
    - kpis.sql: projetos em andamento, em risco (atenção+crítico), críticos, melancias,
-     estouro previsto e carteira (projeto_situacao_atual), rupturas de capacidade
-     (cobertura_capacidade) e multa a cobrar de fornecedor na vigência atual
-     (contratos_multa_fornecedor).
+     estouro previsto e carteira (projeto_situacao_atual), alto risco em 30 dias
+     (faixa_risco = 'alto' na data_referencia mais recente de score_estouro_30d) e multa a
+     cobrar de fornecedor, calculada na própria query com gold.contratos +
+     silver.entregas_fornecedor (a mesma conta do prompt 1, só a vigência atual).
    - projetos_risco.sql: projetos em andamento do pior para o melhor, com SPI, CPI, estouro,
      atraso projetado, farol do gerente × calculado, melancia, a causa mais frequente no
      status_estruturado dos últimos 90 dias, os dias de impacto por falta_sre e por
-     rotatividade, rupturas de capacidade e multa a cobrar por projeto.
+     rotatividade e multa a cobrar por projeto (mesma conta da multa).
    - pessoas_ociosas.sql: pessoas com utilização < 20% nas últimas 12 semanas
      (utilizacao_pessoa_semana), com horas paradas e custo ocioso MÉDIOS por semana e custo_hora.
-   A probabilidade de estouro (gold.score_estouro_30d, da noite 3) NÃO vai em config/queries:
-   a tabela pode não existir e quebraria o build. Faça uma rota GET /api/score-estouro no
-   servidor que responde {disponivel, linhas}.
+   A probabilidade por projeto (gold.score_estouro_30d, da noite 3) vem de uma rota
+   GET /api/score-estouro no servidor que responde {disponivel, linhas}.
 
 3. Telas (português, R$, índices com 2 casas, Number() em tudo que vem do warehouse):
    - Projetos em risco: 4 KPIs + tabela (situação com cor: crítico vermelho, atenção âmbar;
@@ -77,7 +77,7 @@ databricks-app-design.
 4. npm run typecheck, npm run lint, npm test, databricks apps validate.
    Depois: databricks bundle deploy --profile <perfil> (cria o app e o service principal).
    Crie scripts/conceder-acesso.sh (lê o service_principal_client_id com apps get e dá
-   USE CATALOG em lakehouse_vertice e USE SCHEMA + SELECT na gold), rode e faça
+   USE CATALOG em lakehouse_vertice e USE SCHEMA + SELECT na gold e na silver), rode e faça
    databricks apps deploy --profile <perfil>. Me mostre a URL.
 ```
 
@@ -88,7 +88,7 @@ databricks-app-design.
 - `apps validate`: typegen, lint, typecheck, build e testes ✅.
 - Sem os `GRANT`, o `apps deploy` falha com `INSUFFICIENT_PERMISSIONS` no typegen do build: **é esperado**.
 - Na URL (1ª visita pede **Authorize**): **17 de 41** projetos em risco (7 críticos, 4 com farol verde),
-  **R$ 6,5 mi** de estouro, **R$ 1,2 mi** de multa a cobrar de fornecedor, **15** rupturas de capacidade;
+  **R$ 6,5 mi** de estouro, **R$ 1,2 mi** de multa a cobrar de fornecedor, **18** em alto risco em 30 dias;
   PRJ-016 e PRJ-030 no topo, PRJ-011 com causa "falta de SRE".
 - Simulador: **COL0017** (SRE sênior, PRJ-007, uso de 6%) → **PRJ-011** dá **151 h** no mês,
   **R$ 30,1 mil** de ociosidade evitada, **19,0 dias** de cronograma recuperados, R$ 8,0 mil de onboarding

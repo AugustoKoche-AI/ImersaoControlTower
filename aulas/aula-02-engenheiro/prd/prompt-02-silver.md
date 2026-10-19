@@ -2,7 +2,7 @@
 
 **Entrega:** o pipeline declarativo `vertice_medalhao` com a silver: o cadastro do
 PMO, a **`silver.tarefas` que integra Excel, ClickUp e MS Project**, e as outras
-tabelas limpas e tipadas, com as regras de qualidade declaradas como `EXPECT`.
+cinco tabelas limpas e tipadas (7 no total), com as regras de qualidade declaradas como `EXPECT`.
 **Deploy nº 2.**
 
 > **A entrega mais importante da noite. Não corte.**
@@ -118,18 +118,18 @@ pct entre 0 e 100 e horas > 0, todos FAIL UPDATE.
 04-pessoas.sql
 - colaboradores: COL0102, COL0257 e COL0433 aparecem duas vezes (nome e papel
   em CAIXA ALTA). Mantenha o cadastro com papel em minúsculas (row_number).
-- alocacoes tipada; apontamentos com semana = semana_inicio + 4 (sexta).
+- apontamentos com semana = semana_inicio + 4 (sexta).
 
-05-fornecedores-e-capacidade.sql
-- entregas_fornecedor: a CodeForge vem de 4 jeitos ('CodeForge Consultoria
-  Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA LTDA', 'Code Forge
-  Consultoria'): normalize (replace(lower(x), ' ', '') LIKE '%codeforge%') e
-  guarde fornecedor_como_veio. data_entrega vazia = em aberto (não é sujeira).
-  prazo_real_dias, dias_de_atraso_na_entrega, em_aberto e em_atraso (em
-  aberto e data_prometida antes de DATE'2026-10-16').
-- contratos_capacidade tipada; consumo_capacidade com saldo negativo → 0 e flag.
+05-fornecedores.sql — entregas_fornecedor: a CodeForge vem de 4 jeitos
+('CodeForge Consultoria Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA
+LTDA', 'Code Forge Consultoria'): normalize (replace(lower(x), ' ', '') LIKE
+'%codeforge%') e guarde fornecedor_como_veio. data_entrega vazia = em aberto
+(não é sujeira). prazo_prometido_dias, prazo_real_dias,
+dias_de_atraso_na_entrega, em_aberto e em_atraso (em aberto e data_prometida
+antes de DATE'2026-10-16').
 
-06-postmortems.sql — tipado, EXPECT severidade IN ('SEV1','SEV2','SEV3').
+São 7 tabelas na silver, nem uma a mais: projetos, tarefas, status_semanal,
+custos, colaboradores, apontamentos e entregas_fornecedor.
 
 Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.

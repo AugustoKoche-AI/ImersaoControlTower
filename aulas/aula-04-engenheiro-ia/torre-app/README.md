@@ -1,14 +1,14 @@
 # farol-torre · gabarito da noite 4
 
 O app **Projeto Farol** da Vértice Tecnologia (Databricks App, AppKit: React + TypeScript + Express) e o
-**agente que lê contrato e manual**, num bundle só. É o resultado dos 3 prompts da noite 4.
+**agente que lê contrato**, num bundle só. É o resultado dos 3 prompts da noite 4.
 Para construir o seu, siga [`../prd/`](../prd) na pasta [`../minha-torre/`](../minha-torre).
 
 ```
 torre-app/
 ├── agente/
-│   ├── 01-contratos.sql              PDF → elementos → cláusulas e seções do manual → resumo (ai_extract com
-│   │                                 JSON schema tipado) → multa a cobrar e avisos prévios
+│   ├── 01-contratos.sql              8 PDFs → silver.documentos_elementos → silver.contratos_clausulas →
+│   │                                 gold.contratos (ai_extract com JSON schema tipado) + consultas da multa e dos avisos
 │   ├── gerar_genie.py                gera o Genie "Farol · Diretoria + Contratos"
 │   └── diretoria-contratos-genie.json  (gerado; NÃO use .geniespace.json: o import do app recusa)
 ├── config/queries/                   leitura no SQL warehouse (typegen gera os tipos)
@@ -36,7 +36,7 @@ bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh <perfil>
 ```
 
 1. cria o projeto Lakebase `farol-torre` (7 s);
-2. roda `agente/01-contratos.sql` (~1 min para os 9 PDFs);
+2. roda `agente/01-contratos.sql` (~1 min para os 8 contratos);
 3. gera e publica o Genie e grava o id dele no `databricks.yml`;
 4. `apps deploy` → `conceder-acesso.sh` → `apps deploy` (o build falha sem os GRANTs).
 
@@ -48,7 +48,7 @@ set -a; . ./.env; set +a; npm run typegen -- --wait   # tipos das queries (wareh
 npm run typecheck && npm run lint && npm test
 databricks apps validate --profile <perfil>
 databricks apps deploy   --profile <perfil>
-databricks bundle run farol_contratos --profile <perfil>   # reprocessa contratos e manual (~1 min)
+databricks bundle run farol_contratos --profile <perfil>   # reprocessa os contratos (~1 min)
 databricks apps logs farol-torre --profile <perfil>
 uv run --no-project --with "psycopg[binary]" python scripts/ver_decisoes.py --profile <perfil>
 ```

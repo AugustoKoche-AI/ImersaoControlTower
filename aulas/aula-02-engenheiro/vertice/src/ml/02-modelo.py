@@ -35,7 +35,7 @@ dbutils.library.restartPython()
 dbutils.widgets.text("catalog", "lakehouse_vertice")
 catalog = dbutils.widgets.get("catalog")
 
-MODELO = f"{catalog}.gold.modelo_estouro_30d"
+MODELO = f"{catalog}.ml.modelo_estouro_30d"
 SEMENTE = 42
 CORTE = 0.9                      # a regra de corte da Torre: abaixo de 0,9 é atenção
 CORTE_TREINO = "2026-03-06"      # treina com as semanas até aqui
@@ -54,14 +54,14 @@ from sklearn.metrics import roc_auc_score
 FEATURES = [
     "spi", "cpi", "indice_min", "d_indice_min_4s", "pct_fisico", "pct_prazo",
     "d_spi_4s", "d_cpi_4s", "d_spi_8s", "d_cpi_8s", "semanas_cpi_caindo", "cpi_ultimas_4s", "spi_ultimas_4s",
-    "ociosidade_4s", "rupturas_capacidade", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s", "incidentes_8s",
+    "ociosidade_4s", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s",
     "status_freeze_4s", "status_falta_sre_4s", "status_fornecedor_4s", "status_rotatividade_4s",
     "status_escopo_4s", "status_retrabalho_4s", "status_com_bloqueio_4s",
 ]
 
 # DECIMAL vira objeto Decimal no pandas e quebra o registro do modelo
 # ("Object of type Decimal is not JSON serializable"): tudo para double.
-dados = spark.table(f"{catalog}.gold.features_projeto_semana").toPandas()
+dados = spark.table(f"{catalog}.ml.features_projeto_semana").toPandas()
 dados["semana"] = pd.to_datetime(dados["semana"])
 dados[FEATURES] = dados[FEATURES].astype(float)
 
@@ -285,7 +285,7 @@ metricas = pd.DataFrame([{
     "feature_principal": importancia.iloc[0]["feature"], "corte_treino": CORTE_TREINO,
 }])
 (spark.createDataFrame(metricas).write.mode("overwrite").option("overwriteSchema", "true")
- .saveAsTable(f"{catalog}.gold.modelo_metricas"))
-spark.sql(f"COMMENT ON TABLE {catalog}.gold.modelo_metricas IS "
+ .saveAsTable(f"{catalog}.ml.modelo_metricas"))
+spark.sql(f"COMMENT ON TABLE {catalog}.ml.modelo_metricas IS "
           "'Noite 3: métricas da última versão do modelo de estouro em 30 dias (AUC, baseline, estouros avisados, sigma).'")
-display(spark.table(f"{catalog}.gold.modelo_metricas"))
+display(spark.table(f"{catalog}.ml.modelo_metricas"))

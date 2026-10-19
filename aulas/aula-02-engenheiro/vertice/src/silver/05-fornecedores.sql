@@ -1,12 +1,10 @@
--- silver.entregas_fornecedor, silver.contratos_capacidade e silver.consumo_capacidade:
--- o que as consultorias prometem entregar e quanto ainda resta de horas e de cloud.
+-- silver.entregas_fornecedor: o que as consultorias prometem entregar, e quando entregam.
 --
 -- Sujeiras resolvidas aqui:
 --   · a MESMA consultoria digitada de quatro jeitos ('CodeForge Consultoria Ltda',
 --     'Codeforge Consultoria', 'CODEFORGE CONSULTORIA LTDA', 'Code Forge Consultoria').
 --     Sem normalizar, ela vira quatro fornecedores medianos — e o pior fornecedor
 --     da carteira some do ranking.
---   · saldo negativo no consumo (erro de lançamento): vira 0 e ganha flag.
 --   · data_entrega vazia NÃO é sujeira: é entrega ainda em aberto.
 
 CREATE OR REFRESH MATERIALIZED VIEW entregas_fornecedor (
@@ -31,30 +29,3 @@ AS SELECT
   status = 'em_aberto'                                                    AS em_aberto,
   status = 'em_aberto' AND CAST(data_prometida AS DATE) < DATE'2026-10-16' AS em_atraso
 FROM lakehouse_vertice.bronze.entregas_fornecedor;
-
-CREATE OR REFRESH MATERIALIZED VIEW contratos_capacidade
-COMMENT 'Contratos de capacidade por projeto: banco de horas de consultoria (horas) e créditos de cloud (R$), com quantidade contratada e vigência.'
-AS SELECT
-  contrato_id,
-  projeto_id,
-  fornecedor,
-  tipo,
-  unidade,
-  CAST(quantidade_contratada AS DOUBLE)     AS quantidade_contratada,
-  CAST(data_inicio AS DATE)                 AS data_inicio,
-  CAST(data_fim_vigencia AS DATE)           AS data_fim_vigencia,
-  CAST(valor_contrato AS DECIMAL(18,2))     AS valor_contrato
-FROM lakehouse_vertice.bronze.contratos_capacidade;
-
-CREATE OR REFRESH MATERIALIZED VIEW consumo_capacidade (
-  CONSTRAINT saldo_nao_negativo EXPECT (saldo >= 0) ON VIOLATION FAIL UPDATE
-)
-COMMENT 'Saldo semanal (sexta) de cada contrato de capacidade, o consumo da semana e o consumo diário previsto para as próximas 4 semanas.'
-AS SELECT
-  contrato_id,
-  CAST(data AS DATE)                          AS data,
-  CAST(consumido_semana AS DOUBLE)            AS consumido_semana,
-  greatest(CAST(saldo AS DOUBLE), 0)          AS saldo,
-  CAST(saldo AS DOUBLE) < 0                   AS saldo_negativo_corrigido,
-  CAST(consumo_previsto_dia AS DOUBLE)        AS consumo_previsto_dia
-FROM lakehouse_vertice.bronze.consumo_capacidade;

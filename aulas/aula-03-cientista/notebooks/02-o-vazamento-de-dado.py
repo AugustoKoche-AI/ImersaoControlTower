@@ -24,11 +24,11 @@ from sklearn.model_selection import train_test_split
 FEATURES = [
     "spi", "cpi", "indice_min", "d_indice_min_4s", "pct_fisico", "pct_prazo",
     "d_spi_4s", "d_cpi_4s", "d_spi_8s", "d_cpi_8s", "semanas_cpi_caindo", "cpi_ultimas_4s", "spi_ultimas_4s",
-    "ociosidade_4s", "rupturas_capacidade", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s", "incidentes_8s",
+    "ociosidade_4s", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s",
     "status_freeze_4s", "status_falta_sre_4s", "status_fornecedor_4s", "status_rotatividade_4s",
     "status_escopo_4s", "status_retrabalho_4s", "status_com_bloqueio_4s",
 ]
-d = spark.table("lakehouse_vertice.gold.features_projeto_semana").toPandas().sort_values(["projeto_id", "semana"])
+d = spark.table("lakehouse_vertice.ml.features_projeto_semana").toPandas().sort_values(["projeto_id", "semana"])
 d["semana"] = pd.to_datetime(d["semana"])
 d[FEATURES] = d[FEATURES].astype(float)
 # a feature proibida: o pior índice (menor entre SPI e CPI) de 4 semanas DEPOIS da linha.
@@ -62,6 +62,10 @@ display(resultado)
 
 # MAGIC %md
 # MAGIC **Medido em 18/10/2026:** A 0,922 · B 0,917 · C 0,991.
+# MAGIC
+# MAGIC *Esses números são da versão com 26 features. Em 19/10 saíram duas (capacidade e incidentes) e o modelo
+# MAGIC honesto continuou em 0,92; este notebook não foi medido de novo, então a 2ª casa pode variar um pouco.
+# MAGIC A ordem (C acima de 0,98 e barrado; A e B parecidos) é o que importa.*
 # MAGIC
 # MAGIC **A lição:** desta vez a divisão aleatória (B) não inflou o número — e isso não prova nada. Ela mede uma
 # MAGIC situação que o modelo nunca vai enfrentar: na segunda-feira ele não tem a semana seguinte para colar. Às vezes

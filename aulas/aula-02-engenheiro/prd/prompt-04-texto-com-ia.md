@@ -1,8 +1,8 @@
-# Prompt 4 · Texto com IA — o status e o postmortem viram coluna
+# Prompt 4 · Texto com IA — o status semanal vira coluna
 
 **Entrega:** `gold.status_estruturado` (causa do bloqueio, o bloqueio, quem destrava e
-dias de impacto, tirados dos 3.911 status semanais) e `gold.postmortem_estruturado`
-(serviço, causa raiz, duração e usuários afetados dos 101 postmortems). **Deploy nº 4.**
+dias de impacto, tirados dos 3.911 status semanais). Uma tabela, duas funções de IA.
+**Deploy nº 4.**
 
 ---
 
@@ -46,9 +46,6 @@ SELECT ai_extract('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimad
     status) e o status vazio. Custo zero, resposta exata.
   - **IA** para o texto com bloqueio dos últimos 90 dias (~160 status, ~2 minutos).
   - **palavra-chave** para o histórico antigo, onde a resposta não muda decisão.
-- **O postmortem é o caso de ouro do `ai_extract`.** A duração vem escrita de três jeitos
-  ("37 minutos", "1h25min", "das 14h10 às 15h45"). Regra nenhuma pega os três; o schema
-  `duracao_minutos: number` pega.
 - **`MERGE` incremental.** A tarefa só processa texto que ainda não está na tabela. Na
   semana que vem ela processa só os status da semana que vem. Não reprocesse o passado.
 
@@ -58,10 +55,10 @@ SELECT ai_extract('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimad
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
-vira coluna: o status semanal e os postmortems. Use as funções de IA na versão
-2.0 (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+do status semanal vira coluna. Use as funções de IA na versão 2.0
+(map('version','2.0')); o resultado é VARIANT, lido com ':response'.
 
-1. src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
    a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
       COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
       bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
@@ -91,19 +88,8 @@ vira coluna: o status semanal e os postmortems. Use as funções de IA na versã
         'impacto estimado: 1 semana' (= 7).
    c. No fim, um SELECT de leitura: quantos status por metodo e causa.
 
-2. src/ia/postmortem_estruturado.sql (sql_task)
-   Tabela lakehouse_vertice.gold.postmortem_estruturado (CREATE TABLE IF NOT
-   EXISTS + MERGE incremental por incidente_id) com: incidente_id, projeto_id,
-   data, severidade, e, por ai_extract com JSON schema tipado:
-   servico_afetado (string), causa_raiz (string), duracao_minutos (number,
-   "duração total convertida para minutos; 1h25min = 85"), usuarios_afetados
-   (number). E categoria_causa por ai_classify em ["deploy_sem_teste",
-   "configuracao","capacidade","dependencia_externa","pipeline_sem_dono"].
-   São só ~100 textos: a IA roda em todos. SELECT final: incidentes e horas
-   fora do ar por categoria.
-
-Acrescente ao job as tarefas status_com_ia e postmortem_com_ia, as duas
-depois de medalhao (em paralelo com testes_de_qualidade).
+Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
+com testes_de_qualidade).
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
@@ -123,10 +109,9 @@ WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18'
 GROUP BY 1 ORDER BY 2 DESC;
 -- falta_sre · 12 semanas · 57 dias de impacto declarado
 
--- e o que a IA tirou dos postmortems
-SELECT categoria_causa, COUNT(*) AS incidentes, ROUND(SUM(duracao_minutos) / 60, 1) AS horas_fora_do_ar
-FROM lakehouse_vertice.gold.postmortem_estruturado GROUP BY 1 ORDER BY 2 DESC;
--- deploy_sem_teste na frente: é o padrão dos squads com rotatividade
+-- quanto cada método classificou
+SELECT metodo, COUNT(*) FROM lakehouse_vertice.gold.status_estruturado GROUP BY 1;
+-- ia 163 · regra 2.954 · palavra_chave 794
 ```
 
 **Rode a tarefa de novo:** o `MERGE` insere zero linhas e termina em segundos. É o
@@ -144,4 +129,4 @@ incremental funcionando — e a conta de IA que não se paga duas vezes.
 | `TABLE_OR_VIEW_ALREADY_EXISTS` | Usou CREATE TABLE sem IF NOT EXISTS | `CREATE TABLE IF NOT EXISTS` (a tabela acumula) |
 | Rodou de novo e inseriu tudo outra vez | Faltou o LEFT ANTI JOIN | O MERGE só recebe o que ainda não está na tabela |
 
-**Tempo medido:** status ~2 min (163 textos na IA) e postmortems ~1 min (101 textos), em paralelo.
+**Tempo medido:** ~2 min (163 textos na IA).

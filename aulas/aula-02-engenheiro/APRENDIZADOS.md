@@ -14,7 +14,7 @@ bundle `vertice` sobre a bronze da noite 1.
 | 5 | XML do Project lido com `inferColumnTypes => false` | a `Baseline` vira texto (`<Number>0</Number>...`) | No XML e no JSON a inferência fica ligada: é ela que mantém a estrutura |
 | 6 | `ai_extract` sem schema | todo campo volta como texto (`"7"`) | Versão 2.0 com JSON schema tipado: `{"dias_impacto":{"type":"number"}}` e `map('version','2.0')` |
 | 7 | Genie curado, 1ª rodada do benchmark: 18/20 | ranking feito na metric view com `HAVING` inválido; cliente repetido por projeto | Duas instruções: ranking em `projeto_situacao_atual`; "quais clientes" = um por cliente. 20/20 |
-| 8 | "O que vai dar errado no próximo mês?" | `FAILED` | Exemplo de SQL com `UNION ALL` de ruptura de capacidade, entregas atrasadas e freeze |
+| 8 | "O que vai dar errado no próximo mês?" | `FAILED` | Exemplo de SQL com `UNION ALL` das entregas atrasadas e do freeze da Black Friday (a previsão completa é o modelo da noite 3) |
 | 9 | Bundle copiado de outro projeto com a pasta `.databricks/` junto | o deploy editaria os recursos do projeto antigo | Apagar a `.databricks/` local antes do primeiro deploy de um bundle copiado ou renomeado |
 
 ## O que funciona (medido em 18/10/2026)
@@ -25,11 +25,11 @@ bundle `vertice` sobre a bronze da noite 1.
 | `CREATE TEMPORARY VIEW` dentro do pipeline (uma visão por ferramenta) | ✅ aparecem no grafo, não no catálogo |
 | Pipeline escrevendo em dois schemas (silver padrão + `lakehouse_vertice.gold.x`) | ✅ |
 | `pipeline_task` dentro do job do bundle (`${resources.pipelines.x.id}`) | ✅ |
-| Metric views (`WITH METRICS LANGUAGE YAML`, v1.1, `comment`, `synonyms`, `joins using`, `filter`) | ✅ via `sql_task` ou API de statements |
+| Metric views (`WITH METRICS LANGUAGE YAML`, v1.1, `comment`, `synonyms`, `filter`) | ✅ via `sql_task` ou API de statements |
 | Metric view pelo `aitools tools query` | ❌ achata a indentação do YAML |
 | `ai_classify` e `ai_extract` versão 2.0 no SQL Warehouse | ✅ ~5 s por texto com as duas; 163 status em ~2 min |
 | Dashboard e Genie como recurso do bundle (`dashboards`, `genie_spaces`) | ✅ |
-| Genie com metric views como fonte (`data_sources.metric_views`) | ✅ |
+| Genie com metric view como fonte (`data_sources.metric_views`) | ✅ |
 | Knowledge Assistant e Supervisor Agent | ❌ "legacy feature ... use Genie Agents instead" |
 
 ## Tempos medidos
@@ -40,8 +40,7 @@ bundle `vertice` sobre a bronze da noite 1.
 | `bundle deploy` (primeiro / seguintes) | ~10 s / ~7 s |
 | Pipeline silver + gold (primeira execução, com cold start) | ~2 min |
 | Tarefa `status_com_ia` (163 status na IA) | ~2 min |
-| Tarefa `postmortem_com_ia` (101 postmortems) | ~1 min |
-| 5 metric views | ~20 s |
+| Metric view `mv_projetos` | ~10 s |
 | Benchmark de 20 perguntas no Genie | ~6 min · **18/20** na 1ª rodada, **20/20** depois de duas instruções |
 
 ## Decisões de modelagem que viraram conteúdo de aula
@@ -60,3 +59,10 @@ bundle `vertice` sobre a bronze da noite 1.
 - **IA só onde ela é a certa:** regra para "sem bloqueio" (2.954 status), IA nos últimos 90
   dias com bloqueio (163), palavra-chave no histórico (794). `MERGE` incremental: a segunda
   execução não chama a IA de novo.
+- **Simplificar para mostrar o todo** (revisão de 19/10/2026): a bronze foi de 13 para 9
+  tabelas, a silver de 11 para 7 e a gold ficou com 3 tabelas, a `status_estruturado` e
+  uma metric view (`mv_projetos`). Saíram alocações, contratos e consumo de capacidade,
+  postmortems, `dim_projeto` (o cadastro foi para dentro da `projeto_situacao_atual`), as
+  tabelas gold de fornecedor (lidas direto da `silver.entregas_fornecedor`) e as outras
+  quatro metric views. Uma tarefa de IA, um modelo, poucas tabelas: o tempo da aula vai
+  para a integração das 3 ferramentas, que é o centro da noite.

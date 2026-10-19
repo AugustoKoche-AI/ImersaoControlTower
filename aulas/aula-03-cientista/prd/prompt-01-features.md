@@ -1,7 +1,11 @@
 # Prompt 1 · Features — o que descreve um projeto que vai estourar
 
-**Entrega:** `gold.features_projeto_semana` (uma linha por projeto e semana, só olhando
+**Entrega:** `ml.features_projeto_semana` (uma linha por projeto e semana, só olhando
 para trás, com os dois alvos) e a tarefa `ml_features` no job. **Deploy nº 7.**
+
+> **Por que um schema `ml`?** Features, métricas e o modelo são o laboratório do cientista:
+> passo intermediário, não resposta para a diretoria. Na `gold` entra só o resultado
+> (`gold.score_estouro_30d`, no prompt 3).
 
 ---
 
@@ -38,10 +42,9 @@ inútil na segunda-feira. O prompt 2 vai provar isso.
   (quem já está abaixo, a regra vê), com 12+ semanas de vida e não terminado.
 - **Os sinais.** Nível (SPI, CPI), tendência (quanto caiu em 4 e 8 semanas),
   ritmo do último mês (`cpi_ultimas_4s` = quanto cada R$ gasto no mês entregou),
-  gente e capacidade (ociosidade, saídas, banco de horas acabando), incidentes em
-  produção e **o texto do status semanal**, que a IA classificou na noite 2
-  (freeze, falta de SRE, consultoria, rotatividade, escopo). A noite 2 vira
-  matéria-prima da noite 3.
+  gente e custo (ociosidade, saídas do time, peso da consultoria) e **o texto do
+  status semanal**, que a IA classificou na noite 2 (freeze, falta de SRE,
+  consultoria, rotatividade, escopo). A noite 2 vira matéria-prima da noite 3.
 
 ---
 
@@ -52,9 +55,11 @@ Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
 em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
 não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
 
-Crie src/ml/01-features.sql (sql_task) que recria a tabela
-lakehouse_vertice.gold.features_projeto_semana: uma linha por projeto e semana
-(sexta-feira), a partir de gold.fato_projeto_semana + gold.dim_projeto.
+Crie src/ml/01-features.sql (sql_task). Primeiro CREATE SCHEMA IF NOT EXISTS
+lakehouse_vertice.ml (o laboratório do cientista; na gold só vai o score).
+Depois recrie lakehouse_vertice.ml.features_projeto_semana: uma linha por
+projeto e semana (sexta-feira), a partir de gold.fato_projeto_semana +
+gold.projeto_situacao_atual (o cadastro: início, duração, segmento).
 COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
 
 - spi, cpi, indice_min = least(spi, cpi)
@@ -65,13 +70,11 @@ COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
 - spi_ultimas_4s = o mesmo com pv
 - pct_fisico = ev / orcamento; pct_prazo = dias desde o início / duração baseline
 - ociosidade_4s = horas ociosas / horas disponíveis das últimas 4 semanas
-- rupturas_capacidade da semana
 - pct_consultoria_4s e pct_cloud_4s: participação no custo das últimas
   4 semanas (silver.custos, pela coluna semana)
-- saidas_12s: pessoas alocadas no projeto que se desligaram nas últimas
-  12 semanas (silver.alocacoes + silver.colaboradores)
-- incidentes_8s: postmortems do projeto nas últimas 8 semanas
-  (gold.postmortem_estruturado)
+- saidas_12s: pessoas do squad que se desligaram nas últimas 12 semanas.
+  Squad = quem apontou hora no projeto (silver.apontamentos) + data de
+  desligamento em silver.colaboradores
 - status_freeze_4s, status_falta_sre_4s, status_fornecedor_4s,
   status_rotatividade_4s, status_escopo_4s, status_retrabalho_4s,
   status_com_bloqueio_4s: quantos dos status dos últimos 28 dias tiveram
@@ -109,7 +112,7 @@ SELECT COUNT(*) AS linhas,
        COUNT_IF(elegivel = 1 AND estoura_30d IS NOT NULL) AS treino,
        ROUND(AVG(CASE WHEN elegivel = 1 THEN estoura_30d END), 3) AS taxa_base,
        COUNT_IF(semana = DATE'2026-10-16') AS hoje
-FROM lakehouse_vertice.gold.features_projeto_semana;
+FROM lakehouse_vertice.ml.features_projeto_semana;
 -- 4.235 · 1.643 · 0,167 · 60
 ```
 
@@ -123,6 +126,7 @@ abaixo de 0,9. Achar essas 17 antes é o trabalho do modelo.
 | Sintoma | Causa | Correção |
 |---|---|---|
 | `PARSE_SYNTAX_ERROR ... missing ')'` | `OVER (w ROWS BETWEEN ...)` | janela por extenso nas que têm frame |
+| `SCHEMA_NOT_FOUND ... ml` | faltou o `CREATE SCHEMA IF NOT EXISTS lakehouse_vertice.ml` | ele vem antes da tabela, no mesmo arquivo |
 | `TABLE_OR_VIEW_NOT_FOUND gold.status_estruturado` | a tarefa `status_com_ia` da noite 2 não rodou | `bundle run vertice_farol` inteiro uma vez |
 | taxa base perto de 0 ou de 50% | rótulo olhando a semana errada | `1 FOLLOWING AND 4 FOLLOWING`, nunca `CURRENT ROW` |
 | `hoje` = 0 | a gold não chega a 2026-10-16 | confira `MAX(semana)` em `fato_projeto_semana` |

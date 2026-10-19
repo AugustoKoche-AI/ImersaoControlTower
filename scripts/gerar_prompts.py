@@ -23,7 +23,7 @@ PROMPTS = [
     (2, "O bundle", "o projeto nasce como código", f"{A2}/prompt-01-bundle.md", "bundle deploy + run"),
     (2, "Silver", "as três ferramentas viram uma", f"{A2}/prompt-02-silver.md", "bundle deploy + run do pipeline"),
     (2, "Gold", "o produto de dados e as perguntas do dono", f"{A2}/prompt-03-gold.md", "bundle deploy + run"),
-    (2, "Texto com IA", "o status e o postmortem viram coluna", f"{A2}/prompt-04-texto-com-ia.md", "bundle deploy + run"),
+    (2, "Texto com IA", "o status semanal vira coluna", f"{A2}/prompt-04-texto-com-ia.md", "bundle deploy + run"),
     (2, "Métricas governadas", "o KPI definido uma vez só", f"{A2}/prompt-05-metricas.md", "bundle deploy + run"),
     (2, "Dashboard e Genie", "o dono pergunta em português", f"{A2}/prompt-06-dashboard-e-genie.md", "bundle deploy"),
     (3, "Features", "o que descreve um projeto que vai estourar", f"{A3}/prompt-01-features.md", "bundle deploy"),
