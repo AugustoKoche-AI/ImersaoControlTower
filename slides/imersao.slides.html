@@ -442,6 +442,19 @@ flowchart LR
 </section>
 
 <section class="slide">
+  <div class="kicker">Noite 2 · o job no workspace</div>
+  <h2 style="margin-bottom:24px;">8 tarefas verdes, <span class="grad">5 minutos</span></h2>
+  <img class="shot" style="height:auto; max-height:480px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite2-job-v2.jpg]]" alt="DAG do job vertice_farol">
+  <div class="grid g4" style="margin-top:30px;">
+    <div class="card"><div class="tag">conferência</div><div class="lbl">6 s · as 9 tabelas da bronze, contadas</div></div>
+    <div class="card"><div class="tag">medalhão</div><div class="lbl">2 min · silver + gold no pipeline</div></div>
+    <div class="card"><div class="tag">IA + testes + métrica</div><div class="lbl">~30 s · só status novo vai para a IA</div></div>
+    <div class="card"><div class="tag">features → modelo → score</div><div class="lbl">~2,5 min · noite 3</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
   <div class="kicker">Noite 2 · o pipeline vertice_medalhao</div>
   <h2>Você declara <span class="grad">o que cada tabela é</span>; o Lakeflow acha a ordem</h2>
   <div class="diagrama"><pre class="mermaid">
@@ -492,6 +505,20 @@ flowchart LR
   <h2 style="margin-bottom:20px;">Excel, ClickUp e Project <span class="grad">na mesma tabela</span></h2>
   <img class="shot" style="height:680px;" src="[[IMG:docs/img/agora-silver-tarefas.jpg]]" alt="silver.tarefas">
   <div class="small" style="margin-top:10px;">Mesmas colunas, mesmo tipo, mesma régua, não importa de onde veio. É aqui que o "juntar à mão" da noite 1 vira código testado.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · a gold no catálogo</div>
+  <h2 style="margin-bottom:20px;">7 objetos, <span class="grad">uma pergunta cada</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.5fr 1fr;">
+    <img class="shot" style="height:640px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite2-gold-v2.jpg]]" alt="A gold no Catalog Explorer">
+    <div class="card"><div class="tag">Quem cria cada um</div><ul class="list">
+      <li><b>noite 2</b>: projeto_situacao_atual, fato_projeto_semana, utilizacao_pessoa_semana (pipeline), status_estruturado (IA), mv_projetos (métrica)</li>
+      <li><b>noite 3</b>: score_estouro_30d (o modelo)</li>
+      <li><b>noite 4</b>: contratos (IA nos PDFs)</li></ul>
+      <p class="note" style="margin-top:20px;">Toda tabela tem COMMENT: é o que o Genie lê para entender o que cada coluna quer dizer.</p></div>
+  </div>
   [[RODAPE]]
 </section>
 
@@ -593,6 +620,19 @@ $$</pre>
       <pre class="code" style="font-size:20px; margin-top:20px;"><span class="k">SELECT</span> MEASURE(spi), MEASURE(estouro_previsto)
 <span class="k">FROM</span> gold.mv_projetos
 <span class="c">-- 0,92 · R$ 6.465.127</span></pre></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Gold · 5 de 5 · a metric view no catálogo</div>
+  <h2 style="margin-bottom:20px;">11 medidas, 9 dimensões, <span class="grad">um dono</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.4fr 1fr;">
+    <img class="shot" style="height:660px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite2-metric-view.jpg]]" alt="mv_projetos no Catalog Explorer">
+    <div class="card"><div class="tag">O que aparece</div><ul class="list">
+      <li>cada medida com a explicação em português (SPI, CPI, EAC, estouro, margem, em risco, críticos, melancias)</li>
+      <li>a fonte: <b>projeto_situacao_atual</b>, filtrada para em andamento</li>
+      <li>quem usa: o dashboard Portfólio e o Genie Diretoria (em "Related assets")</li></ul></div>
   </div>
   [[RODAPE]]
 </section>
@@ -761,6 +801,13 @@ databricks bundle run vertice_farol --profile SEU-PERFIL</pre><div class="lbl">8
 </section>
 
 <section class="slide">
+  <div class="kicker">Noite 3 · o score no catálogo</div>
+  <h2 style="margin-bottom:20px;">gold.score_estouro_30d, <span class="grad">uma linha por projeto</span></h2>
+  <img class="shot" style="height:720px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite3-score-v2.jpg]]" alt="score_estouro_30d no Catalog Explorer">
+  [[RODAPE]]
+</section>
+
+<section class="slide">
   <div class="kicker">Noite 3 · o "uau"</div>
   <h2>PRJ-024: <span class="grad">ok hoje, 46% de estourar</span></h2>
   <div class="grid g3" style="margin-bottom:30px;">
@@ -824,6 +871,16 @@ teto_multa_pct        10.0    (number)
 renovacao_automatica  true    (boolean)
 aviso_previo_dias     90      (integer)
 data_fim_vigencia     2026-12-31</pre><div class="lbl">Vira coluna: filtra, soma, cruza com as entregas.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 4 · gold.contratos no catálogo</div>
+  <h2 style="margin-bottom:20px;">O PDF virou <span class="grad">linha e coluna</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <div><img class="shot" style="height:560px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite4-contratos.jpg]]" alt="gold.contratos: fornecedor e objeto"><div class="small" style="margin-top:8px;">Um contrato por linha: fornecedor e objeto, lidos do PDF.</div></div>
+    <div><img class="shot" style="height:560px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite4-contratos-tipado.jpg]]" alt="gold.contratos: colunas tipadas"><div class="small" style="margin-top:8px;">As colunas tipadas: data, booleano, inteiro e decimal. null = contrato sem multa por atraso.</div></div>
   </div>
   [[RODAPE]]
 </section>
