@@ -169,10 +169,13 @@ Cada exemplo usa o anterior. Rode no SQL Editor, na ordem. Detalhes na seção [
 Com o exemplo 05 já rodado (ele cria o rascunho que a verificação usa), rode [`99-verificacao.sql`](99-verificacao.sql).
 As 22 linhas devem dar `ok`. Se alguma der `CONFIRA`, veja [Se der errado](#-se-der-errado).
 
-### 8. Publique o dashboard (7 min)
+### 8. Monte e publique o dashboard (15 min)
 
-Abra **Dashboards → Projeto Farol · Noite 1 (bronze)**. Se ele ainda não existir, publique pelo terminal
-(veja [O dashboard e o Genie](#-o-dashboard-e-o-genie)).
+Pela interface, em 4 passos: **Dashboards → Create dashboard** → aba **Data**, cole os 2 SQLs prontos
+([`dashboard-dataset-projetos.sql`](dashboard-dataset-projetos.sql) e
+[`dashboard-dataset-custos.sql`](dashboard-dataset-custos.sql)) → no canvas, **Add a visualization** e digite o
+prompt de cada gráfico → **Publish**. Os 8 prompts e o "à mão" de cada gráfico estão em
+[**passo-a-passo-dashboard-e-genie.md**](passo-a-passo-dashboard-e-genie.md).
 
 ![Topo do dashboard da noite 1](../../docs/img/noite1-dashboard.jpg)
 
@@ -188,8 +191,10 @@ vez alguém vê as três ferramentas lado a lado. Clique numa barra: a tabela em
 
 ### 9. Faça as 4 perguntas ao Genie (8 min)
 
-Abra **Genie Agents → Farol · Noite 1 (bronze, sem curadoria)**. Ele enxerga 8 tabelas da bronze e
-**não recebeu nenhuma instrução**. De propósito.
+**Genie Agents → + New** → marque as 8 tabelas da bronze (`projetos`, `status_semanal`, `excel_tarefas`,
+`clickup_tarefas`, `msproject_tarefas`, `colaboradores`, `apontamentos`, `custos`) → **Create** → renomeie para
+**Farol · Noite 1 (bronze, sem curadoria)**. Ele **não recebe nenhuma instrução**. De propósito. As perguntas para
+copiar e colar estão em [passo-a-passo-dashboard-e-genie.md](passo-a-passo-dashboard-e-genie.md#parte-2--o-genie-farol--noite-1-bronze-sem-curadoria-10-min).
 
 ![A tela inicial do Genie com as perguntas do dono](../../docs/img/recurso-genie-perguntas.jpg)
 
@@ -404,6 +409,8 @@ Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 | `00-setup-catalogo.sql` | catálogo, schemas e volume (também roda no SQL Editor) |
 | `01-ingestao-bronze.sql` | CSV, Excel, JSON e XML viram 9 tabelas Delta |
 | `exemplo-01..06-*.sql` | os 6 exemplos da noite |
+| `passo-a-passo-dashboard-e-genie.md` | o dashboard e o Genie pela interface, com os prompts para copiar |
+| `dashboard-dataset-*.sql` | os 2 SQLs que o dashboard usa (colar na aba Data) |
 | `99-verificacao.sql` | esperado × obtido, 22 checagens |
 | `notebooks/` | os exemplos em notebook, resolvidos e em branco |
 | `gerar_dashboard.py` · `dashboard-bronze.lvdash.json` | o dashboard como código |
