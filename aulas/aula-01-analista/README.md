@@ -168,9 +168,11 @@ duplica o PRJ-021 de propósito (a carteira vai de R$ 305,2 mi para R$ 318,8 mi)
 versão de antes do erro com `VERSION AS OF 0` e volta com `RESTORE`. Toda tabela Delta guarda as versões: um erro na
 bronze não é o fim do mundo. No fim ele apaga a cópia.
 
-### 6.1 Rode os 6 exemplos (14 queries, ~1 hora)
+### 6.1 Rode os 6 exemplos (21 queries, ~1 hora)
 
-Cada exemplo usa o anterior. Rode no SQL Editor, na ordem, **um bloco de cada vez** (selecione e Ctrl+Enter).
+Abra o [`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql) (exemplos 01 a 05) e depois o
+[`exemplo-06-quanto-custa-o-atraso.sql`](exemplo-06-quanto-custa-o-atraso.sql). Rode no SQL Editor, na ordem,
+**um bloco de cada vez** (selecione e Ctrl+Enter).
 Cada bloco diz no comentário o que queremos achar, o que cada comando faz e o que deve aparecer.
 Detalhes na seção [Os 6 exemplos](#-os-6-exemplos).
 
@@ -273,35 +275,37 @@ Hoje você vê os sintomas: atraso, estouro e o farol que não bate. As causas a
 
 ## 🧪 Os 6 exemplos
 
-São **14 queries** no total, para caber em 1 hora de SQL. Cada exemplo usa o anterior, e cada bloco traz no máximo
+São **21 queries** no total, para caber em 1 hora de SQL. Os exemplos 01 a 05 estão num arquivo só,
+[`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql), uma seção por exemplo; o 06 fica à parte. Cada exemplo usa o anterior, e cada bloco traz no máximo
 um ou dois comandos novos, explicados no comentário. Rode no SQL Editor ou use os notebooks (logo abaixo).
 
 | # | Arquivo | Queries | Conceito | Pergunta de negócio |
 |---|---|---:|---|---|
-| 01 | [`exemplo-01-primeiro-select.sql`](exemplo-01-primeiro-select.sql) | 2 | `SELECT`, `LIMIT`, `COUNT` | Que projetos a Vértice tem, e onde cada um vive? |
-| 02 | [`exemplo-02-order-by-e-distinct.sql`](exemplo-02-order-by-e-distinct.sql) | 3 | `ORDER BY`, `CAST`, `DISTINCT` | Quais os maiores contratos? |
-| 03 | [`exemplo-03-where-e-a-sujeira.sql`](exemplo-03-where-e-a-sujeira.sql) | 3 | `WHERE`, `LIKE` | **Dá para confiar nesse número?** |
-| 04 | [`exemplo-04-group-by-custo-no-tempo.sql`](exemplo-04-group-by-custo-no-tempo.sql) | 2 | `GROUP BY`, `SUM`, `replace` | Para onde vai o dinheiro? (a 1ª query **quebra de propósito**) |
-| 05 | [`exemplo-05-union-quais-projetos-atrasados.sql`](exemplo-05-union-quais-projetos-atrasados.sql) | 2 | `UNION ALL`, `VIEW`, `CASE`, `JOIN`, `WITH` | **Quais projetos estão mais atrasados?** (as 3 ferramentas numa fila só) |
+| 01 | [`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql) | 2 | `SELECT`, `LIMIT`, `COUNT` | Que projetos a Vértice tem, e onde cada um vive? |
+| 02 | [`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql) | 3 | `ORDER BY`, `CAST`, `DISTINCT` | Quais os maiores contratos? |
+| 03 | [`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql) | 7 | `WHERE`, `LIKE`, `AND`, `IN`, `IS NULL` | **Dá para confiar nesse número?** |
+| 04 | [`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql) | 2 | `GROUP BY`, `SUM`, `replace` | Para onde vai o dinheiro? (a 1ª query **quebra de propósito**) |
+| 05 | [`exemplo-01-a-05-sql-na-bronze.sql`](exemplo-01-a-05-sql-na-bronze.sql) | 5 | `UNION ALL`, `VIEW`, `CASE`, `JOIN`, `WITH` | **Quais projetos estão mais atrasados?** (as 3 ferramentas numa fila só) |
 | 06 | [`exemplo-06-quanto-custa-o-atraso.sql`](exemplo-06-quanto-custa-o-atraso.sql) | 2 | `WITH`, conta de KPI | **Quanto o atraso custa? O farol mostra isso?** |
 
 O que esperar de cada um:
 
 - **01 e 02:** o primeiro contato. No 02, ordenar valor guardado como texto dá a ordem errada; o `CAST` conserta.
-- **03:** dado sujo não dá erro: dá um número errado, em silêncio. 3 achados: data em 2 formatos (24 × 36), a linha
-  de TOTAL nas 20 planilhas e 671 custos com vírgula decimal.
+- **03:** dado sujo não dá erro: dá um número errado, em silêncio. 3 achados (data em 2 formatos, a linha de TOTAL
+  nas 20 planilhas, 671 custos com vírgula) e 4 jeitos de filtrar: `AND` (14 projetos de varejo em andamento), `IN`
+  (os 20 do Excel, escritos de 3 jeitos), `IS NULL` (2 sem código) e `lower` + `LIKE` (a CodeForge de 4 jeitos).
 - **04:** a primeira query **quebra de propósito** com `CAST_INVALID_INPUT` (a vírgula do 03). O `replace` conserta:
   R$ 193,35 mi de custo, R$ 117,8 mi em gente.
-- **05:** o rascunho à mão. Cada ferramenta vira as mesmas colunas e tudo é empilhado com `UNION ALL` numa view
-  (`bronze.rascunho_tarefas`). Sai o SPI dos 41 projetos em andamento.
+- **05:** o rascunho à mão, em 5 degraus: o `UNION ALL` no menor exemplo possível, o Excel traduzido sozinho, as
+  três ferramentas numa view (`bronze.rascunho_tarefas`), as horas prontas × planejadas e, por fim, o SPI dos 41
+  projetos em andamento.
 - **06:** o atraso vira dinheiro (R$ 6,47 mi de estouro previsto) e, na coluna do farol, aparecem os 4 projetos melancia.
 - **00 (bônus):** time travel, se sobrar tempo.
 
 Pelo terminal (opcional):
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-01-analista/exemplo-05-union-quais-projetos-atrasados.sql --profile SEU-PERFIL
-python3 scripts/run_sql.py aulas/aula-01-analista/exemplo-04-group-by-custo-no-tempo.sql --profile SEU-PERFIL --continuar
+python3 scripts/run_sql.py aulas/aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql --profile SEU-PERFIL --continuar
 ```
 
 ### Os KPIs, em uma linha cada

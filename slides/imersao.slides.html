@@ -1067,17 +1067,17 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
 
 <section class="slide">
   <div class="kicker">Noite 1 · os 6 exemplos SQL</div>
-  <h2>14 queries: do primeiro SELECT <span class="grad">à resposta do dono</span></h2>
+  <h2>21 queries: do primeiro SELECT <span class="grad">à resposta do dono</span></h2>
   <table class="t" style="font-size:22px;">
     <tr><th>Exemplo</th><th>Conceito</th><th class="r">Queries</th><th>O que ele mostra</th></tr>
     <tr><td>01 · SELECT</td><td>SELECT, FROM, LIMIT, COUNT</td><td class="r">2</td><td>olhar o cadastro: 60 projetos</td></tr>
     <tr><td>02 · ORDER BY e DISTINCT</td><td>ORDER BY, CAST, DISTINCT</td><td class="r">3</td><td>o maior contrato é o PRJ-017; a ferramenta escrita de 8 jeitos</td></tr>
-    <tr><td>03 · WHERE e a sujeira</td><td>WHERE, LIKE</td><td class="r">3</td><td>data em 2 formatos, linha de TOTAL, 671 custos com vírgula</td></tr>
+    <tr><td>03 · WHERE e a sujeira</td><td>WHERE, LIKE, AND, IN, IS NULL</td><td class="r">7</td><td>data em 2 formatos, TOTAL, vírgula; varejo em andamento; CodeForge de 4 jeitos</td></tr>
     <tr><td>04 · GROUP BY</td><td>GROUP BY, SUM, replace</td><td class="r">2</td><td>o erro da vírgula; R$ 117,8 mi em gente</td></tr>
-    <tr class="cur"><td>05 · UNION</td><td>UNION ALL, VIEW, CASE, JOIN, WITH</td><td class="r">2</td><td><b>as 3 ferramentas numa fila só</b> → quem atrasa (pergunta 1)</td></tr>
+    <tr class="cur"><td>05 · UNION</td><td>UNION ALL, VIEW, CASE, JOIN, WITH</td><td class="r">5</td><td><b>as 3 ferramentas numa fila só</b> → quem atrasa (pergunta 1)</td></tr>
     <tr class="cur"><td>06 · quanto custa</td><td>WITH, conta de KPI</td><td class="r">2</td><td><b>R$ 6,47 mi</b> de estouro e 4 melancias (pergunta 2)</td></tr>
   </table>
-  <p class="note" style="margin-top:22px;">Cada exemplo existe em dois notebooks: <b>em branco</b> (você digita) e <b>resolvido</b> (para conferir). Bônus, se sobrar tempo: o <b>exemplo 00</b>, time travel.</p>
+  <p class="note" style="margin-top:22px;">Cada exemplo existe em dois notebooks: <b>em branco</b> (você digita) e <b>resolvido</b> (para conferir). Os exemplos 01 a 05 estão num arquivo só: <b>exemplo-01-a-05-sql-na-bronze.sql</b>. Bônus, se sobrar tempo: o <b>exemplo 00</b>, time travel.</p>
   [[RODAPE]]
 </section>
 
@@ -1098,7 +1098,7 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>cliente, valor, prazo e a <b>ferramenta</b> de cada projeto</li><li><b>60</b> projetos</li><li>a ferramenta já aparece escrita de jeitos diferentes</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-primeiro-select.sql</b> no GitHub. Copie, cole no SQL Editor e rode bloco a bloco.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-a-05-sql-na-bronze.sql</b> no GitHub (os exemplos 01 a 05 estão nele). Copie, cole no SQL Editor e rode bloco a bloco.</p>
   [[RODAPE]]
 </section>
 
@@ -1124,7 +1124,7 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>maior contrato de verdade: <b>PRJ-017, R$ 15,3 mi</b> (o texto dizia PRJ-052)</li><li>a ferramenta escrita de <b>8 jeitos</b>: Excel, excel, Planilha, ClickUp, Clickup…</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-02-order-by-e-distinct.sql</b>. A primeira sujeira do dia é o retrato do problema da Vértice: cada um registra do seu jeito.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-a-05-sql-na-bronze.sql</b>. A primeira sujeira do dia é o retrato do problema da Vértice: cada um registra do seu jeito.</p>
   [[RODAPE]]
 </section>
 
@@ -1149,7 +1149,7 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>data em 2 formatos: <b>24</b> × <b>36</b> projetos</li><li><b>20</b> linhas de TOTAL no Excel</li><li><b>671</b> custos com vírgula decimal</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-03-where-e-a-sujeira.sql</b>: 3 achados. Tudo que ele acha é o que a silver conserta amanhã.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-a-05-sql-na-bronze.sql</b>: 3 achados e 4 jeitos de filtrar (AND, IN, IS NULL, lower + LIKE). Tudo que ele acha é o que a silver conserta amanhã.</p>
   [[RODAPE]]
 </section>
 
@@ -1174,7 +1174,7 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>a primeira: erro <b>CAST_INVALID_INPUT</b></li><li>a segunda: <b>R$ 193,35 mi</b> de custo real</li><li>gente é <b>R$ 117,8 mi</b>, quase dois terços; consultoria R$ 29,4 mi; cloud R$ 23,0 mi</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-04-group-by-custo-no-tempo.sql</b>. Começa a responder a pergunta 2: quanto custa.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-a-05-sql-na-bronze.sql</b>. Começa a responder a pergunta 2: quanto custa.</p>
   [[RODAPE]]
 </section>
 
@@ -1199,7 +1199,7 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>Excel <b>20</b> projetos / 1.643 tarefas · ClickUp <b>25</b> / 2.119 · Project <b>15</b> / 1.155</li><li>os <b>60</b> projetos numa tabela só, pela primeira vez</li><li>o SPI de cada um: o pior é o <b>PRJ-016, 0,63</b></li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-05-union-quais-projetos-atrasados.sql</b>. 2 queries. A primeira cria a view que o exemplo 06, o dashboard e a verificação usam.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-01-a-05-sql-na-bronze.sql</b>. 5 degraus: UNION ALL mínimo → Excel traduzido → a view → as horas → o SPI. A view que o exemplo 06, o dashboard e a verificação usam.</p>
   [[RODAPE]]
 </section>
 
