@@ -124,7 +124,7 @@ job vertice_farol com 9 tarefas, 4 a 5 min. PRJ-013 tem status (43%) e planilha 
 Noite 4: 8 contratos, 72 cláusulas, 10 seções do manual · multa cobrável da CodeForge R$ 1,12 mi (vigência atual) ·
 NuvemSul e DataPrime renovaram sozinhos (R$ 21,4 mi/ano) · Genie "Farol · Diretoria + Contratos" 10/10 · simulador
 COL0017 → PRJ-011: 19 dias e R$ 22,1 mil/mês de saldo · ROI ≈ R$ 3,0 mi no ano 1 contra R$ 0,4 mi · app `farol-torre`
-testado local; o workspace atingiu o limite de 3 apps do Free Edition (liberar um antes do deploy).
+publicado em 18/10 (bundle deploy falha no 1º build → conceder-acesso.sh → apps deploy: RUNNING).
 
 ### Noite 1 (Vértice)
 
