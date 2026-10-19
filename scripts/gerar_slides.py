@@ -28,8 +28,24 @@ LOGO = RAIZ / "docs" / "img" / "logo-jornada-horizontal-branco.png"
 RODAPE = '<img class="logo" alt="Jornada de Dados"><div class="pg"></div>'
 
 
+def pendente(caminho: str) -> str:
+    """Print que ainda não existe: um quadro tracejado com o nome do arquivo esperado."""
+    nome = Path(caminho).name
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">'
+           f'<rect x="6" y="6" width="1588" height="888" rx="28" fill="#101016" stroke="#467CF6" '
+           f'stroke-width="6" stroke-dasharray="26 18"/>'
+           f'<text x="800" y="420" fill="#22C2F4" font-family="Poppins, sans-serif" font-size="64" '
+           f'font-weight="700" text-anchor="middle">print pendente</text>'
+           f'<text x="800" y="510" fill="#a3a6b4" font-family="Poppins, sans-serif" font-size="40" '
+           f'text-anchor="middle">docs/img/{nome}</text></svg>')
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode("ascii")
+
+
 def embutir(caminho: str) -> str:
     arq = RAIZ / caminho
+    if not arq.exists():
+        print(f"  aviso: {caminho} não existe ainda — entra o quadro de print pendente")
+        return pendente(caminho)
     tipo = mimetypes.guess_type(arq.name)[0] or "image/png"
     return f"data:{tipo};base64," + base64.b64encode(arq.read_bytes()).decode("ascii")
 

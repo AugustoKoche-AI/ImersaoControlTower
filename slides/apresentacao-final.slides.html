@@ -126,11 +126,16 @@ flowchart LR
   [[RODAPE]]
 </section>
 
-<!-- 7 · NOITE 1 -->
+<!-- NOITE 1 -->
 <section class="slide">
-  <div class="kicker">Noite 1 · o Databricks inteiro, pelo navegador</div>
-  <h2 style="margin-bottom:24px;">O mesmo comando lê qualquer formato</h2>
-  <div class="grid g2" style="gap:24px; grid-template-columns: 1.2fr 0.8fr;">
+  <div class="kicker">Noite 1 · Analista · 19/10</div>
+  <h2 style="margin-bottom:22px;">Ver o Databricks inteiro e responder o dono à mão</h2>
+  <div class="grid g2" style="gap:24px; grid-template-columns: 0.95fr 1.05fr;">
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card"><div class="tag">O que foi feito</div><ul class="list" style="font-size:23px; gap:8px;"><li>catálogo, schemas e volume no Unity Catalog</li><li><b>read_files</b> lendo Excel, JSON, XML e CSV sem conversão: 13 tabelas na bronze</li><li>6 exemplos SQL: da 1ª linha à sujeira, ao custo e ao SPI</li><li>o <b>UNION ALL</b> das três ferramentas num rascunho</li><li>dashboard AI/BI e Genie sem curadoria</li></ul></div>
+      <div class="card hl"><div class="tag">Entregável</div><div class="lbl" style="color:#fff; font-size:23px;">o primeiro ranking de atraso da carteira inteira, o estouro em reais e o farol que mente</div></div>
+      <div><span class="pill on" style="font-size:20px;">17 de 41 em risco</span><span class="pill on" style="font-size:20px;">R$ 6,47 mi</span><span class="pill on" style="font-size:20px;">4 melancias</span><span class="pill on" style="font-size:20px;">Genie 0 de 4</span></div>
+    </div>
     <div class="diagrama" style="height:720px; flex:none;">
 <pre class="mermaid">
 flowchart TB
@@ -145,22 +150,32 @@ flowchart TB
   classDef erro fill:#3a1a1a,stroke:#FF5F46,color:#fff
 </pre>
     </div>
-    <div style="display:flex; flex-direction:column; gap:18px;">
-      <div class="card hl"><div class="num md">17 de 41</div><div class="lbl">projetos em risco, 7 críticos, nas três ferramentas</div></div>
-      <div class="card"><div class="num md">4</div><div class="lbl">projetos "melancia": farol verde com SPI abaixo de 0,9</div></div>
-      <div class="card"><div class="num md">0 de 4</div><div class="lbl">perguntas do dono certas no Genie sem curadoria</div></div>
-    </div>
   </div>
   [[RODAPE]]
 </section>
 
-<!-- 8 · NOITE 2 -->
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Noite 1 · os entregáveis no Databricks</div>
+  <h2 style="margin-bottom:18px; font-size:52px;">Do arquivo da planilha ao primeiro painel</h2>
+  <div class="grid g2" style="gap:20px 24px;">
+    <div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite1-volume-excel.jpg]]" alt="as 20 planilhas no volume, como o gerente salvou"><div class="small" style="margin-top:8px;">as 20 planilhas no volume, como o gerente salvou</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite1-catalogo-bronze.jpg]]" alt="as 13 tabelas da bronze no Unity Catalog"><div class="small" style="margin-top:8px;">as 13 tabelas da bronze no Unity Catalog</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite1-dashboard.jpg]]" alt="Projeto Farol · Noite 1: KPIs e SPI por projeto"><div class="small" style="margin-top:8px;">Projeto Farol · Noite 1: KPIs e SPI por projeto</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite1-genie-erra.jpg]]" alt="o Genie sem curadoria: "nenhum atraso custa nada""><div class="small" style="margin-top:8px;">o Genie sem curadoria: "nenhum atraso custa nada"</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- NOITE 2 -->
 <section class="slide">
-  <div class="kicker">Noite 2 · a integração vira produto</div>
-  <h2 style="margin-bottom:24px;">Seis prompts, seis deploys, um job</h2>
-  <div class="diagrama">
+  <div class="kicker">Noite 2 · Engenheiro de Dados · 20/10</div>
+  <h2 style="margin-bottom:22px;">Integrar as três ferramentas e rodar sozinho, com teste</h2>
+  <div class="grid g2" style="gap:24px; grid-template-columns: 0.95fr 1.05fr;">
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card"><div class="tag">O que foi feito</div><ul class="list" style="font-size:23px; gap:8px;"><li>bundle <b>vertice</b> no Git: seis prompts, seis deploys</li><li>pipeline Lakeflow: <b>silver.tarefas</b> = Excel ∪ ClickUp ∪ Project, pelo de-para do PMO</li><li>gold: situação de hoje + fato semanal do status</li><li>IA nos status e postmortems: ai_classify + ai_extract tipado</li><li>5 metric views, dashboard e Genie curado como código</li></ul></div>
+      <div class="card hl"><div class="tag">Entregável</div><div class="lbl" style="color:#fff; font-size:23px;">a Torre como produto: job toda segunda, 10 testes, KPIs governados e o Genie que responde o dono</div></div>
+      <div><span class="pill on" style="font-size:20px;">20/20 no Genie</span><span class="pill on" style="font-size:20px;">10 testes</span><span class="pill on" style="font-size:20px;">2 SREs paradas</span><span class="pill on" style="font-size:20px;">15 rupturas</span></div>
+    </div>
+    <div class="diagrama" style="height:720px; flex:none;">
 <pre class="mermaid">
-flowchart LR
+flowchart TB
   C["conferência<br/>da bronze"] --> M["medalhão Lakeflow<br/>silver.tarefas = Excel ∪ ClickUp ∪ Project<br/>gold: situação de hoje + fato semanal"]:::pipe
   M --> T["10 testes"]
   M --> S["status com IA<br/>ai_classify + ai_extract"]:::ia
@@ -175,15 +190,30 @@ flowchart LR
   classDef gold fill:#3a3214,stroke:#E8C34A,color:#fff
   classDef uso fill:#0e3a44,stroke:#22C2F4,color:#fff
 </pre>
+    </div>
   </div>
   [[RODAPE]]
 </section>
 
-<!-- 9 · NOITE 3 -->
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Noite 2 · os entregáveis no Databricks</div>
+  <h2 style="margin-bottom:18px; font-size:52px;">O pipeline, o job e as portas para o dono</h2>
+  <div class="grid g2" style="gap:20px 24px;">
+    <div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite2-pipeline.jpg]]" alt="o pipeline: as 3 ferramentas viram silver.tarefas"><div class="small" style="margin-top:8px;">o pipeline: as 3 ferramentas viram silver.tarefas</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite2-job.jpg]]" alt="o job vertice_farol verde, tarefa a tarefa"><div class="small" style="margin-top:8px;">o job vertice_farol verde, tarefa a tarefa</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite2-dashboard.jpg]]" alt="Projeto Farol · Portfólio, sobre a gold"><div class="small" style="margin-top:8px;">Projeto Farol · Portfólio, sobre a gold</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite2-genie.jpg]]" alt="Farol · Diretoria: "tenho gente parada?""><div class="small" style="margin-top:8px;">Farol · Diretoria: "tenho gente parada?"</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- NOITE 3 -->
 <section class="slide">
-  <div class="kicker">Noite 3 · o pipeline passa a prever</div>
-  <h2 style="margin-bottom:24px;">Quem vai estourar nos próximos 30 dias</h2>
-  <div class="grid g2" style="gap:24px; grid-template-columns: 1.2fr 0.8fr;">
+  <div class="kicker">Noite 3 · Cientista de Dados · 21/10</div>
+  <h2 style="margin-bottom:22px;">Prever quem vai estourar nos próximos 30 dias</h2>
+  <div class="grid g2" style="gap:24px; grid-template-columns: 0.95fr 1.05fr;">
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card"><div class="tag">O que foi feito</div><ul class="list" style="font-size:23px; gap:8px;"><li>features projeto × semana, só olhando para trás</li><li>rótulo: o pior índice cruza 0,9 em até 4 semanas</li><li>treino com corte no tempo, baselines e testes contra vazamento</li><li>modelo no Unity Catalog com MLflow, alias @prod</li><li>score em lote na gold, com os motivos em português</li></ul></div>
+      <div class="card hl"><div class="tag">Entregável</div><div class="lbl" style="color:#fff; font-size:23px;">a lista que o dono abre na segunda: probabilidade, ranking e por quê</div></div>
+      <div><span class="pill on" style="font-size:20px;">AUC 0,92 × 0,50</span><span class="pill on" style="font-size:20px;">9 de 10 avisados</span><span class="pill on" style="font-size:20px;">40 dias antes</span><span class="pill on" style="font-size:20px;">PRJ-024: 49%</span></div>
+    </div>
     <div class="diagrama" style="height:720px; flex:none;">
 <pre class="mermaid">
 flowchart TB
@@ -195,22 +225,32 @@ flowchart TB
   classDef ml fill:#2b1a4a,stroke:#9B6BDB,color:#fff
 </pre>
     </div>
-    <div style="display:flex; flex-direction:column; gap:18px;">
-      <div class="card hl"><div class="tag">AUC</div><div class="num md">0,92</div><div class="lbl">contra 0,50 da regra atual</div></div>
-      <div class="card"><div class="tag">Antecedência</div><div class="num md">40 dias</div><div class="lbl">9 de 10 estouros do teste avisados no top 5, em média 40 dias antes</div></div>
-      <div class="card"><div class="tag">O momento "uau"</div><div class="lbl" style="color:#fff;"><b>PRJ-024</b>, marketplace do varejo: ok hoje (SPI 0,91) e <b>49%</b> de chance de estourar. O freeze de 01/11 vem aí, e o crédito de cloud acaba em 19 dias.</div></div>
-    </div>
   </div>
   [[RODAPE]]
 </section>
 
-<!-- 10 · NOITE 4 -->
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Noite 3 · os entregáveis no Databricks</div>
+  <h2 style="margin-bottom:18px; font-size:52px;">O modelo registrado e o score de hoje</h2>
+  <div class="grid g2" style="gap:20px 24px;">
+    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/noite3-modelo.jpg]]" alt="modelo_estouro_30d no Unity Catalog, @prod"><div class="small" style="margin-top:8px;">modelo_estouro_30d no Unity Catalog, @prod</div></div><div><img class="shot" style="height:560px;" src="[[IMG:docs/img/noite3-score.jpg]]" alt="gold.score_estouro_30d: prob, ranking e motivos"><div class="small" style="margin-top:8px;">gold.score_estouro_30d: prob, ranking e motivos</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- NOITE 4 -->
 <section class="slide">
-  <div class="kicker">Noite 4 · o projeto ganha uma URL</div>
-  <h2 style="margin-bottom:24px;">Do dado à decisão registrada</h2>
-  <div class="diagrama">
+  <div class="kicker">Noite 4 · Engenheiro de IA · 22/10</div>
+  <h2 style="margin-bottom:22px;">Transformar a resposta em decisão registrada</h2>
+  <div class="grid g2" style="gap:24px; grid-template-columns: 0.95fr 1.05fr;">
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="card"><div class="tag">O que foi feito</div><ul class="list" style="font-size:23px; gap:8px;"><li>contratos e manual: <b>ai_parse_document</b> → cláusulas → <b>ai_extract</b> tipado</li><li>multa cobrável e aviso prévio vencendo</li><li>Genie Diretoria + Contratos</li><li>app da Torre (AppKit): projetos, simulador, Genie</li><li>aprovação gravada no <b>Lakebase</b>; pitch com ROI</li></ul></div>
+      <div class="card hl"><div class="tag">Entregável</div><div class="lbl" style="color:#fff; font-size:23px;">uma URL que o dono abre no celular: pergunta, simula, aprova, e a decisão fica com nome e horário</div></div>
+      <div><span class="pill on" style="font-size:20px;">Genie 10/10</span><span class="pill on" style="font-size:20px;">R$ 1,12 mi de multa</span><span class="pill on" style="font-size:20px;">19 dias recuperados</span><span class="pill on" style="font-size:20px;">ROI ≈ R$ 3 mi</span></div>
+    </div>
+    <div class="diagrama" style="height:720px; flex:none;">
 <pre class="mermaid">
-flowchart LR
+flowchart TB
   PDF["8 contratos + manual<br/>(PDF)"] --> PD["ai_parse_document"] --> EX["ai_extract<br/>schema tipado"]
   EX --> CT[("gold.contratos<br/>multa · aviso prévio · SLA")]:::gold
   CT --> GC["Genie<br/>Diretoria + Contratos"]:::uso
@@ -222,6 +262,16 @@ flowchart LR
   classDef uso fill:#0e3a44,stroke:#22C2F4,color:#fff
   classDef lb fill:#0b2a5c,stroke:#467CF6,color:#fff
 </pre>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Noite 4 · os entregáveis no Databricks</div>
+  <h2 style="margin-bottom:18px; font-size:52px;">O app, o agente de contratos e a decisão no Lakebase</h2>
+  <div class="grid g2" style="gap:20px 24px;">
+    <div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite4-app.jpg]]" alt="o app farol-torre: projetos em risco, causa e score"><div class="small" style="margin-top:8px;">o app farol-torre: projetos em risco, causa e score</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite4-simulador.jpg]]" alt="simulador: COL0017 do PRJ-007 para o PRJ-011"><div class="small" style="margin-top:8px;">simulador: COL0017 do PRJ-007 para o PRJ-011</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite4-genie-contratos.jpg]]" alt="Farol · Diretoria + Contratos: a multa da CodeForge"><div class="small" style="margin-top:8px;">Farol · Diretoria + Contratos: a multa da CodeForge</div></div><div><img class="shot" style="height:330px;" src="[[IMG:docs/img/noite4-decisao.jpg]]" alt="a decisão aprovada, gravada no Lakebase"><div class="small" style="margin-top:8px;">a decisão aprovada, gravada no Lakebase</div></div>
   </div>
   [[RODAPE]]
 </section>
