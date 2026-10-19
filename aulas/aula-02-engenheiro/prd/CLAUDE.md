@@ -10,7 +10,7 @@ qualquer código**. Ele vale para os seis prompts da noite 2.
 
 A **Vértice Tecnologia** desenvolve e implanta sistemas para grandes clientes de varejo,
 financeiro, saúde, logística e indústria: 60 projetos, 520 pessoas, R$ 305 mi de carteira.
-Quem constrói a Torre é o novo CTO, promovido de engenheiro de dados. O problema: cada
+Quem constrói a Torre é o único profissional de dados da empresa, que faz os 4 papéis. O problema: cada
 gerente controla o projeto numa ferramenta — **20 em planilhas Excel, 25 no ClickUp e 15 no
 MS Project** — e ninguém sabe dizer quais projetos estão atrasados.
 

@@ -55,7 +55,7 @@ SELECT DISTINCT segmento FROM lakehouse_vertice.bronze.projetos ORDER BY segment
 -- MAGIC %md
 -- MAGIC 5. E em quais ferramentas os projetos vivem?
 -- MAGIC    Repare: 'Excel', 'excel' e 'Planilha' são a mesma coisa. É a primeira sujeira do dia,
--- MAGIC    e é o retrato do problema do CTO: cada um registra do seu jeito.
+-- MAGIC    e é o retrato do problema da Vértice: cada um registra do seu jeito.
 
 -- COMMAND ----------
 

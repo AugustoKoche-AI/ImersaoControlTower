@@ -7,7 +7,7 @@ Out 18, 2026 · @Luciano
 Em 4 noites, os alunos constroem no Databricks a **Torre de Controle de Projetos** de uma empresa de tecnologia —
 e saem sabendo vender esse projeto para o dono da empresa.
 
-A narrativa: **você era engenheiro de dados e acaba de ser promovido a CTO** da Vértice Tecnologia. O primeiro grande
+A narrativa: **você é o único profissional de dados** da Vértice Tecnologia, e faz o trabalho de analista, engenheiro, cientista e engenheiro de IA. O primeiro grande
 case é simples de dizer e difícil de fazer: ninguém sabe quais projetos estão atrasados, porque cada gerente controla o
 seu numa ferramenta — planilhas Excel, ClickUp ou MS Project — e o PMO consolida tudo à mão, toda sexta.
 
@@ -64,7 +64,7 @@ logística e indústria: 60 projetos (41 em andamento), R$ 305 mi de carteira, 5
 | Persona | O que precisa | Como usa a Torre |
 | --- | --- | --- |
 | Dono / diretoria | quais projetos atrasam, de quais clientes, quanto custa | dashboard + perguntas ao Genie |
-| CTO (o aluno) | construir e operar tudo isso | bundle, pipeline, modelo, app, com Claude Code |
+| Profissional de dados (o aluno) | construir e operar tudo isso | bundle, pipeline, modelo, app, com Claude Code |
 | PMO | as 3 ferramentas numa visão só, simular realocação | app: simula, aprova e registra |
 | Gerente de projeto | a causa do desvio, sem farol de enfeite | causa extraída do status semanal |
 | Financeiro | margem por contrato, estouro previsto, multa de fornecedor | EAC, margem e exposição contratual governados |
@@ -108,7 +108,7 @@ decimal; estornos; pessoa duplicada; status vazio.
 | 3 | Cientista de Dados | features projeto × semana; modelo de estouro em 30 dias (MLflow + UC); score por projeto com motivos | 3 prompts |
 | 4 | Engenheiro de IA | agente de contratos (ai_parse_document + ai_extract tipado + Genie); app da Torre (AppKit) com simulador e aprovação no Lakebase; pitch | 3 prompts |
 
-Toda noite tem uma trilha sem código para gestão, PMO e financeiro.
+
 
 ## Fora de escopo
 

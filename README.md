@@ -2,8 +2,8 @@
 
 **4 noites, 4 chapéus, 1 caso do começo ao fim.**
 
-Você era engenheiro de dados e acaba de ser promovido a **CTO da Vértice Tecnologia**, uma empresa fictícia com
-520 pessoas e 60 projetos de clientes. No primeiro dia, o dono pergunta uma coisa simples: *quais projetos estão
+Você é o **único profissional de dados da Vértice Tecnologia**, uma empresa fictícia com 520 pessoas e 60 projetos
+de clientes. Não tem time de dados: o analista, o engenheiro, o cientista e o engenheiro de IA são você. No primeiro dia, o dono pergunta uma coisa simples: *quais projetos estão
 atrasados?* E ninguém sabe responder, porque cada gerente controla o seu projeto numa ferramenta diferente.
 
 Em 4 noites, no **Databricks Free Edition** (grátis, na sua conta), você constrói a **Torre de Controle** que responde
@@ -12,7 +12,7 @@ status semanais e contratos.
 
 > **Imersão Jornada de Dados** · ao vivo no YouTube · **19 a 22 de outubro de 2026, às 19h30**
 > Stack: Databricks Free Edition (serverless), SQL, Python, Lakeflow, Unity Catalog, AI/BI, Genie, Apps, Lakebase e Claude Code.
-> Nunca programou? Toda noite tem uma **trilha sem código** e a noite 1 é toda no navegador.
+> Nunca programou? A noite 1 é toda no navegador.
 
 ---
 
@@ -22,7 +22,7 @@ A Vértice desenvolve e implanta sistemas para grandes clientes de varejo, finan
 São 60 projetos, e cada gerente controla o seu do seu jeito: **20 em planilhas Excel, 25 no ClickUp e 15 no
 MS Project**. O PMO consolida tudo à mão, toda sexta, e o farol do status semanal está quase todo verde.
 
-No primeiro dia do novo CTO, o dono faz quatro perguntas:
+Na sua primeira semana, o dono faz quatro perguntas:
 
 | # | Pergunta do dono | O que a Torre mede |
 |---|---|---|
@@ -169,7 +169,6 @@ prompts e um print de cada entregável, e no fim o tour pelos recursos do Databr
 | ![Genie de contratos](docs/img/noite4-genie-contratos.jpg) | ![Lakebase farol-torre](docs/img/recurso-lakebase-projeto.jpg) |
 
 Cada pasta é **autocontida** (README, roteiro, verificação e checkpoint). Perdeu uma noite? Comece da próxima.
-Toda noite tem uma **trilha sem código** para gestão, PMO e financeiro.
 
 ---
 

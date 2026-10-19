@@ -10,10 +10,11 @@ vai custar (R$ 6,47 mi); e mostrar a resposta num dashboard publicado. Tudo pelo
 
 ## 🏢 O caso: a Vértice Tecnologia
 
-Você era engenheiro de dados e acaba de ser promovido a **CTO da Vértice Tecnologia**: 520 pessoas,
-60 projetos de clientes (varejo, financeiro, saúde, logística e indústria).
+Você é o **único profissional de dados da Vértice Tecnologia**: 520 pessoas, 60 projetos de clientes (varejo,
+financeiro, saúde, logística e indústria). Sem time de dados, você vai ser o analista hoje, o engenheiro amanhã,
+o cientista na quarta e o engenheiro de IA na quinta.
 
-No primeiro dia, o dono te chama e faz quatro perguntas:
+Na primeira semana, o dono te chama e faz quatro perguntas:
 
 1. **Quais projetos estão atrasados, e de quais clientes?**
 2. **Quanto esse atraso vai me custar?**
@@ -370,19 +371,6 @@ Os comandos de terminal são opcionais hoje: a CLI é a lição de casa (veja o 
 
 ---
 
-## 🧭 Sem escrever código (trilha de gestão)
-
-Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
-
-1. faça os passos 1 a 4 (cliques, upload e um **Run all** no SQL Editor);
-2. abra o **dashboard** publicado e responda as perguntas do dono olhando para ele;
-3. use o **Genie** com as 4 perguntas do roteiro e compare com a tabela [O que deve aparecer na tela](#-o-que-deve-aparecer-na-tela);
-4. no SQL Editor, use o **Genie Code** (o assistente do editor) e peça: *"junte as tarefas de bronze.excel_tarefas,
-   bronze.clickup_tarefas e bronze.msproject_tarefas e calcule o SPI por projeto, com hoje = 2026-10-16"*.
-   Compare com o exemplo 05: ele lembrou da linha de TOTAL e das tarefas-resumo?
-
----
-
 ## 🧯 Se der errado
 
 | Sintoma | Causa | O que fazer |
@@ -415,7 +403,7 @@ Para quem é de gestão, PMO ou financeiro e quer acompanhar sem SQL:
 | `notebooks/` | os exemplos em notebook, resolvidos e em branco |
 | `gerar_dashboard.py` · `dashboard-bronze.lvdash.json` | o dashboard como código |
 | `genie-bronze.json` | o Genie sem curadoria (para errar) |
-| `roteiro-genie-e-dashboard.md` | o bloco sem código da aula, com as respostas do Genie no ensaio |
+| `roteiro-genie-e-dashboard.md` | o bloco final da aula (dashboard e Genie), com as respostas do Genie no ensaio |
 | Slides | [`slides/imersao.html`](../../slides/imersao.html), seção da noite 1 (abra no navegador, ← → navega, F tela cheia) |
 
 ---

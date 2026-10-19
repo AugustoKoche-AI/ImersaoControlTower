@@ -2,8 +2,8 @@
 
 Material e código da **Imersão Databricks + Claude Code** (Jornada de Dados, 19 a 22/10/2026): construir
 ao vivo, em 4 noites de 1h30, o **Projeto Farol**, a Torre de Controle de Projetos da **Vértice Tecnologia** (empresa
-de tecnologia fictícia, 520 pessoas, 60 projetos de clientes). A narrativa: você era engenheiro de dados, foi promovido a
-CTO, e o dono faz 4 perguntas (quais projetos atrasam e de quais clientes; quanto custa; tenho gente parada enquanto
+de tecnologia fictícia, 520 pessoas, 60 projetos de clientes). A narrativa: você é o único profissional de dados da
+Vértice, então faz o trabalho de analista, engenheiro, cientista e engenheiro de IA; o dono faz 4 perguntas (quais projetos atrasam e de quais clientes; quanto custa; tenho gente parada enquanto
 outro pede gente; o que vai dar errado no próximo mês). O problema central: os projetos vivem em **Excel (20), ClickUp
 (25) e MS Project (15)**, sem centralização. Noite 1 mostra o Databricks inteiro e junta à mão; noite 2 é a integração.
 

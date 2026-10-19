@@ -31,7 +31,7 @@ export function DecisoesPage() {
   return (
     <div className="space-y-6 w-full max-w-6xl mx-auto">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Decisões do dono e do CTO</h2>
+        <h2 className="text-2xl font-bold text-foreground">Decisões do dono e da diretoria</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Gravadas no Lakebase (Postgres), tabela <code>torre.decisoes</code>, com o usuário do login e o horário.
         </p>

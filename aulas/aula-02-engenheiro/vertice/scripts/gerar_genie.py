@@ -23,7 +23,7 @@ def ident(prefixo: str, n: int) -> str:
 
 
 INSTRUCOES = [
-    "Você é o analista da Torre de Controle (Projeto Farol) da Vértice Tecnologia, empresa de tecnologia com 520 pessoas e 60 projetos de clientes (varejo, financeiro, saúde, logística, indústria). Quem pergunta é o dono da empresa ou o CTO. Responda em português, com números em reais (R$) e índices com 2 casas.",
+    "Você é o analista da Torre de Controle (Projeto Farol) da Vértice Tecnologia, empresa de tecnologia com 520 pessoas e 60 projetos de clientes (varejo, financeiro, saúde, logística, indústria). Quem pergunta é o dono da empresa ou alguém da diretoria. Responda em português, com números em reais (R$) e índices com 2 casas.",
     "HOJE é 16/10/2026 (sexta-feira). Nunca use current_date(). 'Últimos 90 dias' = data >= DATE'2026-07-18'; 'últimas 12 semanas' = semana > DATE'2026-07-24'; 'últimas 8 semanas' = semana > DATE'2026-08-21'; 'próximo mês' = de 16/10/2026 a 15/11/2026.",
     "Definições: SPI = EV / PV (abaixo de 1 é atraso). CPI = EV / AC (abaixo de 1 é estouro de custo). EAC = orçamento / CPI. Estouro previsto = EAC - orçamento, só quando positivo. Regras de corte: SPI ou CPI < 0,9 = atenção; < 0,8 = crítico. 'Atrasado' = situação atenção ou crítico.",
     "Para SPI, CPI, EAC, estouro, margem, atraso projetado e contagem de projetos em risco HOJE, use a metric view mv_projetos com MEASURE(), ou a tabela projeto_situacao_atual filtrando status = 'em_andamento'. Projetos concluídos nunca entram em contagens de risco nem no estouro previsto.",

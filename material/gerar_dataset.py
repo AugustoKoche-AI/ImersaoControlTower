@@ -7,8 +7,8 @@ Uso:
 Só biblioteca padrão. A seed é fixa: todo aluno gera exatamente os mesmos
 arquivos e chega aos mesmos números.
 
-O case: você era engenheiro de dados e acaba de ser promovido a CTO da
-Vértice (520 pessoas, 60 projetos de clientes). O primeiro grande problema:
+O case: você é o único profissional de dados da Vértice (520 pessoas,
+60 projetos de clientes) e faz os 4 papéis. O primeiro grande problema:
 ninguém sabe quais projetos estão atrasados, porque cada gerente usa uma
 ferramenta. 20 projetos vivem em planilhas Excel, 25 no ClickUp e 15 no
 MS Project. A Torre de Controle junta tudo.

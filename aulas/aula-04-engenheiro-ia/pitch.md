@@ -12,7 +12,7 @@ explícitas**: troque pelas da sua empresa.
 ## O roteiro (falado)
 
 ### 0:00 – 0:30 · O problema
-> "Quando eu virei CTO, ninguém sabia dizer quais projetos estavam atrasados: 20 viviam no Excel, 25 no
+> "Quando eu cheguei na Vértice, ninguém sabia dizer quais projetos estavam atrasados: 20 viviam no Excel, 25 no
 > ClickUp e 15 no MS Project. Hoje a resposta é esta: dos **41 projetos em andamento**, **17 estão em
 > risco** e 7 já são críticos. Se nada mudar, vamos queimar **R$ 6,5 milhões de margem**. E 4 desses
 > projetos estavam com **farol verde** no status de sexta."

@@ -11,7 +11,7 @@ português. Tudo como código, com **seis prompts no Claude Code** e um job que 
 custa nada"), porque olhava dado sujo e espalhado. Hoje ele acerta as quatro, e as 20 do teste.
 
 > **O caso:** Vértice Tecnologia, 60 projetos de clientes, controlados em Excel (20), ClickUp (25) e
-> MS Project (15). Você era engenheiro de dados e acabou de virar CTO.
+> MS Project (15). Você é o único profissional de dados: hoje, o engenheiro.
 > **Pergunta da noite:** *"Como as três ferramentas viram uma — e isso roda sozinho, certo?"*
 > **Conexão:** a gold de hoje é o que a [noite 3](../aula-03-cientista) usa para prever qual
 > projeto vai estourar em 30 dias.
@@ -490,15 +490,6 @@ python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 
 ---
 
-## 🧩 Sem código: a mesma noite pela interface
-
-Para quem é de gestão, PMO ou financeiro: [`sem-codigo.md`](sem-codigo.md) refaz as entregas
-clicando (Lakeflow Designer, Genie Code, metric view pela interface, dashboard e Genie). O resultado
-é o mesmo; a diferença é que o que é clicado não fica no Git, e precisa ser clicado de novo na
-segunda que vem.
-
----
-
 ## 📁 O que tem nesta pasta
 
 | Caminho | O que é |
@@ -511,7 +502,6 @@ segunda que vem.
 | `vertice/` | **o gabarito**: o bundle completo, testado |
 | `vertice/scripts/gerar_dashboard.py`, `gerar_genie.py` | dashboard e Genie gerados por código |
 | `meu-vertice/` | onde o **seu** bundle nasce no prompt 1 |
-| `sem-codigo.md` | a trilha pela interface |
 | `APRENDIZADOS.md` | o que falhou no ensaio do Free Edition e como foi resolvido |
 
 ## ➡️ Amanhã

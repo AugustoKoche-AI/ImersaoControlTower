@@ -5,8 +5,8 @@ quando o dado está espalhado em três ferramentas e nenhum KPI está definido. 
 
 ## As 4 perguntas do dono
 
-Abra o bloco com a cena: o dono da Vértice chama o novo CTO (você, que até mês passado era
-engenheiro de dados) e faz quatro perguntas. São as perguntas da semana inteira:
+Abra o bloco com a cena: o dono da Vértice chama você, o único profissional de dados da empresa,
+e faz quatro perguntas. São as perguntas da semana inteira:
 
 1. **Quais projetos estão atrasados, e de quais clientes?**
 2. **Quanto esse atraso vai me custar?**

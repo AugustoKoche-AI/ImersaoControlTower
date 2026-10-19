@@ -310,13 +310,6 @@ bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil>
 
 ---
 
-## 🧭 Sem escrever código (trilha de gestão)
-
-Veja [`sem-codigo.md`](sem-codigo.md): o mesmo resultado com o **Genie** (pergunta-âncora e benchmark na
-mão) e com o **Genie App Builder** (o app descrito em português).
-
----
-
 ## 🗂️ Arquivos
 
 | Arquivo | Para que serve |
@@ -329,6 +322,5 @@ mão) e com o **Genie App Builder** (o app descrito em português).
 | `torre-app/` | o gabarito: app + agente + job + scripts |
 | `meu-agente/`, `minha-torre/` | onde você constrói |
 | `pitch.md` | o pitch de 3 minutos e o checklist de publicação |
-| `sem-codigo.md` | trilha sem código |
 | `APRENDIZADOS.md` | o que falhou no ensaio e como foi resolvido |
 | Slides | [`slides/imersao.html`](../../slides/imersao.html), seção da noite 4 (abra no navegador, ← → navega, F tela cheia) |

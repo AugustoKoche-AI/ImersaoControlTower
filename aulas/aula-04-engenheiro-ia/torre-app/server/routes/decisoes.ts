@@ -1,4 +1,4 @@
-// Decisões do dono e do CTO, gravadas no Lakebase (Postgres).
+// Decisões do dono e da diretoria, gravadas no Lakebase (Postgres).
 //
 // Por que Postgres e não uma tabela Delta? Porque isto é uma TRANSAÇÃO: uma
 // pessoa clica, uma linha nasce, e ela precisa aparecer na hora para todo

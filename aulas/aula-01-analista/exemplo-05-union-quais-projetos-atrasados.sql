@@ -4,7 +4,7 @@
 -- Conceito: CTE (WITH), UNION ALL, CASE, JOIN, conversão de datas
 -- Pergunta de negócio: QUAIS PROJETOS ESTÃO MAIS ATRASADOS?
 --
--- É a primeira pergunta que o CTO recebeu, e ninguém na Vértice sabia responder:
+-- É a primeira pergunta que o dono fez, e ninguém na Vértice sabia responder:
 -- 20 projetos estão no Excel, 25 no ClickUp e 15 no MS Project. Aqui a gente faz
 -- um RASCUNHO à mão: cada ferramenta é traduzida para as mesmas 7 colunas e
 -- empilhada com UNION ALL. Na noite 2 isso vira pipeline de verdade (silver).

@@ -70,7 +70,7 @@ as métricas estão prontos. Agora as duas portas para quem não escreve SQL.
      tabelas gold.fato_projeto_semana, gold.projeto_situacao_atual,
      gold.status_estruturado, gold.utilizacao_pessoa_semana e
      silver.entregas_fornecedor, e a metric view gold.mv_projetos; as 4 perguntas do dono como perguntas de
-     exemplo; instruções de texto com: quem pergunta (o dono e o CTO); HOJE =
+     exemplo; instruções de texto com: quem pergunta (o dono e a diretoria); HOJE =
      2026-10-16 e o que é "últimos 90 dias / 12 semanas / próximo mês"; as
      fórmulas e as regras de corte; mv_projetos para totais de hoje e
      projeto_situacao_atual para ranking; PV/EV/AC acumulados no fato (nunca

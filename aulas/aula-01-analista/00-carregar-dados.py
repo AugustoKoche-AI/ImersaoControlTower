@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # Noite 1 · Carregar os dados da Vértice Tecnologia
 # MAGIC
-# MAGIC Você acaba de ser promovido de engenheiro de dados a **CTO da Vértice**. Primeira pergunta da diretoria:
+# MAGIC Você é o **único profissional de dados da Vértice**. Primeira pergunta da diretoria:
 # MAGIC *quais projetos estão mais atrasados?* Ninguém sabe responder, porque cada gerente usa uma ferramenta.
 # MAGIC
 # MAGIC Rode este notebook **uma vez**, de cima para baixo (botão **Run all**). Ele:

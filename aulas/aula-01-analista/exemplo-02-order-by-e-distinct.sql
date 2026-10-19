@@ -31,7 +31,7 @@ SELECT DISTINCT segmento FROM lakehouse_vertice.bronze.projetos ORDER BY segment
 
 -- 5. E em quais ferramentas os projetos vivem?
 --    Repare: 'Excel', 'excel' e 'Planilha' são a mesma coisa. É a primeira sujeira do dia,
---    e é o retrato do problema do CTO: cada um registra do seu jeito.
+--    e é o retrato do problema da Vértice: cada um registra do seu jeito.
 SELECT DISTINCT ferramenta
 FROM lakehouse_vertice.bronze.projetos
 ORDER BY ferramenta;

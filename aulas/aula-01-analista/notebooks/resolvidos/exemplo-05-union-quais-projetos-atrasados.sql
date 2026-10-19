@@ -4,7 +4,7 @@
 -- MAGIC Conceito: CTE (WITH), UNION ALL, CASE, JOIN, conversão de datas
 -- MAGIC Pergunta de negócio: QUAIS PROJETOS ESTÃO MAIS ATRASADOS?
 -- MAGIC
--- MAGIC É a primeira pergunta que o CTO recebeu, e ninguém na Vértice sabia responder:
+-- MAGIC É a primeira pergunta que o dono fez, e ninguém na Vértice sabia responder:
 -- MAGIC 20 projetos estão no Excel, 25 no ClickUp e 15 no MS Project. Aqui a gente faz
 -- MAGIC um RASCUNHO à mão: cada ferramenta é traduzida para as mesmas 7 colunas e
 -- MAGIC empilhada com UNION ALL. Na noite 2 isso vira pipeline de verdade (silver).

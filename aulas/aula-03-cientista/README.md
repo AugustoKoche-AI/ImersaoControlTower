@@ -311,13 +311,6 @@ bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh SEU-PERFIL --apagar   # ap
 
 ---
 
-## 🧭 Sem escrever código
-
-[`sem-codigo.md`](sem-codigo.md): como gestão, PMO e financeiro usam o score sem
-abrir notebook — a lista no SQL Editor, a pergunta no Genie e a leitura dos motivos.
-
----
-
 ## 🗂️ Arquivos desta pasta
 
 | Arquivo | Para que serve |
@@ -327,7 +320,6 @@ abrir notebook — a lista no SQL Editor, a pergunta no Genie e a leitura dos mo
 | `99-verificacao.sql` | 17 checagens esperado × obtido |
 | `notebooks/01-o-que-o-modelo-vale.sql` | conferência: métricas, lista de segunda e a curva do PRJ-024 |
 | `notebooks/02-o-vazamento-de-dado.py` | o mesmo modelo em 3 divisões: honesta, aleatória e com vazamento |
-| `sem-codigo.md` | a trilha de gestão |
 | `APRENDIZADOS.md` | o que falhou no Free Edition e como resolvemos |
 | Gabarito | [`../aula-02-engenheiro/vertice/src/ml/`](../aula-02-engenheiro/vertice/src/ml) + as tarefas `ml_*` em `resources/vertice.job.yml` |
 
@@ -336,7 +328,7 @@ abrir notebook — a lista no SQL Editor, a pergunta no Genie e a leitura dos mo
 ## ➡️ Amanhã
 
 A lista existe, com motivo. Mas ela mora numa tabela, e o dono não abre o
-SQL Editor. Amanhã ela ganha uma **URL**: o app da Torre, onde o CTO vê a
+SQL Editor. Amanhã ela ganha uma **URL**: o app da Torre, onde o dono vê a
 lista, simula realocar um dos SREs parados no PRJ-007 para o PRJ-011 e
 **aprova**, com a decisão gravada no Lakebase. E um agente que lê os contratos
 de fornecedor e o manual da Vértice e diz o que fazer antes do freeze. → [aula-04](../aula-04-engenheiro-ia)

@@ -8,7 +8,7 @@
 
 <section class="slide">
   <div class="kicker">O caso</div>
-  <h2>Você era engenheiro de dados. <span class="grad">Agora é o CTO da Vértice.</span></h2>
+  <h2>Você é o <span class="grad">único profissional de dados</span> da Vértice</h2>
   <div class="grid g4" style="margin-bottom:34px;">
     <div class="card hl"><div class="num md">520</div><div class="lbl">pessoas</div></div>
     <div class="card hl"><div class="num md">60</div><div class="lbl">projetos de clientes (41 em andamento)</div></div>
@@ -144,7 +144,7 @@
     <tr><td>PMO</td><td>as 3 ferramentas numa visão só, simular realocação</td><td>app: simula, aprova e registra a decisão</td></tr>
     <tr><td>Financeiro e controller</td><td>margem por contrato, estouro previsto</td><td>EAC e margem projetada governados</td></tr>
     <tr><td>Compras</td><td>consultoria subcontratada que atrasa</td><td>ranking de fornecedor e a multa que dá para cobrar</td></tr>
-    <tr class="cur"><td>CTO (você)</td><td>construir e operar tudo isso</td><td>bundle, pipeline, modelo, app, com Claude Code</td></tr>
+    <tr class="cur"><td>Profissional de dados (você)</td><td>construir e operar tudo isso</td><td>bundle, pipeline, modelo, app, com Claude Code</td></tr>
   </table>
   [[RODAPE]]
 </section>
@@ -173,7 +173,7 @@
     <tr><td>3 · 21/10</td><td>Cientista de Dados</td><td>Quais vão estourar em 30 dias?</td><td>modelo no Unity Catalog, score por projeto</td></tr>
     <tr><td>4 · 22/10</td><td>Engenheiro de IA</td><td>E o dono, que não escreve SQL?</td><td>agente de contratos, app + Lakebase, pitch</td></tr>
   </table>
-  <p class="note" style="margin-top:28px;">Repositório: <b>github.com/lvgalvao/ImersaoControlTower</b> · tudo no Databricks Free Edition · trilha sem código em todas as noites</p>
+  <p class="note" style="margin-top:28px;">Repositório: <b>github.com/lvgalvao/ImersaoControlTower</b> · tudo no Databricks Free Edition</p>
   [[RODAPE]]
 </section>
 
@@ -206,6 +206,334 @@ flowchart LR
     <tr><td>utilizacao_pessoa_semana · status_estruturado</td><td>2</td><td>gente parada × gente pedida · por que travou (IA)</td></tr>
     <tr><td>mv_projetos · score_estouro_30d · contratos</td><td>2 · 3 · 4</td><td>a métrica governada · o que vem aí · o que o contrato diz</td></tr>
   </table>
+  [[RODAPE]]
+</section>
+
+<!-- ============================================================ NOITE 1 -->
+
+
+<!-- ============================================================ NIVELAMENTO -->
+
+<section class="slide hero">
+  <div class="kicker">Nivelamento · antes da primeira query</div>
+  <h1>O mínimo para<br><span class="grad">acompanhar tudo</span></h1>
+  <p class="sub" style="margin-top:30px;">Primeiro o Databricks: o que é, por que o mercado usa e como entrar. Depois os conceitos de dado e de gestão de projetos que aparecem nas 4 noites.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · Databricks · o que é</div>
+  <h2>Uma plataforma para <span class="grad">dado e IA</span>, num lugar só</h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Em uma frase</div>
+      <div class="lbl" style="color:#fff; font-size:30px; font-weight:700; line-height:1.3;">Guardar, limpar, analisar e colocar IA em cima dos dados da empresa, sem montar dez ferramentas diferentes.</div>
+      <ul class="list" style="margin-top:22px;">
+        <li>roda na nuvem: AWS, Azure ou Google Cloud</li>
+        <li>SQL, Python, dashboards, IA e apps no mesmo lugar</li>
+        <li>quem usa: analista, engenheiro, cientista, engenheiro de IA e o negócio</li></ul></div>
+    <div class="card"><div class="tag">De onde veio</div><ul class="list">
+      <li>fundada em <b>2013</b> pelos criadores do <b>Apache Spark</b>, na Universidade da Califórnia em Berkeley</li>
+      <li>criou e abriu projetos que viraram padrão de mercado: <b>Spark</b>, <b>Delta Lake</b>, <b>MLflow</b> e o <b>Unity Catalog</b></li>
+      <li>popularizou a ideia de <b>lakehouse</b>: o próximo slide</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · Databricks · o mercado</div>
+  <h2>Por que vale a pena <span class="grad">aprender isso agora</span></h2>
+  <div class="grid g4" style="gap:22px;">
+    <div class="card hl"><div class="num md">US$ 190 bi</div><div class="lbl">de avaliação, na rodada de US$ 5 bi de ago/2026</div></div>
+    <div class="card hl"><div class="num md">US$ 7 bi</div><div class="lbl">de receita anualizada, crescendo mais de 80% ao ano</div></div>
+    <div class="card"><div class="num md">20 mil+</div><div class="lbl">empresas clientes no mundo</div></div>
+    <div class="card"><div class="num md">60%+</div><div class="lbl">da Fortune 500 usa Databricks</div></div>
+  </div>
+  <div class="card" style="margin-top:28px;"><div class="tag">O que isso quer dizer para você</div><div class="lbl" style="color:#fff; font-size:26px;">É uma das empresas de dados que mais cresce no mundo, e a vaga de dados que pede "Databricks" já não é exceção. O que você faz nestas 4 noites é o que essas empresas fazem todo dia.</div></div>
+  <p class="note" style="margin-top:22px;">Fontes: Databricks (comunicado de 2026: US$ 7 bi de run-rate) e CNBC (13/08/2026: rodada a US$ 190 bi); página de clientes da Databricks (20 mil+, 60%+ da Fortune 500).</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · Databricks · lakehouse</div>
+  <h2>Data warehouse + data lake = <span class="grad">lakehouse</span></h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card"><div class="tag">Data warehouse</div><ul class="list">
+      <li>tabelas organizadas, SQL rápido, dashboards</li>
+      <li>caro e rígido; não guarda planilha, PDF, JSON</li></ul></div>
+    <div class="card"><div class="tag">Data lake</div><ul class="list">
+      <li>guarda qualquer arquivo, barato</li>
+      <li>vira um "pântano": ninguém sabe o que tem, nem confia</li></ul></div>
+    <div class="card hl"><div class="tag">Lakehouse</div><ul class="list">
+      <li>os arquivos ficam no lake, mas com <b>tabela de verdade</b> por cima (Delta)</li>
+      <li>governança num catálogo só (Unity Catalog)</li>
+      <li>SQL, BI, ML e IA sobre o <b>mesmo</b> dado</li></ul></div>
+  </div>
+  <p class="note" style="margin-top:28px;">No Projeto Farol: as planilhas, os JSON e os XML entram como arquivo no <b>volume</b> e viram <b>tabela</b> no mesmo catálogo. É o lakehouse na prática.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · Databricks · o mapa do workspace</div>
+  <h2>Um workspace, <span class="grad">seis blocos</span></h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card hl"><div class="tag">Onde mora o código</div><div class="lbl" style="color:#fff;">Workspace · Git folder · bundle · notebooks</div></div>
+    <div class="card hl"><div class="tag">Quem processa</div><div class="lbl" style="color:#fff;">Serverless · SQL Warehouse</div></div>
+    <div class="card hl"><div class="tag">Onde mora o dado</div><div class="lbl" style="color:#fff;">Unity Catalog · schemas · tabelas · volumes · lineage · metric views</div></div>
+    <div class="card"><div class="tag">Quem move o dado</div><div class="lbl">Data Ingestion · Lakeflow pipeline · Jobs</div></div>
+    <div class="card"><div class="tag">Quem pergunta</div><div class="lbl">SQL Editor · Query History · AI/BI Dashboard · Genie · funções de IA</div></div>
+    <div class="card"><div class="tag">Quem decide</div><div class="lbl">MLflow · modelo no Unity Catalog · Lakebase · Apps</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Tudo isto existe no <b>Free Edition</b>, sem cartão de crédito. O tour completo, tela a tela, está no apêndice.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · Databricks · Free Edition</div>
+  <h2>Sua conta, <span class="grad">de graça e sem cartão</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Como criar (5 min)</div><ul class="list">
+      <li>entre em <b>databricks.com/learn/free-edition</b></li>
+      <li><b>Sign up</b> com Google, Microsoft ou e-mail (o login é por código, sem senha)</li>
+      <li>o workspace abre pronto: não tem cluster para criar</li>
+      <li>guarde o endereço do seu workspace (<b>dbc-….cloud.databricks.com</b>): cada conta tem o seu</li></ul></div>
+    <div class="card"><div class="tag">O que vem</div><ul class="list">
+      <li>tudo <b>serverless</b>: o Databricks liga e desliga a máquina</li>
+      <li>1 SQL Warehouse (2X-Small), notebooks, jobs, pipelines</li>
+      <li>dashboards, Genie, funções de IA, Lakebase e até 3 apps</li></ul>
+      <div class="tag" style="margin-top:22px;">Cuidado</div><ul class="list">
+      <li>entrou e viu tudo vazio? Confira se é a <b>conta certa</b>: o login leva ao workspace da última conta usada</li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · Databricks · como se usa</div>
+  <h2>O menu da esquerda <span class="grad">é o mapa da semana</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>No menu</th><th>Para que serve</th><th>Noite</th></tr>
+    <tr><td>Catalog</td><td>ver catálogos, schemas, tabelas e volumes; subir arquivo</td><td>1 em diante</td></tr>
+    <tr><td>SQL Editor</td><td>escrever e rodar SQL</td><td>1</td></tr>
+    <tr><td>Dashboards</td><td>montar e publicar painéis</td><td>1 e 2</td></tr>
+    <tr><td>Genie Agents</td><td>perguntar em português para os dados</td><td>1, 2 e 4</td></tr>
+    <tr><td>Jobs &amp; Pipelines</td><td>o que roda sozinho, com agenda</td><td>2 e 3</td></tr>
+    <tr><td>Experiments · Models</td><td>MLflow e o modelo registrado</td><td>3</td></tr>
+    <tr><td>Compute → Apps · Lakebase</td><td>o app da Torre e o banco que grava as decisões</td><td>4</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · conceitos de dado</div>
+  <h2>As palavras que você vai <span class="grad">ouvir o tempo todo</span></h2>
+  <table class="t" style="font-size:21px;">
+    <tr><th>Termo</th><th>Em uma frase</th></tr>
+    <tr><td>Tabela</td><td>linhas e colunas que o SQL consegue ler; no Databricks, uma tabela <b>Delta</b></td></tr>
+    <tr><td>SQL</td><td>a língua para perguntar ao dado: SELECT o quê, FROM onde, WHERE com qual filtro</td></tr>
+    <tr><td>Catálogo · schema</td><td>a gaveta e a pasta: <b>lakehouse_vertice</b> &gt; <b>bronze</b> &gt; <b>projetos</b></td></tr>
+    <tr><td>Volume</td><td>a pasta de <b>arquivos</b> (planilha, JSON, XML, PDF) dentro do catálogo</td></tr>
+    <tr><td>Serverless · warehouse</td><td>a máquina que roda tudo, ligada e desligada pelo Databricks</td></tr>
+    <tr><td>Pipeline · job</td><td>a sequência que roda sozinha e na ordem certa, toda segunda</td></tr>
+    <tr><td>KPI · métrica governada</td><td>o número do negócio, com a fórmula definida uma vez só</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · conceitos de dado · o medalhão</div>
+  <h2>Três camadas: <span class="grad">bronze, silver e gold</span></h2>
+  <div class="flow">
+    <div class="card"><div class="med b">● Bronze · como veio</div><div class="lbl">o arquivo virou tabela, sem mexer em nada. A sujeira fica, de propósito: dá para voltar na origem e comparar.</div><div class="tag" style="margin-top:16px;">noite 1</div></div>
+    <div class="arr">→</div>
+    <div class="card"><div class="med s">● Silver · limpo e junto</div><div class="lbl">datas e números corrigidos, duplicatas fora, as 3 ferramentas num modelo só. Testado.</div><div class="tag" style="margin-top:16px;">noite 2</div></div>
+    <div class="arr">→</div>
+    <div class="card hl"><div class="med g">● Gold · pronto para decidir</div><div class="lbl">uma tabela por pergunta do dono, com o KPI calculado. É o que dashboard, Genie e app leem.</div><div class="tag" style="margin-top:16px;">noites 2 a 4</div></div>
+  </div>
+  <p class="note" style="margin-top:28px;">Separar em camadas é o que permite consertar um erro sem perder a origem, e trocar uma fonte sem quebrar o dashboard.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Nivelamento · gestão de projetos · como se mede um projeto</div>
+  <h2>O plano dizia <span class="grad">3 meses</span>. Hoje é o fim do 3º mês.</h2>
+  <p class="sub" style="margin-bottom:30px;">Um projeto de <b>3 meses</b> por <b>R$ 300 mil</b>. A linha vermelha é <b>hoje</b>: o dia da entrega.</p>
+
+  <div style="display:grid; grid-template-columns:260px 1fr; row-gap:22px; column-gap:28px; align-items:center;">
+    <div style="font-size:24px; color:var(--muted);">Meses</div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; font-size:22px; color:var(--muted); font-weight:600; text-align:center;">
+      <div>mês 1</div><div>mês 2</div><div>mês 3</div><div style="color:var(--gray);">mês 4</div>
+    </div>
+
+    <div style="font-size:26px;"><b>O plano</b><div class="small">o que foi combinado</div></div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+      <div style="grid-column:1 / span 3; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px;">100% pronto em 3 meses</div>
+      <div style="height:64px; border-radius:14px; border:2px dashed var(--line);"></div>
+    </div>
+
+    <div style="font-size:26px;"><b>A realidade</b><div class="small">o que está pronto hoje</div></div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+      <div style="grid-column:1 / span 3; display:flex; gap:0; border-radius:14px; overflow:hidden;">
+        <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ffd166; color:#14141A; padding-left:24px; border-radius:0;">75% pronto</div>
+        <div style="flex:1; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--card-2); color:var(--muted); justify-content:center; border-radius:0;">falta 25%</div>
+      </div>
+      <div style="height:64px; border-radius:14px; border:2px dashed #ff6b6b; display:flex; align-items:center; justify-content:center; font-size:22px; color:#ff6b6b; font-weight:600;">+1 mês</div>
+    </div>
+
+    <div style="font-size:26px;"><b>O dinheiro</b><div class="small">o que já foi gasto</div></div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+      <div style="grid-column:1 / span 3; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; padding-left:24px;">R$ 300 mil gastos · o orçamento inteiro</div>
+      <div style="height:64px; border-radius:14px; border:2px dashed #ff6b6b; display:flex; align-items:center; justify-content:center; font-size:22px; color:#ff6b6b; font-weight:600;">+ R$ ?</div>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:calc(120px + 260px + 28px + (100% - 240px - 260px - 28px) * 0.75 - 8px); top:335px; height:330px; width:0; border-left:3px solid #ff6b6b;"></div>
+  <div style="position:absolute; left:calc(120px + 260px + 28px + (100% - 240px - 260px - 28px) * 0.75 + 4px); top:306px; font-size:20px; font-weight:700; color:#ff6b6b; letter-spacing:.1em;">HOJE</div>
+
+  <p class="note" style="margin-top:34px;">Três perguntas, três números: <b>quanto devia estar pronto</b> (100%), <b>quanto está pronto</b> (75%), <b>quanto já custou</b> (R$ 300 mil). Tudo o que vem agora é dividir um pelo outro.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">SPI · Schedule Performance Index · índice de prazo</div>
+  <h2>SPI: quanto do que <span class="grad">devia</span> estar pronto <span class="grad">está</span> pronto?</h2>
+
+  <div style="display:grid; grid-template-columns:300px 1fr 200px; row-gap:26px; column-gap:28px; align-items:center; margin-top:10px;">
+    <div style="font-size:26px;"><b>Devia estar pronto</b><div class="small">PV · pelo plano, no fim do 3º mês</div></div>
+    <div style="display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px;">100%</div>
+    <div></div>
+
+    <div style="font-size:26px;"><b>Está pronto</b><div class="small">EV · valor agregado</div></div>
+    <div style="display:flex; border-radius:14px; overflow:hidden;">
+      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ffd166; color:#14141A; padding-left:24px; border-radius:0;">75%</div>
+      <div style="flex:1; background:var(--card-2);"></div>
+    </div>
+    <div></div>
+  </div>
+
+  <div class="grid g2" style="gap:28px; margin-top:40px;">
+    <div class="card hl">
+      <div class="tag">A conta</div>
+      <div style="font-size:46px; font-weight:800; margin:8px 0;">SPI = 75% ÷ 100% = 0,75</div>
+      <div class="lbl" style="font-size:25px;">"andou <b>75% do que devia</b>". Em tempo: 3 meses ÷ 0,75 = <b>4 meses</b>. Um mês de atraso, se o ritmo não mudar.</div>
+    </div>
+    <div class="card">
+      <div class="tag">A régua da Torre</div>
+      <div style="display:flex; height:40px; border-radius:12px; overflow:hidden; font-size:20px; font-weight:700; margin:14px 0 10px;">
+        <div style="flex:0 0 40%; background:#ff6b6b; display:flex; align-items:center; justify-content:center; color:#14141A;">crítico &lt; 0,80</div>
+        <div style="flex:0 0 20%; background:#ffd166; display:flex; align-items:center; justify-content:center; color:#14141A;">atenção</div>
+        <div style="flex:1; background:#5ad47a; display:flex; align-items:center; justify-content:center; color:#14141A;">ok ≥ 0,90</div>
+      </div>
+      <div class="lbl">Nosso exemplo (0,75) é <b style="color:#ff6b6b;">crítico</b>. Na Vértice, o pior é o <b>PRJ-016: 0,63</b>, +298 dias projetados.</div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">CPI · Cost Performance Index · índice de custo</div>
+  <h2>CPI: o que foi entregue <span class="grad">vale</span> quanto, e <span class="grad">custou</span> quanto?</h2>
+
+  <div style="display:grid; grid-template-columns:300px 1fr; row-gap:26px; column-gap:28px; align-items:center; margin-top:10px;">
+    <div style="font-size:26px;"><b>Vale</b><div class="small">EV · 75% de R$ 300 mil</div></div>
+    <div style="display:flex; border-radius:14px; overflow:hidden;">
+      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ffd166; color:#14141A; padding-left:24px; border-radius:0;">R$ 225 mil</div>
+      <div style="flex:1; background:var(--card-2);"></div>
+    </div>
+
+    <div style="font-size:26px;"><b>Custou</b><div class="small">AC · custo real</div></div>
+    <div style="display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; padding-left:24px;">R$ 300 mil</div>
+  </div>
+
+  <div class="grid g2" style="gap:28px; margin-top:40px;">
+    <div class="card hl">
+      <div class="tag">A conta</div>
+      <div style="font-size:46px; font-weight:800; margin:8px 0;">CPI = 225 ÷ 300 = 0,75</div>
+      <div class="lbl" style="font-size:25px;">cada <b>R$ 1</b> gasto comprou <b>R$ 0,75</b> de entrega. Os outros 25 centavos viraram retrabalho, hora extra, escopo que ninguém cobrou.</div>
+    </div>
+    <div class="card">
+      <div class="tag">Independentes</div>
+      <div class="lbl" style="font-size:25px;">Aqui os dois deram 0,75 por coincidência. Dá para estar <b>no prazo e estourando</b> (hora extra para entregar) ou <b>atrasado e barato</b> (time parado). Por isso a Torre olha os dois.</div>
+      <div class="lbl">Na Vértice: <b>PRJ-009, CPI 0,77</b>. E 8 projetos com o CPI caindo desde o 6º mês.</div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">EAC · Estimate at Completion · estimativa no término</div>
+  <h2>EAC: se nada mudar, <span class="grad">quanto vai custar no fim</span>?</h2>
+
+  <div style="display:grid; grid-template-columns:300px 1fr; row-gap:26px; column-gap:28px; align-items:center; margin-top:10px;">
+    <div style="font-size:26px;"><b>Orçamento</b><div class="small">BAC · o combinado</div></div>
+    <div style="display:flex; border-radius:14px; overflow:hidden;">
+      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px; border-radius:0;">R$ 300 mil</div>
+      <div style="flex:1;"></div>
+    </div>
+
+    <div style="font-size:26px;"><b>Vai custar</b><div class="small">EAC = orçamento ÷ CPI</div></div>
+    <div style="display:flex; border-radius:14px; overflow:hidden;">
+      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px; border-radius:0; opacity:.55;">R$ 300 mil</div>
+      <div style="flex:1; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; justify-content:center; border-radius:0;">+ R$ 100 mil</div>
+    </div>
+
+    <div style="font-size:26px;"><b>Prazo</b><div class="small">duração ÷ SPI</div></div>
+    <div style="display:flex; border-radius:14px; overflow:hidden;">
+      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px; border-radius:0; opacity:.55;">3 meses</div>
+      <div style="flex:1; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; justify-content:center; border-radius:0;">+ 1 mês</div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="gap:28px; margin-top:40px;">
+    <div class="card hl">
+      <div class="tag">A conta</div>
+      <div style="font-size:46px; font-weight:800; margin:8px 0;">300 ÷ 0,75 = R$ 400 mil</div>
+      <div class="lbl" style="font-size:25px;"><b>Estouro previsto: R$ 100 mil.</b> É o primeiro número que o dono quer ouvir, e sai de três colunas: orçamento, % concluído e custo real.</div>
+    </div>
+    <div class="card">
+      <div class="tag">Na Vértice</div>
+      <div class="num md" style="color:#ff6b6b;">R$ 6,47 mi</div>
+      <div class="lbl">de estouro previsto, somando só quem estoura. O maior é o <b>PRJ-021, R$ 1,78 mi</b>. Resposta da pergunta 2 do dono.</div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Farol × número</div>
+  <h2>O projeto <span class="grad">melancia</span></h2>
+  <div class="grid g2" style="gap:28px;">
+    <div class="card">
+      <div class="tag">O farol</div>
+      <div class="lbl" style="font-size:26px;">Toda sexta o gerente põe uma cor no status: <b style="color:#5ad47a;">verde</b>, <b style="color:#ffd166;">amarelo</b> ou <b style="color:#ff6b6b;">vermelho</b>. No olhômetro. É a mensagem do pedreiro: <i>"tá tudo certo, chefe"</i>.</div>
+      <div class="num md" style="margin-top:22px; color:#5ad47a;">32 verdes</div><div class="lbl">de 41 projetos em andamento, pelo gerente</div>
+    </div>
+    <div class="card hl">
+      <div class="tag">O número</div>
+      <div class="lbl" style="font-size:26px; color:#dbe6ff;">O SPI não tem opinião. Ele divide o que está pronto pelo que devia estar.</div>
+      <div class="num md" style="margin-top:22px;">24 ok</div><div class="lbl">pelo SPI e CPI. Os outros 17 estão em atenção ou críticos.</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:28px; border-color:var(--blue-2);">
+    <div class="lbl" style="font-size:27px;"><b>Melancia</b> = verde por fora, vermelho por dentro. <b>4 projetos</b> na Vértice (PRJ-012, 028, 034, 042) estão verdes para o gerente e abaixo de 0,9 pelo número. Ninguém mentiu. Só ninguém fez a conta.</div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Glossário · as siglas ficam em inglês, até no PMO brasileiro</div>
+  <h2>As siglas, em uma linha cada</h2>
+  <table class="t" style="font-size:23px;">
+    <tr><th>Sigla</th><th>Inglês</th><th>Português (PMBOK)</th><th>Em uma frase</th></tr>
+    <tr><td>PV</td><td>Planned Value</td><td>Valor Planejado</td><td>quanto devia estar pronto hoje</td></tr>
+    <tr><td>EV</td><td>Earned Value</td><td>Valor Agregado</td><td>quanto está pronto de verdade</td></tr>
+    <tr><td>AC</td><td>Actual Cost</td><td>Custo Real</td><td>quanto já foi gasto</td></tr>
+    <tr class="cur"><td>SPI</td><td>Schedule Performance Index</td><td>Índice de Desempenho de Prazo</td><td>EV ÷ PV · abaixo de 1 é atraso</td></tr>
+    <tr class="cur"><td>CPI</td><td>Cost Performance Index</td><td>Índice de Desempenho de Custo</td><td>EV ÷ AC · abaixo de 1 é estouro</td></tr>
+    <tr><td>BAC</td><td>Budget at Completion</td><td>Orçamento no Término</td><td>o orçamento original</td></tr>
+    <tr><td>EAC</td><td>Estimate at Completion</td><td>Estimativa no Término</td><td>BAC ÷ CPI · quanto vai custar no fim</td></tr>
+    <tr><td>Estouro</td><td>VAC · Variance at Completion</td><td>Variação no Término</td><td>EAC − BAC</td></tr>
+    <tr><td>Baseline</td><td>Baseline</td><td>Linha de base</td><td>o plano original, contra o qual tudo é medido</td></tr>
+  </table>
+  <p class="note" style="margin-top:26px;">Régua da Torre: <b>SPI ou CPI &lt; 0,9 = atenção · &lt; 0,8 = crítico</b>. Definida uma vez, usada em toda query, dashboard, Genie e app.</p>
   [[RODAPE]]
 </section>
 
@@ -451,197 +779,23 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
   [[RODAPE]]
 </section>
 
-<!-- ---- Noite 1 · os termos de gestão de projetos (antes do SQL) ---- -->
 <!-- 1 · PLANO × REALIDADE -->
-<section class="slide">
-  <div class="kicker">Antes do SQL · como gestão de projetos mede um projeto</div>
-  <h2>O plano dizia <span class="grad">3 meses</span>. Hoje é o fim do 3º mês.</h2>
-  <p class="sub" style="margin-bottom:30px;">Um projeto de <b>3 meses</b> por <b>R$ 300 mil</b>. A linha vermelha é <b>hoje</b>: o dia da entrega.</p>
 
-  <div style="display:grid; grid-template-columns:260px 1fr; row-gap:22px; column-gap:28px; align-items:center;">
-    <div style="font-size:24px; color:var(--muted);">Meses</div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; font-size:22px; color:var(--muted); font-weight:600; text-align:center;">
-      <div>mês 1</div><div>mês 2</div><div>mês 3</div><div style="color:var(--gray);">mês 4</div>
-    </div>
-
-    <div style="font-size:26px;"><b>O plano</b><div class="small">o que foi combinado</div></div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
-      <div style="grid-column:1 / span 3; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px;">100% pronto em 3 meses</div>
-      <div style="height:64px; border-radius:14px; border:2px dashed var(--line);"></div>
-    </div>
-
-    <div style="font-size:26px;"><b>A realidade</b><div class="small">o que está pronto hoje</div></div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
-      <div style="grid-column:1 / span 3; display:flex; gap:0; border-radius:14px; overflow:hidden;">
-        <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ffd166; color:#14141A; padding-left:24px; border-radius:0;">75% pronto</div>
-        <div style="flex:1; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--card-2); color:var(--muted); justify-content:center; border-radius:0;">falta 25%</div>
-      </div>
-      <div style="height:64px; border-radius:14px; border:2px dashed #ff6b6b; display:flex; align-items:center; justify-content:center; font-size:22px; color:#ff6b6b; font-weight:600;">+1 mês</div>
-    </div>
-
-    <div style="font-size:26px;"><b>O dinheiro</b><div class="small">o que já foi gasto</div></div>
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
-      <div style="grid-column:1 / span 3; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; padding-left:24px;">R$ 300 mil gastos · o orçamento inteiro</div>
-      <div style="height:64px; border-radius:14px; border:2px dashed #ff6b6b; display:flex; align-items:center; justify-content:center; font-size:22px; color:#ff6b6b; font-weight:600;">+ R$ ?</div>
-    </div>
-  </div>
-
-  <div style="position:absolute; left:calc(120px + 260px + 28px + (100% - 240px - 260px - 28px) * 0.75 - 8px); top:335px; height:330px; width:0; border-left:3px solid #ff6b6b;"></div>
-  <div style="position:absolute; left:calc(120px + 260px + 28px + (100% - 240px - 260px - 28px) * 0.75 + 4px); top:306px; font-size:20px; font-weight:700; color:#ff6b6b; letter-spacing:.1em;">HOJE</div>
-
-  <p class="note" style="margin-top:34px;">Três perguntas, três números: <b>quanto devia estar pronto</b> (100%), <b>quanto está pronto</b> (75%), <b>quanto já custou</b> (R$ 300 mil). Tudo o que vem agora é dividir um pelo outro.</p>
-  [[RODAPE]]
-</section>
 
 <!-- 2 · SPI -->
-<section class="slide">
-  <div class="kicker">SPI · Schedule Performance Index · índice de prazo</div>
-  <h2>SPI: quanto do que <span class="grad">devia</span> estar pronto <span class="grad">está</span> pronto?</h2>
 
-  <div style="display:grid; grid-template-columns:300px 1fr 200px; row-gap:26px; column-gap:28px; align-items:center; margin-top:10px;">
-    <div style="font-size:26px;"><b>Devia estar pronto</b><div class="small">PV · pelo plano, no fim do 3º mês</div></div>
-    <div style="display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px;">100%</div>
-    <div></div>
-
-    <div style="font-size:26px;"><b>Está pronto</b><div class="small">EV · valor agregado</div></div>
-    <div style="display:flex; border-radius:14px; overflow:hidden;">
-      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ffd166; color:#14141A; padding-left:24px; border-radius:0;">75%</div>
-      <div style="flex:1; background:var(--card-2);"></div>
-    </div>
-    <div></div>
-  </div>
-
-  <div class="grid g2" style="gap:28px; margin-top:40px;">
-    <div class="card hl">
-      <div class="tag">A conta</div>
-      <div style="font-size:46px; font-weight:800; margin:8px 0;">SPI = 75% ÷ 100% = 0,75</div>
-      <div class="lbl" style="font-size:25px;">"andou <b>75% do que devia</b>". Em tempo: 3 meses ÷ 0,75 = <b>4 meses</b>. Um mês de atraso, se o ritmo não mudar.</div>
-    </div>
-    <div class="card">
-      <div class="tag">A régua da Torre</div>
-      <div style="display:flex; height:40px; border-radius:12px; overflow:hidden; font-size:20px; font-weight:700; margin:14px 0 10px;">
-        <div style="flex:0 0 40%; background:#ff6b6b; display:flex; align-items:center; justify-content:center; color:#14141A;">crítico &lt; 0,80</div>
-        <div style="flex:0 0 20%; background:#ffd166; display:flex; align-items:center; justify-content:center; color:#14141A;">atenção</div>
-        <div style="flex:1; background:#5ad47a; display:flex; align-items:center; justify-content:center; color:#14141A;">ok ≥ 0,90</div>
-      </div>
-      <div class="lbl">Nosso exemplo (0,75) é <b style="color:#ff6b6b;">crítico</b>. Na Vértice, o pior é o <b>PRJ-016: 0,63</b>, +298 dias projetados.</div>
-    </div>
-  </div>
-  [[RODAPE]]
-</section>
 
 <!-- 3 · CPI -->
-<section class="slide">
-  <div class="kicker">CPI · Cost Performance Index · índice de custo</div>
-  <h2>CPI: o que foi entregue <span class="grad">vale</span> quanto, e <span class="grad">custou</span> quanto?</h2>
 
-  <div style="display:grid; grid-template-columns:300px 1fr; row-gap:26px; column-gap:28px; align-items:center; margin-top:10px;">
-    <div style="font-size:26px;"><b>Vale</b><div class="small">EV · 75% de R$ 300 mil</div></div>
-    <div style="display:flex; border-radius:14px; overflow:hidden;">
-      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ffd166; color:#14141A; padding-left:24px; border-radius:0;">R$ 225 mil</div>
-      <div style="flex:1; background:var(--card-2);"></div>
-    </div>
-
-    <div style="font-size:26px;"><b>Custou</b><div class="small">AC · custo real</div></div>
-    <div style="display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; padding-left:24px;">R$ 300 mil</div>
-  </div>
-
-  <div class="grid g2" style="gap:28px; margin-top:40px;">
-    <div class="card hl">
-      <div class="tag">A conta</div>
-      <div style="font-size:46px; font-weight:800; margin:8px 0;">CPI = 225 ÷ 300 = 0,75</div>
-      <div class="lbl" style="font-size:25px;">cada <b>R$ 1</b> gasto comprou <b>R$ 0,75</b> de entrega. Os outros 25 centavos viraram retrabalho, hora extra, escopo que ninguém cobrou.</div>
-    </div>
-    <div class="card">
-      <div class="tag">Independentes</div>
-      <div class="lbl" style="font-size:25px;">Aqui os dois deram 0,75 por coincidência. Dá para estar <b>no prazo e estourando</b> (hora extra para entregar) ou <b>atrasado e barato</b> (time parado). Por isso a Torre olha os dois.</div>
-      <div class="lbl">Na Vértice: <b>PRJ-009, CPI 0,77</b>. E 8 projetos com o CPI caindo desde o 6º mês.</div>
-    </div>
-  </div>
-  [[RODAPE]]
-</section>
 
 <!-- 4 · EAC -->
-<section class="slide">
-  <div class="kicker">EAC · Estimate at Completion · estimativa no término</div>
-  <h2>EAC: se nada mudar, <span class="grad">quanto vai custar no fim</span>?</h2>
 
-  <div style="display:grid; grid-template-columns:300px 1fr; row-gap:26px; column-gap:28px; align-items:center; margin-top:10px;">
-    <div style="font-size:26px;"><b>Orçamento</b><div class="small">BAC · o combinado</div></div>
-    <div style="display:flex; border-radius:14px; overflow:hidden;">
-      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px; border-radius:0;">R$ 300 mil</div>
-      <div style="flex:1;"></div>
-    </div>
-
-    <div style="font-size:26px;"><b>Vai custar</b><div class="small">EAC = orçamento ÷ CPI</div></div>
-    <div style="display:flex; border-radius:14px; overflow:hidden;">
-      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px; border-radius:0; opacity:.55;">R$ 300 mil</div>
-      <div style="flex:1; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; justify-content:center; border-radius:0;">+ R$ 100 mil</div>
-    </div>
-
-    <div style="font-size:26px;"><b>Prazo</b><div class="small">duração ÷ SPI</div></div>
-    <div style="display:flex; border-radius:14px; overflow:hidden;">
-      <div style="flex:0 0 75%; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:var(--blue-2); padding-left:24px; border-radius:0; opacity:.55;">3 meses</div>
-      <div style="flex:1; display:flex; align-items:center; height:64px; border-radius:14px; overflow:hidden; font-size:24px; font-weight:700; color:#fff; background:#ff6b6b; justify-content:center; border-radius:0;">+ 1 mês</div>
-    </div>
-  </div>
-
-  <div class="grid g2" style="gap:28px; margin-top:40px;">
-    <div class="card hl">
-      <div class="tag">A conta</div>
-      <div style="font-size:46px; font-weight:800; margin:8px 0;">300 ÷ 0,75 = R$ 400 mil</div>
-      <div class="lbl" style="font-size:25px;"><b>Estouro previsto: R$ 100 mil.</b> É o primeiro número que o dono quer ouvir, e sai de três colunas: orçamento, % concluído e custo real.</div>
-    </div>
-    <div class="card">
-      <div class="tag">Na Vértice</div>
-      <div class="num md" style="color:#ff6b6b;">R$ 6,47 mi</div>
-      <div class="lbl">de estouro previsto, somando só quem estoura. O maior é o <b>PRJ-021, R$ 1,78 mi</b>. Resposta da pergunta 2 do dono.</div>
-    </div>
-  </div>
-  [[RODAPE]]
-</section>
 
 <!-- 5 · MELANCIA -->
-<section class="slide">
-  <div class="kicker">Farol × número</div>
-  <h2>O projeto <span class="grad">melancia</span></h2>
-  <div class="grid g2" style="gap:28px;">
-    <div class="card">
-      <div class="tag">O farol</div>
-      <div class="lbl" style="font-size:26px;">Toda sexta o gerente põe uma cor no status: <b style="color:#5ad47a;">verde</b>, <b style="color:#ffd166;">amarelo</b> ou <b style="color:#ff6b6b;">vermelho</b>. No olhômetro. É a mensagem do pedreiro: <i>"tá tudo certo, chefe"</i>.</div>
-      <div class="num md" style="margin-top:22px; color:#5ad47a;">32 verdes</div><div class="lbl">de 41 projetos em andamento, pelo gerente</div>
-    </div>
-    <div class="card hl">
-      <div class="tag">O número</div>
-      <div class="lbl" style="font-size:26px; color:#dbe6ff;">O SPI não tem opinião. Ele divide o que está pronto pelo que devia estar.</div>
-      <div class="num md" style="margin-top:22px;">24 ok</div><div class="lbl">pelo SPI e CPI. Os outros 17 estão em atenção ou críticos.</div>
-    </div>
-  </div>
-  <div class="card" style="margin-top:28px; border-color:var(--blue-2);">
-    <div class="lbl" style="font-size:27px;"><b>Melancia</b> = verde por fora, vermelho por dentro. <b>4 projetos</b> na Vértice (PRJ-012, 028, 034, 042) estão verdes para o gerente e abaixo de 0,9 pelo número. Ninguém mentiu. Só ninguém fez a conta.</div>
-  </div>
-  [[RODAPE]]
-</section>
+
 
 <!-- 6 · GLOSSÁRIO -->
-<section class="slide">
-  <div class="kicker">Glossário · as siglas ficam em inglês, até no PMO brasileiro</div>
-  <h2>As siglas, em uma linha cada</h2>
-  <table class="t" style="font-size:23px;">
-    <tr><th>Sigla</th><th>Inglês</th><th>Português (PMBOK)</th><th>Em uma frase</th></tr>
-    <tr><td>PV</td><td>Planned Value</td><td>Valor Planejado</td><td>quanto devia estar pronto hoje</td></tr>
-    <tr><td>EV</td><td>Earned Value</td><td>Valor Agregado</td><td>quanto está pronto de verdade</td></tr>
-    <tr><td>AC</td><td>Actual Cost</td><td>Custo Real</td><td>quanto já foi gasto</td></tr>
-    <tr class="cur"><td>SPI</td><td>Schedule Performance Index</td><td>Índice de Desempenho de Prazo</td><td>EV ÷ PV · abaixo de 1 é atraso</td></tr>
-    <tr class="cur"><td>CPI</td><td>Cost Performance Index</td><td>Índice de Desempenho de Custo</td><td>EV ÷ AC · abaixo de 1 é estouro</td></tr>
-    <tr><td>BAC</td><td>Budget at Completion</td><td>Orçamento no Término</td><td>o orçamento original</td></tr>
-    <tr><td>EAC</td><td>Estimate at Completion</td><td>Estimativa no Término</td><td>BAC ÷ CPI · quanto vai custar no fim</td></tr>
-    <tr><td>Estouro</td><td>VAC · Variance at Completion</td><td>Variação no Término</td><td>EAC − BAC</td></tr>
-    <tr><td>Baseline</td><td>Baseline</td><td>Linha de base</td><td>o plano original, contra o qual tudo é medido</td></tr>
-  </table>
-  <p class="note" style="margin-top:26px;">Régua da Torre: <b>SPI ou CPI &lt; 0,9 = atenção · &lt; 0,8 = crítico</b>. Definida uma vez, usada em toda query, dashboard, Genie e app.</p>
-  [[RODAPE]]
-</section>
+
 
 <section class="slide">
   <div class="kicker">Noite 1 · os 6 exemplos SQL</div>
@@ -700,7 +854,7 @@ L0000001      | PRJ-001    | 2025-01-10 | pessoal   | Folha alocada PRJ-001 sema
       <div class="card hl"><div class="tag">O que aparece</div><ul class="list"><li>maior contrato de verdade: <b>PRJ-017, R$ 15,3 mi</b> (o texto dizia PRJ-052)</li><li>carteira <b>R$ 305,2 mi</b>, R$ 208,6 mi em andamento</li><li>a ferramenta escrita de <b>8 jeitos</b>: Excel, excel, Planilha, ClickUp, Clickup…</li></ul></div>
     </div>
   </div>
-  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-02-order-by-e-distinct.sql</b>. A primeira sujeira do dia é o retrato do problema do CTO: cada um registra do seu jeito.</p>
+  <p class="note" style="margin-top:22px;">Arquivo: <b>exemplo-02-order-by-e-distinct.sql</b>. A primeira sujeira do dia é o retrato do problema da Vértice: cada um registra do seu jeito.</p>
   [[RODAPE]]
 </section>
 
@@ -913,7 +1067,7 @@ O que vai dar errado no próximo mês?</pre>
 <section class="slide hero">
   <div class="kicker">A frase do primeiro dia</div>
   <h2 style="font-size:78px; line-height:1.15;">"São <span class="grad">17 projetos</span> em risco, espalhados em três ferramentas. Quatro deles estão com farol verde."</h2>
-  <p class="sub" style="margin-top:30px;">É o que o novo CTO responde ao dono no fim da noite 1. Na noite 4, a frase vem com o quanto custa, a causa e a decisão.</p>
+  <p class="sub" style="margin-top:30px;">É o que você responde ao dono no fim da noite 1. Na noite 4, a frase vem com o quanto custa, a causa e a decisão.</p>
   [[RODAPE]]
 </section>
 

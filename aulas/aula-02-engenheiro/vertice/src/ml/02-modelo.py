@@ -40,7 +40,7 @@ SEMENTE = 42
 CORTE = 0.9                      # a regra de corte da Torre: abaixo de 0,9 é atenção
 CORTE_TREINO = "2026-03-06"      # treina com as semanas até aqui
 INICIO_TESTE = "2026-04-03"      # testa a partir daqui: 4 semanas de folga = o horizonte do rótulo
-TOP_K = 5                        # quantos projetos o CTO consegue olhar de perto por semana
+TOP_K = 5                        # quantos projetos dá para olhar de perto por semana
 
 import math
 import mlflow
