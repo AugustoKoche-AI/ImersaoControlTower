@@ -1,5 +1,5 @@
 bundle:
-  name: torre-atlas
+  name: farol-torre
 
 include:
   - resources/*.yml
@@ -19,8 +19,8 @@ variables:
 resources:
   apps:
     app:
-      name: "torre-atlas"
-      description: "Torre de Controle da Atlas Engenharia: obras em risco, realocação e aprovação da diretoria"
+      name: "farol-torre"
+      description: "Projeto Farol da Vértice Tecnologia: projetos em risco, realocação de pessoas e aprovação do dono"
       source_code_path: ./
 
       # Start the app automatically on deploy.
@@ -54,7 +54,7 @@ targets:
 
     variables:
       sql_warehouse_id: 666be37e3fededf2
-      genie_space_id: 01f1cb0e05f719b6b71edafc85b5658b
-      genie_space_name: Torre de Controle · Diretoria + Contratos
-      postgres_branch: projects/torre-atlas/branches/production
-      postgres_database: projects/torre-atlas/branches/production/databases/databricks-postgres
+      genie_space_id: 01f1cb513eb91dd58208123de3d84ad4
+      genie_space_name: Farol · Diretoria + Contratos
+      postgres_branch: projects/farol-torre/branches/production
+      postgres_database: projects/farol-torre/branches/production/databases/databricks-postgres

@@ -1,10 +1,10 @@
-# O agente que lê contrato, como job: PDF → texto → cláusulas → colunas.
-# Roda no SQL warehouse serverless (~30 s para os 8 contratos).
+# O agente que lê contrato e manual, como job: PDF → elementos → cláusulas e seções → colunas tipadas.
+# Roda no SQL warehouse serverless (~1 min para os 9 PDFs).
 resources:
   jobs:
-    torre_contratos:
-      name: torre_contratos
-      description: "Noite 4 · ai_parse_document + ai_query nos contratos EPC → gold.contratos_*"
+    farol_contratos:
+      name: farol_contratos
+      description: "Noite 4 · ai_parse_document + ai_extract (schema tipado) nos contratos de fornecedor e no manual → gold.contratos_*, gold.manual_secoes"
       tasks:
         - task_key: contratos
           sql_task:

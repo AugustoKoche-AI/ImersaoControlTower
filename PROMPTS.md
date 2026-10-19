@@ -1,7 +1,8 @@
 # 🧾 Os prompts, na ordem
 
-A Torre de Controle da Atlas Engenharia — da bronze crua ao Genie que explica
-por que a obra atrasou — sai de **prompts colados em sequência no Claude Code**.
+O Projeto Farol, a Torre de Controle da Vértice Tecnologia — das planilhas, listas do ClickUp e
+cronogramas do Project até o Genie que responde as quatro perguntas do dono — sai de
+**prompts colados em sequência no Claude Code**.
 Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 > **Cada prompt termina com um deploy.** Não junte dois: o valor do formato
@@ -9,16 +10,16 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo silver + gold, RDO com IA, 5 metric views, dashboard e Genie |
-| [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score em lote |
-| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | Genie da diretoria, o app da Torre e o agente de contratos |
+| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status e postmortems com IA, 5 metric views, dashboard e Genie |
+| [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
+| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | o agente de contratos e do manual, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
 ## Antes do primeiro prompt
 
-A noite 1 precisa estar feita: o catálogo `lakehouse_atlas` com a bronze
-carregada (12 tabelas). Se não estiver, rode o
+A noite 1 precisa estar feita: o catálogo `lakehouse_vertice` com a bronze
+carregada (13 tabelas). Se não estiver, rode o
 [`00-carregar-dados`](aulas/aula-01-analista/00-carregar-dados.py) e o
 [`01-ingestao-bronze.sql`](aulas/aula-01-analista/01-ingestao-bronze.sql).
 
@@ -28,17 +29,16 @@ brew tap databricks/tap && brew install databricks     # Windows: winget install
 databricks auth login --profile <perfil>
 databricks auth profiles                                # o seu aparece com Valid: YES
 
-# 2 · o Claude Code e as skills oficiais do Databricks
+# 2 · o Claude Code (as skills oficiais do Databricks já vêm em .claude/skills)
 npm install -g @anthropic-ai/claude-code
-databricks aitools install
 
 # 3 · conferir que a bronze está lá
 python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile <perfil>
 ```
 
-**A pasta `aulas/aula-02-engenheiro/meu-atlas/` nasce vazia** — é o prompt 1 que
-a preenche. A pasta `atlas/` ao lado é o gabarito. Se você já rodou antes, zere
-com `BUNDLE_DIR=aulas/aula-02-engenheiro/meu-atlas bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar`.
+**A pasta `aulas/aula-02-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
+a preenche. A pasta `vertice/` ao lado é o gabarito. Se você já rodou antes, zere
+com `BUNDLE_DIR=aulas/aula-02-engenheiro/meu-vertice bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar`.
 
 Nos prompts abaixo, **troque `<perfil>` pelo seu profile**.
 
@@ -66,22 +66,22 @@ errado"**. Se for a primeira vez, siga por eles.
 ```
 Leia aulas/aula-02-engenheiro/prd/CLAUDE.md antes de começar.
 
-Crie o projeto da noite 2 em aulas/aula-02-engenheiro/meu-atlas/ como um
-Databricks Asset Bundle chamado atlas. Esta é a primeira de seis entregas: as
+Crie o projeto da noite 2 em aulas/aula-02-engenheiro/meu-vertice/ como um
+Databricks Asset Bundle chamado vertice. Esta é a primeira de seis entregas: as
 outras cinco estendem este mesmo bundle, então deixe a estrutura pronta para
 crescer (resources/, src/conferencia, src/silver, src/gold, src/ia,
-src/metricas, src/testes, scripts/). NÃO copie da pasta atlas/ (é o gabarito).
+src/metricas, src/testes, scripts/). NÃO copie da pasta vertice/ (é o gabarito).
 
 CONTEXTO DO WORKSPACE
 - profile: <perfil>   (sempre passe --profile, nunca deixe implícito)
 - descubra o SQL Warehouse com `databricks warehouses list --profile <perfil>`
 - Databricks Free Edition: tudo serverless, nunca configure cluster
-- o catálogo lakehouse_atlas e os schemas bronze/silver/gold JÁ EXISTEM
+- o catálogo lakehouse_vertice e os schemas bronze/silver/gold JÁ EXISTEM
   (noite 1). O bundle NÃO cria nem gerencia catálogo nem schema.
 
 1. databricks.yml
-   - bundle name: atlas; include: resources/*.yml
-   - variables: catalog (default lakehouse_atlas) e warehouse_id (o id que
+   - bundle name: vertice; include: resources/*.yml
+   - variables: catalog (default lakehouse_vertice) e warehouse_id (o id que
      você descobriu)
    - targets dev (default) e prod
    - ARMADILHA: NÃO use `mode: development` no dev. Ele prefixa os nomes com
@@ -90,18 +90,21 @@ CONTEXTO DO WORKSPACE
      explicando isso.
    - prod: mode production, root_path em /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
 
-2. resources/atlas.job.yml
-   - job atlas_torre, agendado todo dia às 6h (America/Sao_Paulo)
+2. resources/vertice.job.yml
+   - job vertice_farol, agendado toda segunda às 6h (America/Sao_Paulo),
+     depois do status semanal de sexta
    - uma tarefa por enquanto: conferencia_bronze, sql_task no warehouse
      ${var.warehouse_id} com o arquivo ../src/conferencia/00-conferencia-bronze.sql
    - comentário no topo listando as tarefas que os próximos prompts vão
-     acrescentar (medalhao, testes_de_qualidade, rdo_com_ia, metricas_governadas)
+     acrescentar (medalhao, testes_de_qualidade, status_com_ia,
+     postmortem_com_ia, metricas_governadas)
 
 3. src/conferencia/00-conferencia-bronze.sql
-   Confere as 12 tabelas da bronze contra a contagem esperada (seed 42):
-   projetos 40 · tarefas 8000 · avanco_semanal 55703 · custos 19445 ·
-   compras 13304 · materiais 25 · estoque 40094 · equipes 123 ·
-   apontamentos 41190 · equipamentos 300 · uso_equipamentos 19817 · rdo 13730
+   Confere as 13 tabelas da bronze contra a contagem esperada (seed 42):
+   projetos 60 · status_semanal 3911 · excel_tarefas 1663 · clickup_tarefas 2119 ·
+   msproject_tarefas 1260 · colaboradores 523 · alocacoes 517 ·
+   apontamentos 30883 · custos 23640 · entregas_fornecedor 640 ·
+   contratos_capacidade 93 · consumo_capacidade 6070 · postmortems 101
    Uma linha por tabela com esperado e obtido; se alguma divergir, chame
    raise_error() com uma mensagem que diga qual tabela e o que fazer
    (rodar de novo o 00-carregar-dados e o 01-ingestao-bronze da noite 1).
@@ -109,199 +112,218 @@ CONTEXTO DO WORKSPACE
 Rode e me mostre a saída de cada um:
   databricks bundle validate --profile <perfil>
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
 ```
 
 ### Prompt 2 · Silver
 
-*a limpeza com contrato* · noite 2 · deploy nº 2 (bundle deploy + run do pipeline) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-02-silver.md)
+*as três ferramentas viram uma* · noite 2 · deploy nº 2 (bundle deploy + run do pipeline) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-02-silver.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. A bronze está
-conferida. Agora a silver: limpar, tipar e declarar o contrato.
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A bronze está
+conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
+declarar o contrato.
 
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
-resources/atlas_medalhao.pipeline.yml com name atlas_medalhao, catalog
+resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
 ${var.catalog}, schema silver, serverless: true, photon: true, e libraries com
 um glob em ../src/silver/** (o prompt 3 vai acrescentar ../src/gold/**).
 
 Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
-existe no pipeline). Leia a bronze pelo nome completo
-lakehouse_atlas.bronze.<tabela>; dentro do pipeline, referencie as tabelas
-silver só pelo nome. COMMENT em toda tabela dizendo o que foi limpo.
+existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
+Leia a bronze pelo nome completo lakehouse_vertice.bronze.<tabela>; dentro do
+pipeline, referencie as tabelas silver só pelo nome. COMMENT em toda tabela.
+Siga a tabela de sujeiras da seção 3 do prd/CLAUDE.md.
 
 Um arquivo por assunto em src/silver/:
 
-01-projetos.sql
-- data_inicio vem em yyyy-MM-dd e dd/MM/yyyy: coalesce de dois try_to_date.
-  Guarde data_veio_em_formato_br (boolean).
-- uf vem 'MG', 'mg', ' MG ': upper(trim()).
-- valor_contrato e orcamento_custo (renomeie para orcamento) em DECIMAL(18,2).
-- EXPECT data_inicio IS NOT NULL e length(uf) = 2, ambos FAIL UPDATE.
+01-projetos.sql — o cadastro do PMO (é o de-para da integração)
+- data_inicio em yyyy-MM-dd e dd/MM/yyyy: coalesce de dois try_to_date.
+- ferramenta escrita de 8 jeitos → 'excel', 'clickup' ou 'msproject'
+  (guarde ferramenta_como_veio). codigo_ferramenta vazio → NULL.
+- EXPECT data_inicio IS NOT NULL e ferramenta IN (...), FAIL UPDATE.
 
-02-cronograma.sql — avanco_semanal e tarefas
-- avanco_semanal tipado (data_medicao DATE, pct_concluido DOUBLE), EXPECT
-  pct entre 0 e 100.
-- tarefas: 52 tarefas têm pct_concluido > 100. NÃO corte em 100. Use a ÚLTIMA
-  medição do boletim (o % só sobe, então max(pct) por tarefa no
-  avanco_semanal) e marque pct_corrigido_pela_medicao. EXPECT pct entre 0 e
-  100 e valor_planejado > 0, FAIL UPDATE.
+02-tarefas.sql — AS TRÊS FERRAMENTAS VIRAM UMA
+Três CREATE TEMPORARY VIEW com as MESMAS colunas (projeto_id, ferramenta,
+id_na_ferramenta, fase, tarefa, responsavel, inicio_baseline, fim_baseline,
+inicio_real, fim_real, pct_como_veio, horas, status_na_ferramenta):
+- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se o
+  código faltar, o PRJ-xxx do nome do arquivo. Datas: com '/' é dd/MM/yyyy,
+  senão é número de série do Excel: date_add(DATE'1899-12-30', CAST(x AS INT)).
+  %: com '%' tire o '%' e troque vírgula por ponto; sem '%' é fração (× 100).
+  Horas: tire o 'h'. TIRE a linha onde tarefa = 'TOTAL'.
+- tarefas_clickup: projeto pelo de-para (codigo_ferramenta = list_id) e, se o
+  código faltar, pelo nome da lista. Datas em milissegundos:
+  to_date(timestamp_millis(CAST(x AS BIGINT))). % e baseline estão em
+  custom_fields: filter(custom_fields, f -> f.name = 'Progresso (%)')[0].value
+  (e 'Início baseline', 'Fim baseline', 'Fase'). Horas = time_estimate / 3600000.
+  Status de 12 jeitos → concluida / a_fazer / em_andamento.
+- tarefas_msproject: projeto pelo de-para (codigo_ferramenta = arquivo). Só
+  Summary = 0 (as tarefas-resumo somam as de baixo). A fase é a última
+  tarefa-resumo de OutlineLevel 1 antes da tarefa:
+  last_value(CASE WHEN OutlineLevel = 1 THEN Name END, true) OVER (PARTITION
+  BY arquivo ORDER BY UID). Baseline.Start/Finish, ActualStart/ActualFinish,
+  PercentComplete, horas de 'PT40H0M0S'.
+MATERIALIZED VIEW tarefas = UNION ALL das três, com tarefa_id
+(projeto-ferramenta-id), pct_concluido = least(pct_como_veio, 100) e a flag
+pct_veio_acima_de_100. EXPECT projeto_id IS NOT NULL (achou_o_projeto),
+pct entre 0 e 100 e horas > 0, todos FAIL UPDATE.
 
-03-custos.sql
-- valor_real tem 540 linhas com vírgula decimal: replace(',', '.') ANTES do
-  CAST. Nunca try_cast (jogaria R$ 16,8 mi fora em silêncio).
-- estorno (valor negativo) FICA na tabela e ganha a coluna estorno.
-- coluna semana = sexta-feira da semana: date_add(date_trunc('WEEK', data), 4).
-- EXPECT valor IS NOT NULL, FAIL UPDATE.
+03-status-e-custos.sql
+- status_semanal: data_status DATE, farol em minúsculas (EXPECT farol IN
+  ('verde','amarelo','vermelho') FAIL UPDATE), pct_concluido INT, flag
+  status_vazio ('', 'N/A', 'ver ata da reunião') — NÃO descarte.
+- custos: valor com 671 vírgulas decimais: replace(',', '.') ANTES do CAST,
+  nunca try_cast. estorno (negativo) FICA, com a coluna estorno. semana =
+  sexta da semana: date_add(date_trunc('WEEK', data), 4).
 
-04-suprimentos.sql — materiais, compras, estoque
-- compras: o mesmo fornecedor vem com 4 grafias ('Metalúrgica Norte Aço
-  Ltda', 'Metalurgica Norte Aco', 'METALÚRGICA NORTE AÇO LTDA', 'Norte Aço
-  Metalúrgica'). Normalize tudo que tiver 'norte a' para
-  'Metalúrgica Norte Aço Ltda' e guarde fornecedor_como_veio.
-  data_entrega vazia = pedido em aberto (não é sujeira). Crie
-  lead_time_real_dias, em_aberto e em_atraso (em aberto e data_prometida
-  antes de DATE'2026-10-16').
-- estoque: saldo negativo (erro de inventário) vira 0 com flag.
+04-pessoas.sql
+- colaboradores: COL0102, COL0257 e COL0433 aparecem duas vezes (nome e papel
+  em CAIXA ALTA). Mantenha o cadastro com papel em minúsculas (row_number).
+- alocacoes tipada; apontamentos com semana = semana_inicio + 4 (sexta).
 
-05-recursos.sql — equipes, apontamentos, equipamentos, uso_equipamentos
-- equipes: EQP014, EQP057 e EQP101 aparecem duas vezes (função em CAIXA ALTA,
-  UF em minúscula, headcount diferente). DISTINCT não resolve. Mantenha o
-  cadastro com funcao em minúsculas (row_number por equipe_id).
-- apontamentos e uso_equipamentos com coluna semana (sexta-feira), como em custos.
+05-fornecedores-e-capacidade.sql
+- entregas_fornecedor: a CodeForge vem de 4 jeitos ('CodeForge Consultoria
+  Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA LTDA', 'Code Forge
+  Consultoria'): normalize (replace(lower(x), ' ', '') LIKE '%codeforge%') e
+  guarde fornecedor_como_veio. data_entrega vazia = em aberto (não é sujeira).
+  prazo_real_dias, dias_de_atraso_na_entrega, em_aberto e em_atraso (em
+  aberto e data_prometida antes de DATE'2026-10-16').
+- contratos_capacidade tipada; consumo_capacidade com saldo negativo → 0 e flag.
 
-06-rdo.sql
-- rdo: 82 RDOs vazios ('', 'N/A', 'ver RDO físico'). NÃO descarte: flag rdo_vazio.
+06-postmortems.sql — tipado, EXPECT severidade IN ('SEV1','SEV2','SEV3').
 
-Acrescente ao job atlas_torre a tarefa medalhao (pipeline_task apontando para
-${resources.pipelines.atlas_medalhao.id}), depois de conferencia_bronze.
+Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
+para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_medalhao --profile <perfil>
+  databricks bundle run vertice_medalhao --profile <perfil>
 ```
 
 ### Prompt 3 · Gold
 
-*o produto de dados e as três perguntas* · noite 2 · deploy nº 3 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-03-gold.md)
+*o produto de dados e as perguntas do dono* · noite 2 · deploy nº 3 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-03-gold.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. A silver está pronta.
-Agora a gold, no MESMO pipeline atlas_medalhao: acrescente o glob
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A silver está pronta.
+Agora a gold, no MESMO pipeline vertice_medalhao: acrescente o glob
 ../src/gold/** em libraries. Os arquivos da gold escrevem com o nome completo
-lakehouse_atlas.gold.<tabela>; leem a silver pelo nome curto. COMMENT em todas.
+lakehouse_vertice.gold.<tabela>; leem a silver pelo nome curto. COMMENT em todas.
 O "hoje" é DATE'2026-10-16'. Nunca current_date().
 
-src/gold/01-fato-projeto-semana.sql → lakehouse_atlas.gold.fato_projeto_semana
-Uma linha por obra e semana (sexta-feira), da semana do início da obra até
+src/gold/01-fato-projeto-semana.sql → lakehouse_vertice.gold.fato_projeto_semana
+Uma linha por projeto e semana (sexta-feira), da semana do início até
 2026-10-16 (sequence(..., INTERVAL 1 WEEK) + explode). Colunas:
-- pv: Σ valor_planejado × fração do baseline decorrida até a semana
+- pv: orçamento × Σ horas × fração do baseline decorrida até a semana ÷ Σ horas
   (greatest(0, least(1, datediff(semana, inicio)/datediff(fim, inicio))))
-- ev: acumulado do avanço medido. Para cada tarefa, delta = pct - lag(pct)
-  por data_medicao; ev_semana = Σ valor_planejado × delta / 100; depois soma
-  acumulada por obra.
-  ARMADILHA MEDIDA: o pipeline recusa função de janela dentro de agregação
-  ("It is not allowed to use a window function inside an aggregate
-  function"). Faça o lag() num CTE e o SUM no CTE seguinte.
+- ev: orçamento × pct_concluido do status_semanal daquela sexta ÷ 100. Projeto
+  concluído não publica mais: use o último % (last_value(pct, true) OVER).
 - ac: custo real acumulado (silver.custos por semana, soma acumulada)
 - spi = ev/pv, cpi = ev/ac (try_divide, 4 casas), eac = orcamento / cpi
+- farol_do_gerente (o último farol publicado)
 - horas_disponiveis, horas_apontadas e horas_ociosas da semana (apontamentos)
-- rupturas_previstas: para cada saldo semanal de estoque, a próxima entrega
-  PROMETIDA ainda em aberto naquela data (pedido feito até a data e não
-  entregue até a data). Ruptura = consumo_previsto_dia > 0 e
-  saldo/consumo < dias até essa entrega; se a promessa já venceu, use o
-  lead_time_contratado_dias do material.
+- rupturas_capacidade: contratos do projeto com consumo_previsto_dia > 0 e
+  saldo / consumo_previsto_dia < 30 naquela semana.
 - EXPECT pv >= 0 e ev <= orcamento, FAIL UPDATE.
 
 src/gold/02-dim-e-marts.sql
-- dim_projeto: obra (projeto_id · nome), cliente, setor, uf, contrato,
-  orçamento, datas, duracao_baseline_dias, status, gerente.
-- obra_situacao_atual: a fotografia de 2026-10-16 de cada obra (40 linhas):
+- dim_projeto: projeto (projeto_id · nome), cliente, segmento, tipo_projeto,
+  ferramenta, contrato, orçamento, datas, duracao_baseline_dias, status, gerente.
+- projeto_situacao_atual: a fotografia de 2026-10-16 de cada projeto (60
+  linhas), calculada sobre silver.tarefas (o % de hoje das ferramentas):
   pv, ev, ac, spi, cpi, eac, estouro_previsto = greatest(eac - orcamento, 0),
-  margem_projetada, atraso_projetado_dias, termino_projetado,
-  rupturas_previstas e situacao: 'concluída' se status <> em_andamento;
-  'crítico' se SPI ou CPI < 0,8; 'atenção' se < 0,9; senão 'ok'.
-- utilizacao_equipe_semana: equipe × semana com horas disponíveis,
-  apontadas, ociosas, utilizacao e o spi_da_obra naquela semana.
-- utilizacao_equipamento_semana: equipamento × semana com tipo, modelo, obra,
-  uf, utilizacao, horas_paradas e custo_ocioso (horas paradas × custo_hora).
-- desempenho_fornecedor: por fornecedor normalizado: pedidos, grafias_no_erp,
-  lead time prometido e real médios, fator_atraso (real/prometido),
-  pct_no_prazo, pedidos_em_atraso, valor_comprado.
-- cobertura_estoque: material × obra em andamento HOJE: saldo, consumo,
-  cobertura_dias, próxima entrega prometida e fornecedor, dias_ate_reposicao
-  e ruptura_prevista (mesma regra do fato).
-- pedidos_em_atraso: pedidos em aberto com data prometida antes de hoje.
+  margem_projetada, atraso_projetado_dias, termino_projetado, situacao
+  ('concluído' se status <> em_andamento; 'crítico' se SPI ou CPI < 0,8;
+  'atenção' se < 0,9; senão 'ok'), farol_do_gerente (status de hoje),
+  farol_calculado (regra do manual: verde >= 0,95; amarelo >= 0,90) e
+  melancia (em andamento, farol do gerente verde e SPI < 0,9).
+- utilizacao_pessoa_semana: pessoa × projeto × semana com nome, papel,
+  senioridade, horas disponíveis, apontadas, ociosas, utilizacao,
+  custo_ocioso (horas ociosas × custo_hora) e o spi_do_projeto naquela semana.
+- desempenho_fornecedor: por fornecedor normalizado: entregas,
+  grafias_no_cadastro, prazo prometido e real médios, fator_atraso
+  (real/prometido), pct_no_prazo, entregas_em_atraso, valor_contratado.
+- cobertura_capacidade: contrato × hoje dos projetos em andamento: saldo,
+  consumo previsto, cobertura_dias, data_prevista_fim_saldo e
+  ruptura_prevista (cobertura < 30 dias).
+- entregas_em_atraso: entregas em aberto com data prometida antes de hoje.
 
 src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
- 1 uma linha por equipe na silver
- 2 a Norte Aço virou um fornecedor só
- 3 a limpeza não mudou o custo total (bronze com replace = silver)
- 4 nenhuma tarefa acima de 100%
- 5 as 40 obras têm fotografia de hoje
- 6 toda obra em andamento tem SPI e CPI
- 7 EV de hoje no fato = Σ valor_planejado × pct da silver.tarefas
- 8 AC de hoje no fato = soma dos lançamentos até hoje
+ 1 os 60 projetos têm cronograma na silver.tarefas
+ 2 cada projeto veio de UMA ferramenta, a do cadastro do PMO
+ 3 as horas do Excel na silver = a soma das linhas de TOTAL das planilhas
+ 4 uma linha por pessoa na silver
+ 5 a CodeForge virou um fornecedor só
+ 6 a limpeza não mudou o custo total (bronze com replace = silver)
+ 7 os 60 projetos têm fotografia de hoje
+ 8 todo projeto em andamento tem SPI e CPI
+ 9 o EV de hoje do status semanal bate com o das ferramentas (diferença < 1%)
+10 AC de hoje no fato = soma dos lançamentos até hoje
 
 Acrescente ao job a tarefa testes_de_qualidade, depois de medalhao.
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
 ```
 
-### Prompt 4 · RDO com IA
+### Prompt 4 · Texto com IA
 
-*o texto livre vira coluna* · noite 2 · deploy nº 4 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-rdo-com-ia.md)
+*o status e o postmortem viram coluna* · noite 2 · deploy nº 4 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Agora o RDO, que é
-texto livre, vira coluna.
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
+vira coluna: o status semanal e os postmortems. Use as funções de IA na versão
+2.0 (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
 
-Crie src/ia/rdo_estruturado.sql (sql_task, caminho completo das tabelas):
+1. src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+   a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
+      COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
+      bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
+      'palavra_chave'), texto_status, _classificado_em.
+      NÃO é CREATE OR REPLACE: a tabela acumula, e a IA não pode ser refeita
+      a cada execução.
+   b. MERGE INTO ... WHEN NOT MATCHED THEN INSERT, só com os status da
+      silver.status_semanal que ainda não estão na tabela (LEFT ANTI JOIN por
+      projeto_id e data_status). Para cada status:
+      - metodo = 'regra' se status_vazio ou se o texto (minúsculas) diz
+        'bloqueios: nenhum', 'sem bloqueios' ou 'nada relevante';
+        'ia' se data_status >= DATE'2026-07-18' (últimos 90 dias);
+        senão 'palavra_chave'.
+      - causa_bloqueio: 'nao_reportado' se vazio; 'sem_bloqueio' na regra;
+        na IA, ai_classify com a lista ["change_freeze","falta_sre",
+        "dependencia_fornecedor","rotatividade","mudanca_escopo",
+        "bug_retrabalho","aprovacao_cliente","sem_bloqueio"]; na
+        palavra-chave, RLIKE: freeze|congelamento|janela de deploy →
+        change_freeze; sre|infraestrutura|ambiente de homologação → falta_sre;
+        forge|consultoria|fornecedor → dependencia_fornecedor; saída de|
+        rotatividade|onboarding → rotatividade; escopo|change request|regra de
+        negócio → mudanca_escopo; bugs|regressão|refazendo → bug_retrabalho;
+        aprovação do cliente|homologação do cliente → aprovacao_cliente.
+      - só na IA: ai_extract com JSON schema tipado: bloqueio (string),
+        quem_destrava (string), dias_impacto (number, "1 semana = 7").
+      - dias_impacto fora da IA: regex em 'impacto estimado de N dias' e
+        'impacto estimado: 1 semana' (= 7).
+   c. No fim, um SELECT de leitura: quantos status por metodo e causa.
 
-1. CREATE TABLE IF NOT EXISTS lakehouse_atlas.gold.rdo_estruturado com COMMENT
-   em cada coluna: rdo_id, projeto_id, data, clima, causa_atraso,
-   dias_impacto (DOUBLE), incidente (BOOLEAN), metodo ('regra', 'ia' ou
-   'palavra_chave'), texto_livre, _classificado_em.
-   NÃO é CREATE OR REPLACE: a tabela acumula, e a IA não pode ser refeita
-   a cada execução.
+2. src/ia/postmortem_estruturado.sql (sql_task)
+   Tabela lakehouse_vertice.gold.postmortem_estruturado (CREATE TABLE IF NOT
+   EXISTS + MERGE incremental por incidente_id) com: incidente_id, projeto_id,
+   data, severidade, e, por ai_extract com JSON schema tipado:
+   servico_afetado (string), causa_raiz (string), duracao_minutos (number,
+   "duração total convertida para minutos; 1h25min = 85"), usuarios_afetados
+   (number). E categoria_causa por ai_classify em ["deploy_sem_teste",
+   "configuracao","capacidade","dependencia_externa","pipeline_sem_dono"].
+   São só ~100 textos: a IA roda em todos. SELECT final: incidentes e horas
+   fora do ar por categoria.
 
-2. MERGE INTO ... WHEN NOT MATCHED THEN INSERT, só com os RDOs da
-   silver.rdo que ainda não estão na tabela (LEFT ANTI JOIN). Para cada RDO:
-   - metodo = 'regra' se rdo_vazio ou se o texto (em minúsculas) bate com
-     'sem ocorr|ocorrências: nenhuma|dia produtivo';
-     metodo = 'ia' se data >= DATE'2026-07-18' (últimos 90 dias até
-     2026-10-16); senão 'palavra_chave'.
-   - causa_atraso: 'nao_reportado' se vazio; 'sem_ocorrencia' pela regra;
-     ai_classify(texto_livre, array('chuva', 'falta_material',
-     'falta_equipamento', 'mao_de_obra', 'retrabalho', 'cliente',
-     'sem_ocorrencia')) para metodo = 'ia' — chame a IA num CTE SÓ com essas
-     linhas e junte depois, para nunca chamá-la à toa;
-     palavra-chave para o resto, nesta ordem: guindaste|içamento →
-     falta_equipamento; cliente|permissão de trabalho → cliente;
-     chuva|precipitação|temporal|encharcado → chuva;
-     aguardando|falta de|não entregou|em estoque|fornecedor → falta_material;
-     efetivo reduzido|faltas|rotatividade|soldadores → mao_de_obra;
-     retrabalho|reprovad → retrabalho.
-   - clima: regexp_extract de 'clima: (palavra)'.
-   - dias_impacto: 'impacto estimado de N dias' → N; 'impacto estimado: 1
-     dia' → 1; 'meio turno' → 0,5; 'sem impacto' → 0; senão nulo.
-   - incidente: o texto cita 'quase acidente'.
-
-3. No fim, um SELECT da contagem por metodo e causa_atraso, para a saída da
-   tarefa mostrar o que a IA fez.
-
-No comentário do topo do arquivo, registre a decisão e o número medido:
-ai_classify faz ~3,7 RDOs/s; 13,7 mil levariam ~1 hora; os ~1.000 com
-ocorrência dos últimos 90 dias levam ~3 minutos.
-
-Acrescente ao job a tarefa rdo_com_ia, depois de medalhao (em paralelo com
-testes_de_qualidade).
+Acrescente ao job as tarefas status_com_ia e postmortem_com_ia, as duas
+depois de medalhao (em paralelo com testes_de_qualidade).
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
 ```
 
 ### Prompt 5 · Métricas governadas
@@ -309,155 +331,164 @@ Rode e me mostre a saída:
 *o KPI definido uma vez só* · noite 2 · deploy nº 5 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-05-metricas.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Agora os KPIs
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora os KPIs
 governados, como metric views do Unity Catalog.
 
 Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW ...
-WITH METRICS LANGUAGE YAML AS $$ ... $$, version 1.1, comment e synonyms em
-português nas medidas principais:
+WITH METRICS LANGUAGE YAML AS $$ ... $$ (version 1.1), comment em toda
+dimensão e medida que não for óbvia, e synonyms em português:
 
-1. lakehouse_atlas.gold.mv_obras — source gold.obra_situacao_atual,
-   filter status = 'em_andamento'.
-   Dimensões: projeto_id, obra, cliente, setor, uf, situacao, gerente_projeto.
-   Medidas: obras, carteira, spi = SUM(ev)/SUM(pv), cpi = SUM(ev)/SUM(ac),
-   eac, estouro_previsto, margem_projetada =
-   (SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato),
-   atraso_projetado_medio_dias, obras_em_risco (situação atenção ou crítico),
-   obras_criticas.
-2. lakehouse_atlas.gold.mv_evolucao — source gold.fato_projeto_semana com
-   join em gold.dim_projeto (using projeto_id). Dimensões semana, mes, obra,
-   uf, setor. Medidas spi, cpi, utilizacao_equipe, horas_ociosas,
-   rupturas_previstas. Comente que PV/EV/AC são acumulados.
-3. lakehouse_atlas.gold.mv_equipamentos — source
-   gold.utilizacao_equipamento_semana: utilizacao_equipamento, horas_paradas,
-   custo_ocioso por tipo, modelo, obra, uf, semana.
-4. lakehouse_atlas.gold.mv_suprimentos — source gold.cobertura_estoque:
-   rupturas_previstas, cobertura_media_dias, itens_monitorados.
-5. lakehouse_atlas.gold.mv_fornecedores — source silver.compras com join em
-   gold.dim_projeto: pedidos, pedidos_em_atraso, lead_time_real_medio_dias,
-   fator_atraso_fornecedor (real / prometido).
+1. lakehouse_vertice.gold.mv_projetos sobre gold.projeto_situacao_atual com
+   filter status = 'em_andamento'. Dimensões: projeto_id, projeto, cliente,
+   segmento, ferramenta, situacao, farol_do_gerente, farol_calculado,
+   gerente_projeto. Medidas: projetos, carteira (SUM valor_contrato),
+   spi (SUM(ev)/SUM(pv)), cpi (SUM(ev)/SUM(ac)), eac, estouro_previsto,
+   margem_projetada ((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato)),
+   atraso_projetado_medio_dias, projetos_em_risco, projetos_criticos,
+   projetos_melancia (COUNT FILTER WHERE melancia).
+2. mv_evolucao sobre gold.fato_projeto_semana com join em gold.dim_projeto
+   (using: [projeto_id]): dimensões semana, mes, projeto, cliente, segmento,
+   ferramenta; medidas spi, cpi, utilizacao_equipe, horas_ociosas,
+   rupturas_capacidade.
+3. mv_pessoas sobre gold.utilizacao_pessoa_semana: dimensões semana, nome,
+   papel, senioridade, projeto; medidas utilizacao, horas_ociosas,
+   custo_ocioso, pessoas.
+4. mv_capacidade sobre gold.cobertura_capacidade: dimensões projeto,
+   fornecedor, tipo; medidas contratos, rupturas_previstas,
+   cobertura_media_dias.
+5. mv_fornecedores sobre silver.entregas_fornecedor: dimensões fornecedor,
+   projeto_id, mes_pedido; medidas entregas, entregas_em_atraso,
+   prazo_real_medio_dias, fator_atraso.
 
-No fim do arquivo, um SELECT com MEASURE() das medidas de mv_obras, para a
-saída da tarefa provar que as views respondem.
-
-ARMADILHA MEDIDA: rodar metric view pelo `databricks experimental aitools
-tools query` achata a indentação do YAML e dá
-METRIC_VIEW_INVALID_VIEW_DEFINITION. Rode como sql_task do job ou com
+ARMADILHA MEDIDA: o YAML precisa da indentação intacta. Teste com
 python3 scripts/run_sql.py <arquivo> --profile <perfil>.
 
 Acrescente ao job a tarefa metricas_governadas, depois de
-testes_de_qualidade E de rdo_com_ia.
+testes_de_qualidade, status_com_ia E postmortem_com_ia.
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
 ```
 
 ### Prompt 6 · Dashboard e Genie
 
-*a diretoria pergunta em português* · noite 2 · deploy nº 6 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-06-dashboard-e-genie.md)
+*o dono pergunta em português* · noite 2 · deploy nº 6 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-06-dashboard-e-genie.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. O pipeline e as
-métricas estão prontos. Agora as duas portas para quem não escreve SQL.
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. O pipeline, a IA e
+as métricas estão prontos. Agora as duas portas para quem não escreve SQL.
 
 1. Dashboard como código
    - scripts/gerar_dashboard.py gera resources/dashboard-portfolio.lvdash.json
      (AI/BI, GRID_V1, queries com nome de tabela PURO, sem catálogo nem
      schema). Três páginas:
-     Portfólio: KPIs da mv_obras com MEASURE() (carteira, SPI, CPI, obras em
-       risco, críticas, estouro previsto); barra de estouro previsto por obra
-       colorida por situação (crítico #FF5F46, atenção #F6C344, ok #22C2F4);
-       dispersão SPI × CPI; linha de SPI e CPI semanais da carteira
-       (mv_evolucao); tabela das obras em andamento.
-     Recursos: top 15 equipamentos por custo ocioso (12 semanas), tabela da
-       frota com utilização, horas ociosas de equipe por obra (8 semanas).
-     Suprimentos: rupturas previstas por obra, tabela de fornecedores
-       (grafias no ERP, lead time prometido x real, % no prazo, em atraso) e
-       tabela de cobertura por material.
+     Portfólio: KPIs da mv_projetos com MEASURE() (carteira, SPI, CPI, estouro
+       previsto, projetos em risco, críticos, melancias); barra de estouro
+       previsto por projeto colorida por situação (crítico #FF5F46, atenção
+       #F6C344, ok #22C2F4); dispersão SPI × CPI; linha de SPI e CPI semanais
+       da carteira (mv_evolucao); tabela dos projetos em andamento com o farol
+       do gerente ao lado do farol pelo número.
+     Pessoas: top 15 pessoas por custo da hora parada (12 semanas), tabela de
+       utilização por pessoa e projeto, e barras de causas de bloqueio por
+       projeto (status_estruturado, últimos 90 dias).
+     Capacidade e fornecedores: contratos com ruptura prevista por projeto,
+       tabela de fornecedores (grafias no cadastro, prazo prometido x real,
+       % no prazo, em atraso) e tabela de banco de horas e créditos de cloud.
      Tema nas cores da Jornada: #0059DB, #22C2F4, fundo #14141A no escuro.
    - resources/dashboard.dashboard.yml: recurso dashboard_portfolio, display
-     name "Torre de Controle · Portfólio", dataset_catalog ${var.catalog},
+     name "Projeto Farol · Portfólio", dataset_catalog ${var.catalog},
      dataset_schema gold, warehouse ${var.warehouse_id}.
    Antes do deploy, rode cada query do dashboard (prefixando
-   lakehouse_atlas.gold.) e me mostre a contagem de linhas de cada uma.
+   lakehouse_vertice.gold.) e me mostre a contagem de linhas de cada uma.
 
 2. Genie Agent como código
-   - scripts/gerar_genie.py gera resources/torre.geniespace.json
+   - scripts/gerar_genie.py gera resources/farol.geniespace.json
      (serialized_space versão 2; ids de 32 caracteres hex, únicos e em ordem):
-     tabelas gold (cobertura_estoque, desempenho_fornecedor, dim_projeto,
-     fato_projeto_semana, obra_situacao_atual, pedidos_em_atraso,
-     rdo_estruturado, utilizacao_equipamento_semana, utilizacao_equipe_semana)
-     e as 5 metric views mv_*; as 4 perguntas de exemplo (as 3 da diretoria +
-     "Por que a obra P011 atrasou?"); uma instrução de texto com: HOJE =
-     2026-10-16 e o que é "últimos 90 dias / 12 semanas / 8 semanas"; as
-     fórmulas e as regras de corte; usar mv_obras para KPIs de hoje; PV/EV/AC
-     acumulados no fato (nunca somar semanas); "por que a obra X atrasou"
-     responde com rdo_estruturado dos últimos 90 dias, sem sem_ocorrencia e
-     nao_reportado, mais o SPI e equipamentos ociosos se a causa for
-     falta_equipamento. E 5 exemplos de SQL, um deles para a P011.
-   - resources/genie.genie_space.yml: recurso genie_torre, título
-     "Torre de Controle · Diretoria".
+     tabelas gold (cobertura_capacidade, desempenho_fornecedor, dim_projeto,
+     entregas_em_atraso, fato_projeto_semana, postmortem_estruturado,
+     projeto_situacao_atual, status_estruturado, utilizacao_pessoa_semana)
+     e as 5 metric views mv_*; as 4 perguntas do dono como perguntas de
+     exemplo; instruções de texto com: quem pergunta (o dono e o CTO); HOJE =
+     2026-10-16 e o que é "últimos 90 dias / 12 semanas / próximo mês"; as
+     fórmulas e as regras de corte; mv_projetos para totais de hoje e
+     projeto_situacao_atual para ranking; PV/EV/AC acumulados no fato (nunca
+     somar semanas); farol e melancia; "por que o projeto X atrasou" responde
+     com status_estruturado dos últimos 90 dias (sem sem_bloqueio e
+     nao_reportado), mais o SPI e SREs ociosos se a causa for falta_sre;
+     gente parada = utilização < 20% em 12 semanas; "o que vai dar errado no
+     próximo mês" junta ruptura de capacidade, entregas em atraso e o change
+     freeze de varejo (01/11/2026 a 10/01/2027) nos projetos de e-commerce;
+     "quais clientes" devolve cada cliente uma vez. E um exemplo de SQL para
+     cada uma das 4 perguntas do dono.
+   - resources/genie.genie_space.yml: recurso genie_farol, título
+     "Farol · Diretoria".
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
   databricks bundle summary --profile <perfil>
-  python3 scripts/genie.py perguntar "Torre de Controle · Diretoria" "Por que a obra P011 atrasou?" --profile <perfil>
-  python3 scripts/genie.py benchmark "Torre de Controle · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile <perfil>
+  python3 scripts/genie.py perguntar "Farol · Diretoria" "Tenho gente parada enquanto outro projeto pede gente?" --profile <perfil>
+  python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile <perfil>
 Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 (não a pergunta), gere o JSON, faça deploy e rode de novo.
 ```
+
 ---
 
 ## Fim da noite 2 · confira antes de seguir
 
 ```bash
 python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile <perfil>
-# 17 linhas, todas "ok"
+# 20 linhas, todas "ok"
 ```
 
 ```sql
-SELECT situacao, COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual GROUP BY 1;
--- crítico 7 · atenção 6 · ok 23 · concluída 4
-SELECT MEASURE(estouro_previsto) FROM lakehouse_atlas.gold.mv_obras;
--- R$ 42.364.558,31
+SELECT situacao, COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual GROUP BY 1;
+-- crítico 7 · atenção 10 · ok 24 · concluído 19
+SELECT MEASURE(estouro_previsto), MEASURE(projetos_melancia) FROM lakehouse_vertice.gold.mv_projetos;
+-- R$ 6.465.127,22 · 4
 ```
 
-O job `atlas_torre` tem **5 tarefas** e roda verde de ponta a ponta em ~5 min 40 s.
-Se estes números não baterem, não adianta seguir: a noite 3 treina em cima deles.
+O job `vertice_farol` tem **6 tarefas** e roda verde de ponta a ponta. Se estes números não
+baterem, não adianta seguir: a noite 3 treina em cima deles.
 
 ---
-
 ## Noite 3 · o pipeline passa a prever
 
 ### Prompt 7 · Features
 
-*o que descreve uma obra que vai estourar* · noite 3 · deploy nº 7 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
+*o que descreve um projeto que vai estourar* · noite 3 · deploy nº 7 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
 
 ```
 Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
-em aulas/aula-02-engenheiro/meu-atlas/: ML é mais uma camada do pipeline,
+em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
 não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
 
 Crie src/ml/01-features.sql (sql_task) que recria a tabela
-lakehouse_atlas.gold.features_obra_semana: uma linha por obra e semana
+lakehouse_vertice.gold.features_projeto_semana: uma linha por projeto e semana
 (sexta-feira), a partir de gold.fato_projeto_semana + gold.dim_projeto.
 COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
 
 - spi, cpi, indice_min = least(spi, cpi)
-- d_spi_4s, d_cpi_4s, d_cpi_8s (variação em 4 e 8 semanas, com lag())
+- d_spi_4s, d_cpi_4s, d_spi_8s, d_cpi_8s (variação em 4 e 8 semanas, com lag())
 - d_indice_min_4s
 - semanas_cpi_caindo: em quantas das últimas 4 semanas o CPI caiu
 - cpi_ultimas_4s = (ev - ev de 4 semanas atrás) / (ac - ac de 4 semanas atrás)
 - spi_ultimas_4s = o mesmo com pv
 - pct_fisico = ev / orcamento; pct_prazo = dias desde o início / duração baseline
 - ociosidade_4s = horas ociosas / horas disponíveis das últimas 4 semanas
-- rupturas_previstas da semana
-- pct_subcontrato_4s e pct_mao_de_obra_4s: participação no custo das
-  últimas 4 semanas (silver.custos, pela coluna semana)
-- rdo_chuva_4s, rdo_falta_material_4s, rdo_falta_equipamento_4s,
-  rdo_mao_de_obra_4s, rdo_com_ocorrencia_4s: fração dos RDOs dos últimos
-  28 dias com cada causa (gold.rdo_estruturado)
+- rupturas_capacidade da semana
+- pct_consultoria_4s e pct_cloud_4s: participação no custo das últimas
+  4 semanas (silver.custos, pela coluna semana)
+- saidas_12s: pessoas alocadas no projeto que se desligaram nas últimas
+  12 semanas (silver.alocacoes + silver.colaboradores)
+- incidentes_8s: postmortems do projeto nas últimas 8 semanas
+  (gold.postmortem_estruturado)
+- status_freeze_4s, status_falta_sre_4s, status_fornecedor_4s,
+  status_rotatividade_4s, status_escopo_4s, status_retrabalho_4s,
+  status_com_bloqueio_4s: quantos dos status dos últimos 28 dias tiveram
+  cada causa_bloqueio (gold.status_estruturado; vale qualquer método,
+  IA ou palavra-chave, porque a causa existe em todas as semanas)
 
 Os dois alvos, do FUTURO, que nunca entram como feature:
 - alvo_pior_indice_30d: o menor least(spi, cpi) nas 4 semanas SEGUINTES
@@ -465,7 +496,7 @@ Os dois alvos, do FUTURO, que nunca entram como feature:
 - estoura_30d: 1 se esse pior índice < 0,9, senão 0
 Os dois NULL quando ainda não há 4 semanas de futuro (é o caso de hoje).
 
-elegivel = 1 se SPI e CPI >= 0,9, a obra tem 84+ dias, ev < 98% do
+elegivel = 1 se SPI e CPI >= 0,9, o projeto tem 84+ dias, ev < 98% do
 orçamento e (status = em_andamento ou a semana é anterior a hoje).
 
 ARMADILHA MEDIDA: o Spark não aceita estender uma janela nomeada com frame
@@ -475,10 +506,10 @@ e o ORDER BY por extenso nas janelas com ROWS BETWEEN.
 No fim do arquivo, uma query de conferência: linhas, linhas de treino
 (elegível com rótulo), taxa base e linhas de hoje.
 
-Acrescente ao job atlas_torre a tarefa ml_features (sql_task), depois de
+Acrescente ao job vertice_farol a tarefa ml_features (sql_task), depois de
 metricas_governadas. Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --only ml_features --profile <perfil>
+  databricks bundle run vertice_farol --only ml_features --profile <perfil>
 ```
 
 ### Prompt 8 · Modelo e MLflow
@@ -486,7 +517,7 @@ metricas_governadas. Rode e me mostre a saída:
 *o baseline primeiro* · noite 3 · deploy nº 8 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-02-modelo.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Crie o notebook
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
 src/ml/02-modelo.py (# Databricks notebook source, widget catalog) e a
 tarefa ml_modelo (notebook_task, depois de ml_features).
 
@@ -498,13 +529,15 @@ ARMADILHAS MEDIDAS NO FREE EDITION (siga todas):
 - XGBoost treina e não carrega de volta: use HistGradientBoosting do sklearn.
 - DECIMAL vira Decimal no pandas e quebra o registro: .astype(float).
 - mlflow.set_experiment não cria a pasta pai: WorkspaceClient().workspace
-  .mkdirs("/Users/<eu>/atlas") antes.
+  .mkdirs("/Users/<eu>/vertice") antes.
 - MLflow 2.x: log_model(..., artifact_path="modelo"), nunca name=.
+- Toda célula de texto começa com "# MAGIC %md": sem ela o notebook quebra
+  com SyntaxError na linha do texto.
 
 O notebook, nesta ordem:
-1. Lê gold.features_obra_semana. Teste = elegíveis com rótulo e semana >=
+1. Lê gold.features_projeto_semana. Teste = elegíveis com rótulo e semana >=
    2026-04-03. Treino = rotulados com semana <= 2026-03-06 e pct_prazo > 0,15
-   (inclui obras já abaixo de 0,9: elas ensinam como uma obra afunda).
+   (inclui projetos já abaixo de 0,9: eles ensinam como um projeto afunda).
 2. BASELINES no teste, impressos antes de qualquer treino: regra de corte
    atual (0,5), folga até o corte (-indice_min), só o CPI, tendência
    (-d_indice_min_4s).
@@ -513,23 +546,25 @@ O notebook, nesta ordem:
    alvo_pior_indice_30d - indice_min. pior_previsto = indice_min + previsão.
    sigma = desvio do erro no teste. prob = P(pior < 0,9) com erro normal
    (math.erf). Compare com um HistGradientBoostingClassifier sim/não.
-4. Métrica da diretoria: um estouro é a primeira semana em que uma obra
-   que estava >= 0,9 antes do teste cruza para baixo. Avisado = esteve no
-   top 5 da semana (rank por prob) em alguma das 8 semanas anteriores.
-   Imprima avisados/estouros, antecedência média em dias e o estouro
-   previsto hoje (gold.obra_situacao_atual) dessas obras.
+4. Métrica do dono: um estouro é o projeto que vinha 4 semanas com SPI e CPI
+   >= 0,9, cruza para baixo e FICA abaixo por 2 semanas seguidas (pct_prazo
+   > 0,15), a partir de 4 semanas depois do início do teste. Avisado =
+   esteve no top 5 da semana (rank por prob) em alguma das 8 semanas
+   anteriores. Imprima avisados/estouros, antecedência média em dias e o
+   estouro previsto hoje (gold.projeto_situacao_atual) desses projetos.
 5. Importância por permutação.
-6. Testes com assert, ANTES de registrar: AUC >= 0,75; AUC < 0,995 (acima
+6. Testes com assert, ANTES de registrar: AUC >= 0,75; AUC < 0,98 (acima
    disso é vazamento); AUC >= a folga até o corte (senão, use a regra);
    avisados >= 70% dos estouros.
 7. Retreine com TODOS os rotulados, registre em
-   lakehouse_atlas.gold.modelo_estouro_30d com input_example, alias @prod.
-8. Grave gold.modelo_metricas (uma linha: versão, auc, baselines, sigma,
-   estouros, avisados, antecedência, estouro avisado, feature principal).
+   lakehouse_vertice.gold.modelo_estouro_30d com input_example, alias @prod.
+8. Grave gold.modelo_metricas (uma linha: versão, auc, todas as réguas,
+   sigma, estouros, avisados e quais, antecedência, estouro avisado,
+   feature principal).
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --only ml_modelo --profile <perfil>
+  databricks bundle run vertice_farol --only ml_modelo --profile <perfil>
 ```
 
 ### Prompt 9 · Score em lote
@@ -537,53 +572,58 @@ Rode e me mostre a saída:
 *a probabilidade de estouro em 30 dias* · noite 3 · deploy nº 9 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-03-score.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Crie o notebook
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
 src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
 ml_score (notebook_task, depois de ml_modelo).
 
-1. Carregue o modelo com mlflow.sklearn.load_model("models:/lakehouse_atlas
+1. Carregue o modelo com mlflow.sklearn.load_model("models:/lakehouse_vertice
    .gold.modelo_estouro_30d@prod") — NÃO use spark_udf: no serverless ele
    quebra com InvalidVersion. O sigma vem de gold.modelo_metricas.
-2. Pontue as obras com status em_andamento na semana 2026-10-16 de
-   gold.features_obra_semana: pior_previsto = indice_min + previsão;
-   prob = P(pior < 0,9) com erro normal; quem tem indice_min < 0,9 → 1,0.
-3. ranking por prob desc (desempate: indice_min asc); faixa_risco alto se
-   >= 0,5, medio se >= 0,2, senão baixo.
+2. Pontue os projetos em andamento na semana 2026-10-16 de
+   gold.features_projeto_semana, com join em gold.projeto_situacao_atual:
+   pior_previsto = indice_min + previsão; prob = P(pior < 0,9) com erro
+   normal; quem tem least(spi, cpi) < 0,9 NA FOTOGRAFIA DE HOJE → 1,0.
+3. ranking por prob desc (desempate: índice de hoje asc); faixa_risco alto
+   se >= 0,5, medio se >= 0,2, senão baixo.
 4. principais_fatores: os 2 ou 3 sinais mais graves em português, com
-   números no padrão brasileiro (vírgula decimal). Sinais: já abaixo do corte
-   (sempre primeiro), folga < 0,05 até o corte, CPI caindo nas últimas
-   semanas, cpi_ultimas_4s < 0,85 ("cada R$ 1 gasto no último mês entregou
-   R$ X"), spi_ultimas_4s < 0,85, falta de equipamento >= 10% dos RDOs,
-   chuva >= 20%, falta de material >= 40%, mão de obra >= 15%, ociosidade
-   >= 15%, 3+ rupturas previstas. Sem sinal: "sem sinal de piora".
-5. Grave lakehouse_atlas.gold.score_estouro_30d com EXATAMENTE as colunas
+   números no padrão brasileiro (vírgula decimal). Sinais: já abaixo do
+   corte (sempre primeiro), status semanal abaixo do corte e cronograma
+   acima (as fontes não batem), folga < 0,05 até o corte, CPI caindo nas
+   últimas semanas, cpi_ultimas_4s < 0,85 ("cada R$ 1 gasto no último mês
+   entregou R$ X"), spi_ultimas_4s < 0,85, falta de SRE em 2+ dos últimos 4
+   status, change freeze em 2+, rotatividade (saídas em 12 semanas ou citada
+   no status), escopo crescendo em 2+, consultoria atrasando em 2+, 2+
+   incidentes em 8 semanas, ociosidade >= 25%, ruptura de capacidade.
+   Sem sinal: "sem sinal de piora".
+5. Grave lakehouse_vertice.gold.score_estouro_30d com EXATAMENTE as colunas
    projeto_id STRING, data_referencia DATE, prob_estouro_30d DOUBLE,
    ranking INT, faixa_risco STRING, principais_fatores STRING (overwrite).
    COMMENT na tabela e nas colunas: a noite 4 lê daqui.
-6. Testes com assert: uma linha por obra em andamento, prob entre 0 e 1,
+6. Testes com assert: uma linha por projeto em andamento, prob entre 0 e 1,
    ranking único, nenhum motivo vazio.
 
-Rode o job inteiro e me mostre o top 10:
+Rode o job inteiro e me mostre o top 25:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
 ```
+
 ---
 
 ## Fim da noite 3 · confira antes de seguir
 
 ```bash
 python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile <perfil>
-# 15 linhas, todas "ok"
+# 17 linhas, todas "ok"
 ```
 
 ```sql
-SELECT faixa_risco, COUNT(*) FROM lakehouse_atlas.gold.score_estouro_30d GROUP BY 1;
--- alto 13 · medio 1 · baixo 22
-SELECT projeto_id, prob_estouro_30d FROM lakehouse_atlas.gold.score_estouro_30d WHERE projeto_id = 'P034';
--- P034 · 0,40  (a obra "ok" que o modelo vê chegando)
+SELECT faixa_risco, COUNT(*) FROM lakehouse_vertice.gold.score_estouro_30d GROUP BY 1;
+-- alto 18 · medio 4 · baixo 19
+SELECT projeto_id, prob_estouro_30d FROM lakehouse_vertice.gold.score_estouro_30d WHERE projeto_id = 'PRJ-024';
+-- PRJ-024 · 0,49  (o e-commerce "ok" que o modelo vê chegando, com o freeze de 01/11 na porta)
 ```
 
-O job `atlas_torre` agora tem **8 tarefas** e roda verde em ~4 min 20 s. A noite 4 lê
+O job `vertice_farol` agora tem **9 tarefas** e roda verde em ~4 a 5 min. A noite 4 lê
 `gold.score_estouro_30d`: se ela não existir, o app mostra "—" na coluna de risco.
 
 ---
@@ -594,111 +634,106 @@ O job `atlas_torre` agora tem **8 tarefas** e roda verde em ~4 min 20 s. A noite
 *o PDF que ninguém lê vira resposta* · noite 4 · deploy nº 10 (Genie publicado) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-01-agente-de-contratos.md)
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar.
+Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar. Use a skill
+databricks-ai-functions.
 
 Crie a pasta aulas/aula-04-engenheiro-ia/meu-agente/ com o agente que lê os
-contratos da Atlas. Perfil: <perfil> (sempre --profile).
+contratos de fornecedor e o manual da Vértice. Perfil: <perfil> (sempre --profile).
 
 1. meu-agente/01-contratos.sql, executável com
    python3 scripts/run_sql.py meu-agente/01-contratos.sql --profile <perfil>
-   (use a API de statements, não o aitools query). Quatro objetos na gold,
-   com COMMENT em todos (é o que o Genie lê):
-   a) gold.contratos_texto: read_files dos PDFs em
-      /Volumes/lakehouse_atlas/bronze/raw/documentos/contratos/ (binaryFile),
-      ai_parse_document(content), texto = concat_ws dos elementos;
-      projeto_id extraído do nome do arquivo (contrato_P011.pdf → P011).
-   b) gold.contratos_clausulas: uma linha por cláusula (projeto_id,
-      clausula_numero INT, titulo, texto). Normalize os espaços (o PDF quebra
-      linha no meio da frase) e corte em "CLÁUSULA N - ".
-   c) gold.contratos_resumo: ai_query('databricks-meta-llama-3-3-70b-instruct',
-      ..., responseFormat => JSON schema strict) com os campos multa_dia_pct
-      (number), teto_multa_pct (number), chuva_da_prorrogacao (boolean),
-      icamento_responsavel e estrutura_fornecida_por (enum contratada|contratante),
-      prazo_aditivo_dias (integer), reajuste (string), bonus_antecipacao
-      (boolean). Descreva cada campo no schema. Lembre: a Atlas é a CONTRATADA.
-   d) gold.contratos_exposicao (view): junta obra_situacao_atual, contratos_resumo
-      e a contagem de RDOs de chuva e de falta_equipamento; multa_estimada =
-      valor_contrato × min(atraso_projetado_dias × multa_dia_pct, teto) / 100 e
-      multa_no_teto.
+   (API de statements, não o aitools query). Na gold, com COMMENT em tudo (é o que o Genie lê):
+   a) gold.documentos_elementos: read_files (binaryFile) dos PDFs em
+      /Volumes/lakehouse_vertice/bronze/raw/documentos/contratos/ e .../manual/,
+      ai_parse_document(content, map('version','2.0')), posexplode dos elementos:
+      tipo_documento, documento, ordem, tipo (title/section_header/text), conteudo.
+   b) gold.contratos_clausulas: uma linha por cláusula (fornecedor, clausula_numero INT,
+      titulo, texto). Cada texto pertence à última section_header "CLÁUSULA N - TÍTULO"
+      antes dele (last_value ignorando nulos). O fornecedor sai da linha "CONTRATADA: ...".
+   c) gold.manual_secoes: uma linha por seção do manual (secao_numero, titulo, texto), mesmo método.
+   d) Um SELECT de demonstração com ai_extract SEM schema (lista de nomes de campo) em 3
+      contratos, para a turma ver que volta texto.
+   e) gold.contratos_resumo: ai_extract(texto, JSON schema, map('version','2.0')) com os campos
+      objeto, valor_anual (number), data_fim_vigencia (string AAAA-MM-DD), renovacao_automatica
+      (boolean), aviso_previo_dias (integer), multa_atraso_pct_dia (number, nulo se não há),
+      teto_multa_pct (number), sla e reajuste (string). Descrição em cada campo; peça
+      "em português" nos campos de texto. Leia com :response:campo::TIPO.
+   f) view gold.contratos_multa_fornecedor: silver.entregas_fornecedor entregue com atraso ou
+      em aberto vencida; dias de atraso até a entrega (ou até 16/10/2026); multa_cobravel =
+      valor × least(dias × multa % ao dia, teto) / 100; na_vigencia_atual = data_prometida
+      nos 12 meses que terminam no fim da vigência.
+   g) view gold.contratos_avisos: data_limite_aviso = fim da vigência − aviso prévio,
+      dias até ela a partir de 16/10/2026, situacao_aviso (vencido / vence em até 60 dias / ok)
+      e o_que_fazer conforme renovacao_automatica.
 
-2. meu-agente/gerar_genie.py gera meu-agente/diretoria-contratos-genie.json
-   (serialized_space v2, ids de 32 caracteres em ordem) com: contratos_*,
-   obra_situacao_atual, rdo_estruturado, utilizacao_equipamento_semana,
-   utilizacao_equipe_semana, cobertura_estoque, pedidos_em_atraso,
-   desempenho_fornecedor, mv_obras, e score_estouro_30d SÓ se existir.
-   Instruções: HOJE = 2026-10-16; a Atlas é a CONTRATADA (nunca "cobrar a
-   contratada"); sempre citar número e trecho da cláusula; regras de leitura
-   (chuva_da_prorrogacao, içamento da contratada não dá prorrogação, prazo do
-   aditivo); "em risco" = atenção + crítico somados. Exemplos de SQL para:
-   "Por que a obra P011 atrasou e o que o contrato diz sobre isso?",
-   "Qual a multa estimada de cada obra com contrato?",
-   "Onde tenho guindaste parado que poderia ir para a P011?".
+2. meu-agente/gerar_genie.py: escreve meu-agente/diretoria-contratos-genie.json (NÃO use a
+   extensão .geniespace.json) com as tabelas contratos_*, manual_secoes, projeto_situacao_atual,
+   status_estruturado, utilizacao_pessoa_semana, cobertura_capacidade, entregas_em_atraso,
+   desempenho_fornecedor e a metric view mv_projetos. Inclua gold.score_estouro_30d SÓ se
+   existir (databricks tables exists). Instruções: a Vértice é a CONTRATANTE (multa é dinheiro
+   que ela cobra); hoje = 16/10/2026; cite cláusula e seção do manual; "na vigência atual" =
+   na_vigencia_atual; manual: freeze é a seção 4, SRE a 5, farol a 8. Exemplos de SQL para
+   "quanto cobrar da CodeForge", "aviso prévio" e "o que o manual diz sobre o freeze".
 
-3. Rode e me mostre:
-   python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/meu-agente/01-contratos.sql --profile <perfil>
-   SELECT * EXCEPT(arquivo) FROM lakehouse_atlas.gold.contratos_resumo ORDER BY 1
-   python3 aulas/aula-04-engenheiro-ia/meu-agente/gerar_genie.py --profile <perfil>
-   python3 scripts/genie.py publicar aulas/aula-04-engenheiro-ia/meu-agente/diretoria-contratos-genie.json \
-     --titulo "Torre de Controle · Diretoria + Contratos" --profile <perfil>
-   python3 scripts/genie.py perguntar "Torre de Controle · Diretoria + Contratos" \
-     "Por que a obra P011 atrasou e o que o contrato diz sobre isso?" --profile <perfil>
-   python3 scripts/genie.py benchmark "Torre de Controle · Diretoria + Contratos" \
+3. Publique e teste:
+   python3 scripts/genie.py publicar meu-agente/diretoria-contratos-genie.json \
+     --titulo "Farol · Diretoria + Contratos" --profile <perfil>
+   python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" \
      aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile <perfil>
-NÃO use o título "Torre de Controle · Diretoria": é o Genie da noite 2.
+   Se errar, ajuste as instruções (não as perguntas) e publique de novo.
 ```
 
 ### Prompt 11 · O app da Torre
 
-*a Torre na tela do gestor* · noite 4 · deploy nº 11 (apps deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-02-app.md)
+*a Torre na tela do dono* · noite 4 · deploy nº 11 (apps deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-02-app.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
 databricks-app-design.
 
-1. Mova aulas/aula-04-engenheiro-ia/meu-agente/ para dentro do app (passo 2,
-   como minha-torre/agente/) e crie o app:
+1. Confira `databricks apps list --profile <perfil>` (limite de 3 apps no Free Edition).
+   Mova aulas/aula-04-engenheiro-ia/meu-agente/ para dentro do app (minha-torre/agente/)
+   e crie o app:
    cd aulas/aula-04-engenheiro-ia && databricks apps init --name minha-torre \
      --features analytics,genie \
      --set analytics.sql-warehouse.id=<warehouse> \
-     --set genie.genie-space.id=<id do Genie "Torre de Controle · Diretoria + Contratos"> \
-     --set "genie.genie-space.name=Torre de Controle · Diretoria + Contratos" \
+     --set genie.genie-space.id=<id do Genie "Farol · Diretoria + Contratos"> \
+     --set "genie.genie-space.name=Farol · Diretoria + Contratos" \
      --run none --profile <perfil>
-   Inclua no databricks.yml um job torre_contratos (sql_task com
-   agente/01-contratos.sql) em resources/contratos.job.yml.
+   Inclua no databricks.yml um job farol_contratos (sql_task com agente/01-contratos.sql)
+   em resources/contratos.job.yml.
 
 2. config/queries (apague os exemplos do template):
-   - kpis.sql: obras em andamento, em risco (atenção+crítico), críticas,
-     estouro previsto, carteira e rupturas previstas (obra_situacao_atual).
-   - obras_risco.sql: obras em andamento da pior para a melhor, com SPI, CPI,
-     estouro, atraso projetado, a causa mais frequente no RDO dos últimos 90
-     dias, dias de impacto por falta_equipamento e por mao_de_obra, e
-     multa_dia_pct / multa_estimada de contratos_exposicao (LEFT JOIN).
-   - recursos_ociosos.sql: equipamentos com utilização média < 20% nas
-     últimas 12 semanas e as 15 equipes com mais horas ociosas, com horas
-     paradas e custo ocioso MÉDIOS por semana (custo da equipe vem de
-     silver.equipes.custo_hora).
-   A probabilidade de estouro (gold.score_estouro_30d, da noite 3) NÃO vai em
-   config/queries: a tabela pode não existir e quebraria o build. Faça uma
-   rota GET /api/score-estouro no servidor que responde {disponivel, linhas}.
+   - kpis.sql: projetos em andamento, em risco (atenção+crítico), críticos, melancias,
+     estouro previsto e carteira (projeto_situacao_atual), rupturas de capacidade
+     (cobertura_capacidade) e multa a cobrar de fornecedor na vigência atual
+     (contratos_multa_fornecedor).
+   - projetos_risco.sql: projetos em andamento do pior para o melhor, com SPI, CPI, estouro,
+     atraso projetado, farol do gerente × calculado, melancia, a causa mais frequente no
+     status_estruturado dos últimos 90 dias, os dias de impacto por falta_sre e por
+     rotatividade, rupturas de capacidade e multa a cobrar por projeto.
+   - pessoas_ociosas.sql: pessoas com utilização < 20% nas últimas 12 semanas
+     (utilizacao_pessoa_semana), com horas paradas e custo ocioso MÉDIOS por semana e custo_hora.
+   A probabilidade de estouro (gold.score_estouro_30d, da noite 3) NÃO vai em config/queries:
+   a tabela pode não existir e quebraria o build. Faça uma rota GET /api/score-estouro no
+   servidor que responde {disponivel, linhas}.
 
 3. Telas (português, R$, índices com 2 casas, Number() em tudo que vem do warehouse):
-   - Obras em risco: 4 KPIs + tabela (situação com cor: crítico vermelho,
-     atenção âmbar), coluna P(estouro) com "—" quando o modelo não existe.
-   - Simulador: escolher recurso ocioso e obra destino (só atenção/crítico);
-     mostrar horas recuperadas no mês (× 4 semanas), ociosidade que deixa de
-     ser paga, dias de atraso evitados (dias de impacto da causa nos últimos
-     90 dias ÷ 90 × 30), multa evitada (dias × multa diária × valor do
-     contrato) e saldo com custo de mobilização editável. Explique a conta
-     num <details>.
+   - Projetos em risco: 4 KPIs + tabela (situação com cor: crítico vermelho, atenção âmbar;
+     farol do gerente com 🍉 quando é melancia), coluna P(estouro) com "—" sem o modelo.
+   - Simulador: escolher uma pessoa ociosa e um projeto destino (só atenção/crítico; para SRE,
+     ordene pelos dias de falta_sre); mostrar horas no mês (× 4 semanas), ociosidade que deixa
+     de ser paga, dias de cronograma recuperados (dias de impacto da causa nos últimos 90 dias
+     ÷ 90 × 30), mobilização = horas de onboarding (editável, 40) × custo_hora, e saldo.
+     Explique a conta num <details>.
    - Perguntar: <GenieChat alias="default" />.
-   Sem cache no createApp. Atualize o título do app.
+   Sem cache no createApp. Título "Projeto Farol".
 
 4. npm run typecheck, npm run lint, npm test, databricks apps validate.
-   Depois: databricks apps deploy --profile <perfil>. O primeiro deploy VAI
-   falhar no build por falta de permissão: crie scripts/conceder-acesso.sh
-   (lê o service_principal_client_id com apps get e dá USE CATALOG, USE
-   SCHEMA + SELECT na gold, USE SCHEMA na silver e SELECT em silver.equipes),
-   rode e faça o deploy de novo. Me mostre a URL.
+   Depois: databricks bundle deploy --profile <perfil> (cria o app e o service principal).
+   Crie scripts/conceder-acesso.sh (lê o service_principal_client_id com apps get e dá
+   USE CATALOG em lakehouse_vertice e USE SCHEMA + SELECT na gold), rode e faça
+   databricks apps deploy --profile <perfil>. Me mostre a URL.
 ```
 
 ### Prompt 12 · A aprovação no Lakebase
@@ -712,33 +747,31 @@ databricks-lakebase. O app minha-torre já está no ar (prompt 2).
 1. Lakebase:
    databricks postgres create-project minha-torre --profile <perfil>
    e descubra branch e database (list-branches, list-databases).
-   Adicione ao databricks.yml as variáveis postgres_branch e postgres_database e
-   o recurso do app `postgres` (CAN_CONNECT_AND_CREATE); no app.yaml a env
-   LAKEBASE_ENDPOINT (valueFrom: postgres); no server o plugin lakebase().
+   Adicione ao databricks.yml as variáveis postgres_branch e postgres_database e o recurso
+   do app `postgres` (CAN_CONNECT_AND_CREATE); no app.yaml a env LAKEBASE_ENDPOINT
+   (valueFrom: postgres); no server o plugin lakebase().
 
 2. server/routes/decisoes.ts, registrado em onPluginsReady:
-   - cria o schema torre e a tabela torre.decisoes (id serial, projeto_origem,
-     projeto_destino, recurso_id, tipo equipamento|equipe, decisao
-     aprovada|recusada, justificativa, horas_recuperadas_mes, economia_mes,
-     multa_evitada, usuario, criado_em timestamptz default now()).
-   - GET /api/quem-sou, GET /api/decisoes (200 mais recentes),
-     POST /api/decisoes com zod (exporte o schema): projeto no padrão
-     ^P\d{3}$, origem ≠ destino, justificativa de 10 a 1000 caracteres,
-     números com z.coerce. Grave o usuário do header x-forwarded-email.
-   - server/decisoes.test.ts (vitest) testando o schema: aceita válida,
-     recusa justificativa curta, código fora do padrão e decisão inválida.
+   - cria o schema torre e a tabela torre.decisoes (id serial, projeto_origem, projeto_destino,
+     recurso_id, tipo 'pessoa', decisao aprovada|recusada, justificativa,
+     horas_recuperadas_mes, economia_mes, dias_recuperados, usuario,
+     criado_em timestamptz default now()).
+   - GET /api/quem-sou, GET /api/decisoes (200 mais recentes), POST /api/decisoes com zod
+     (exporte o schema): projeto ^PRJ-\d{3}$, pessoa ^COL\d{4}$, origem ≠ destino,
+     justificativa de 10 a 1000 caracteres, números com z.coerce. Grave o usuário do header
+     x-forwarded-email.
+   - server/decisoes.test.ts (vitest) testando o schema: aceita válida, recusa justificativa
+     curta, projeto fora do padrão, pessoa fora do padrão e decisão inválida.
 
-3. Cliente: no simulador, textarea de justificativa + botões Aprovar e
-   Recusar (desabilitados com menos de 10 caracteres) que fazem POST e mostram
-   "Decisão nº X aprovada e registrada por <e-mail>". Nova tela Decisões com o
-   histórico (nº, quando, recurso origem → destino, decisão, justificativa,
-   multa evitada, por quem).
+3. Cliente: no simulador, textarea de justificativa + botões Aprovar e Recusar (desabilitados
+   com menos de 10 caracteres) que fazem POST e mostram "Decisão nº X aprovada e registrada
+   por <e-mail>". Nova tela Decisões com o histórico (nº, quando, pessoa origem → destino,
+   decisão, justificativa, ociosidade evitada no mês, por quem).
 
 4. typecheck, lint, test, apps validate, apps deploy --profile <perfil>.
-   Prove a gravação: crie scripts/ver_decisoes.py que lê torre.decisoes direto
-   no Postgres (psycopg, senha = token de
-   `databricks postgres generate-database-credential <endpoint>`) e rode com
-   uv run --no-project --with "psycopg[binary]" python ... --profile <perfil>
+   Prove a gravação: crie scripts/ver_decisoes.py que lê torre.decisoes direto no Postgres
+   (psycopg, senha = token de `databricks postgres generate-database-credential <endpoint>`)
+   e rode com uv run --no-project --with "psycopg[binary]" python ... --profile <perfil>
 ```
 ---
 
@@ -750,4 +783,6 @@ Cada noite tem o próprio script de limpeza. Sem `--apagar`, eles apenas
 ```bash
 bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>             # simula
 bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar    # apaga silver, gold e os recursos do bundle
+bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh <perfil>     # simula; --apagar tira features, modelo e score
+bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> # simula; --apagar tira contratos, app e Lakebase
 ```

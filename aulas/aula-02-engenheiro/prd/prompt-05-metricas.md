@@ -1,33 +1,32 @@
 # Prompt 5 · Métricas governadas — o KPI definido uma vez só
 
-**Entrega:** 5 metric views no Unity Catalog com os 12 KPIs da Torre, e a tarefa
+**Entrega:** 5 metric views no Unity Catalog com os KPIs da Torre, e a tarefa
 `metricas_governadas` fechando o job. **Deploy nº 5.**
 
 ---
 
 ## O que mostrar antes
 
-O problema que a metric view resolve, em uma imagem: a mesma pergunta, três
-respostas.
+O problema que a metric view resolve, em uma imagem: a mesma pergunta, três respostas.
 
 ```
-SQL da noite 1 ...... CPI da P018 = 0,79   (EV / AC, com CAST e replace)
-Genie da noite 1 .... CPI da P018 = 3,26   (inventou a fórmula, multiplicou o JOIN)
-Planilha do PMO ..... CPI da P018 = ?      (cada gerente calcula de um jeito)
+SQL da noite 1 ...... CPI do PRJ-009 = 0,77   (EV / AC, com CASE e replace)
+Genie da noite 1 .... CPI do PRJ-009 = 1,9    (inventou: valor do contrato ÷ custo)
+Planilha do PMO ..... CPI do PRJ-009 = ?      (cada gerente calcula de um jeito)
 ```
 
-*"Quando a diretoria recebe três números, ela não confia em nenhum. A fórmula do
-CPI precisa morar num lugar só."*
+*"Quando o dono recebe três números, ele não confia em nenhum. A fórmula do CPI
+precisa morar num lugar só."*
 
 **Enquanto ele trabalha, você explica:**
 
 - **Metric view guarda a FÓRMULA, não o número.** `MEASURE(cpi)` no dashboard, no
-  Genie e no SQL é sempre `SUM(ev) / SUM(ac)` — recalculado no grão que a
-  pergunta pedir (obra, UF, setor, carteira).
-- **Razão não se soma.** O CPI da carteira não é a média dos CPIs das obras: é
+  Genie e no SQL é sempre `SUM(ev) / SUM(ac)` — recalculado no grão que a pergunta
+  pedir (projeto, cliente, segmento, ferramenta, carteira).
+- **Razão não se soma.** O CPI da carteira não é a média dos CPIs dos projetos: é
   ΣEV ÷ ΣAC. A metric view faz isso certo sozinha, porque a medida é a fórmula.
 - **`comment` e `synonyms` são para o Genie.** "índice de custo" e "desempenho de
-  custo" passam a significar CPI.
+  custo" passam a significar CPI; "farol mentiroso" passa a significar melancia.
 - **Armadilha medida:** o YAML da metric view precisa da indentação intacta. Pelo
   `aitools tools query` ela falha; como `sql_task` (ou `scripts/run_sql.py`) funciona.
 
@@ -36,48 +35,45 @@ CPI precisa morar num lugar só."*
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. Agora os KPIs
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora os KPIs
 governados, como metric views do Unity Catalog.
 
 Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW ...
-WITH METRICS LANGUAGE YAML AS $$ ... $$, version 1.1, comment e synonyms em
-português nas medidas principais:
+WITH METRICS LANGUAGE YAML AS $$ ... $$ (version 1.1), comment em toda
+dimensão e medida que não for óbvia, e synonyms em português:
 
-1. lakehouse_atlas.gold.mv_obras — source gold.obra_situacao_atual,
-   filter status = 'em_andamento'.
-   Dimensões: projeto_id, obra, cliente, setor, uf, situacao, gerente_projeto.
-   Medidas: obras, carteira, spi = SUM(ev)/SUM(pv), cpi = SUM(ev)/SUM(ac),
-   eac, estouro_previsto, margem_projetada =
-   (SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato),
-   atraso_projetado_medio_dias, obras_em_risco (situação atenção ou crítico),
-   obras_criticas.
-2. lakehouse_atlas.gold.mv_evolucao — source gold.fato_projeto_semana com
-   join em gold.dim_projeto (using projeto_id). Dimensões semana, mes, obra,
-   uf, setor. Medidas spi, cpi, utilizacao_equipe, horas_ociosas,
-   rupturas_previstas. Comente que PV/EV/AC são acumulados.
-3. lakehouse_atlas.gold.mv_equipamentos — source
-   gold.utilizacao_equipamento_semana: utilizacao_equipamento, horas_paradas,
-   custo_ocioso por tipo, modelo, obra, uf, semana.
-4. lakehouse_atlas.gold.mv_suprimentos — source gold.cobertura_estoque:
-   rupturas_previstas, cobertura_media_dias, itens_monitorados.
-5. lakehouse_atlas.gold.mv_fornecedores — source silver.compras com join em
-   gold.dim_projeto: pedidos, pedidos_em_atraso, lead_time_real_medio_dias,
-   fator_atraso_fornecedor (real / prometido).
+1. lakehouse_vertice.gold.mv_projetos sobre gold.projeto_situacao_atual com
+   filter status = 'em_andamento'. Dimensões: projeto_id, projeto, cliente,
+   segmento, ferramenta, situacao, farol_do_gerente, farol_calculado,
+   gerente_projeto. Medidas: projetos, carteira (SUM valor_contrato),
+   spi (SUM(ev)/SUM(pv)), cpi (SUM(ev)/SUM(ac)), eac, estouro_previsto,
+   margem_projetada ((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato)),
+   atraso_projetado_medio_dias, projetos_em_risco, projetos_criticos,
+   projetos_melancia (COUNT FILTER WHERE melancia).
+2. mv_evolucao sobre gold.fato_projeto_semana com join em gold.dim_projeto
+   (using: [projeto_id]): dimensões semana, mes, projeto, cliente, segmento,
+   ferramenta; medidas spi, cpi, utilizacao_equipe, horas_ociosas,
+   rupturas_capacidade.
+3. mv_pessoas sobre gold.utilizacao_pessoa_semana: dimensões semana, nome,
+   papel, senioridade, projeto; medidas utilizacao, horas_ociosas,
+   custo_ocioso, pessoas.
+4. mv_capacidade sobre gold.cobertura_capacidade: dimensões projeto,
+   fornecedor, tipo; medidas contratos, rupturas_previstas,
+   cobertura_media_dias.
+5. mv_fornecedores sobre silver.entregas_fornecedor: dimensões fornecedor,
+   projeto_id, mes_pedido; medidas entregas, entregas_em_atraso,
+   prazo_real_medio_dias, fator_atraso.
 
-No fim do arquivo, um SELECT com MEASURE() das medidas de mv_obras, para a
-saída da tarefa provar que as views respondem.
-
-ARMADILHA MEDIDA: rodar metric view pelo `databricks experimental aitools
-tools query` achata a indentação do YAML e dá
-METRIC_VIEW_INVALID_VIEW_DEFINITION. Rode como sql_task do job ou com
-python3 scripts/run_sql.py <arquivo> --profile <perfil>.
+ARMADILHAS MEDIDAS: o YAML precisa da indentação intacta (teste com
+python3 scripts/run_sql.py <arquivo> --profile <perfil>), e NUNCA use ';'
+dentro do YAML, nem num comment: a sql_task do job corta o arquivo em todo ';'.
 
 Acrescente ao job a tarefa metricas_governadas, depois de
-testes_de_qualidade E de rdo_com_ia.
+testes_de_qualidade, status_com_ia E postmortem_com_ia.
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_torre --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
 ```
 
 ---
@@ -86,17 +82,17 @@ Rode e me mostre a saída:
 
 ```sql
 SELECT MEASURE(spi) AS spi, MEASURE(cpi) AS cpi, MEASURE(estouro_previsto) AS estouro,
-       MEASURE(obras_criticas) AS criticas
-FROM lakehouse_atlas.gold.mv_obras;
--- 0,95 · 0,94 · R$ 42,36 mi · 7
+       MEASURE(projetos_criticos) AS criticos, MEASURE(projetos_melancia) AS melancias
+FROM lakehouse_vertice.gold.mv_projetos;
+-- 0,92 · 0,97 · R$ 6,47 mi · 7 · 4
 
 -- o mesmo KPI, em outro grão, sem reescrever fórmula nenhuma
-SELECT uf, MEASURE(cpi) AS cpi, MEASURE(obras_em_risco) AS em_risco
-FROM lakehouse_atlas.gold.mv_obras GROUP BY uf ORDER BY cpi;
+SELECT ferramenta, MEASURE(spi) AS spi, MEASURE(projetos_em_risco) AS em_risco
+FROM lakehouse_vertice.gold.mv_projetos GROUP BY ferramenta ORDER BY spi;
 ```
 
-Abra o DAG do job: **cinco tarefas**, com o paralelismo de `testes` e
-`rdo_com_ia` no meio. É a tela da noite.
+Abra o DAG do job: **seis tarefas**, com o paralelismo de `testes`, `status_com_ia` e
+`postmortem_com_ia` no meio. É a tela da noite.
 
 ---
 
@@ -106,7 +102,8 @@ Abra o DAG do job: **cinco tarefas**, com o paralelismo de `testes` e
 |---|---|---|
 | `METRIC_VIEW_INVALID_VIEW_DEFINITION ... Missing required creator property 'expr'` | Rodou pelo `aitools tools query` | `sql_task` ou `scripts/run_sql.py` |
 | `Failed to parse YAML` em `on:` | YAML 1.1 lê `on` como booleano | Use `using: [projeto_id]` no join |
-| `UNRESOLVED_COLUMN` numa dimensão de join | Faltou o prefixo do join | `dim_obra.uf`, não `uf` |
-| A tarefa roda antes do RDO | `depends_on` só com testes | Precisa depender das duas |
+| `UNRESOLVED_COLUMN` numa dimensão de join | Faltou o prefixo do join | `dim_projeto.cliente`, não `cliente` |
+| A tarefa roda antes da IA | `depends_on` só com testes | Precisa depender das três |
+| `metricas_governadas` falha no job, mas roda pelo `run_sql.py` | Um `;` dentro do YAML (num comment) | A `sql_task` corta o arquivo em todo `;`: troque por vírgula |
 
-**Tempo medido:** ~20 s para as 5 metric views. Job completo do zero: **5 min 40 s**.
+**Tempo medido:** ~20 s para as 5 metric views. Job completo do zero: ~6 min.

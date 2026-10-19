@@ -7,47 +7,56 @@
 --   python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile SEU-PERFIL
 
 WITH v AS (
-  -- silver: a limpeza fez o que prometeu
-  SELECT 1 AS n, 'equipes únicas (123 linhas no RH → 120)' AS item, 120 AS esperado,
-         (SELECT COUNT(*) FROM lakehouse_atlas.silver.equipes) AS obtido
-  UNION ALL SELECT 2, 'grafias da Norte Aço que viraram 1 fornecedor', 4,
-         (SELECT COUNT(DISTINCT fornecedor_como_veio) FROM lakehouse_atlas.silver.compras WHERE fornecedor = 'Metalúrgica Norte Aço Ltda')
-  UNION ALL SELECT 3, 'datas de início em formato BR convertidas', 11,
-         (SELECT COUNT_IF(data_veio_em_formato_br) FROM lakehouse_atlas.silver.projetos)
-  UNION ALL SELECT 4, 'tarefas >100% corrigidas pela medição', 52,
-         (SELECT COUNT_IF(pct_corrigido_pela_medicao) FROM lakehouse_atlas.silver.tarefas)
-  UNION ALL SELECT 5, 'custos com vírgula decimal recuperados', 540,
-         (SELECT COUNT_IF(valor_veio_com_virgula) FROM lakehouse_atlas.silver.custos)
-  UNION ALL SELECT 6, 'custo real total (R$ mi) — igual à noite 1', 573,
-         (SELECT CAST(ROUND(SUM(valor) / 1e6) AS INT) FROM lakehouse_atlas.silver.custos)
-  -- gold: as três perguntas
-  UNION ALL SELECT 7, 'obras críticas (SPI ou CPI < 0,8)', 7,
-         (SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE situacao = 'crítico')
-  UNION ALL SELECT 8, 'obras em atenção', 6,
-         (SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE situacao = 'atenção')
-  UNION ALL SELECT 9, 'estouro previsto (R$ mil) — noite 1 dava 41.9xx', 42365,
-         (SELECT CAST(ROUND(SUM(estouro_previsto) / 1e3) AS INT) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE status = 'em_andamento')
-  UNION ALL SELECT 10, 'rupturas de estoque previstas hoje', 97,
-         (SELECT COUNT_IF(ruptura_prevista) FROM lakehouse_atlas.gold.cobertura_estoque)
-  UNION ALL SELECT 11, 'pedidos de compra em atraso hoje', 27,
-         (SELECT COUNT(*) FROM lakehouse_atlas.gold.pedidos_em_atraso)
-  UNION ALL SELECT 12, 'Norte Aço: lead time real ÷ prometido (×100)', 141,
-         (SELECT CAST(ROUND(fator_atraso * 100) AS INT) FROM lakehouse_atlas.gold.desempenho_fornecedor WHERE fornecedor = 'Metalúrgica Norte Aço Ltda')
-  UNION ALL SELECT 13, 'guindastes < 20% de uso nas últimas 12 semanas', 2,
-         (SELECT COUNT(*) FROM (SELECT equipamento_id FROM lakehouse_atlas.gold.utilizacao_equipamento_semana
-                                WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24'
-                                GROUP BY equipamento_id HAVING SUM(horas_operadas) / SUM(horas_disponiveis) < 0.2))
+  -- silver: a integração e a limpeza fizeram o que prometeram
+  SELECT 1 AS n, 'projetos com cronograma nas 3 ferramentas' AS item, 60 AS esperado,
+         (SELECT COUNT(DISTINCT projeto_id) FROM lakehouse_vertice.silver.tarefas) AS obtido
+  UNION ALL SELECT 2, 'tarefas na silver (sem TOTAL e sem tarefa-resumo)', 4917,
+         (SELECT COUNT(*) FROM lakehouse_vertice.silver.tarefas)
+  UNION ALL SELECT 3, 'tarefas do Excel acima de 100% (cortadas e sinalizadas)', 11,
+         (SELECT COUNT_IF(pct_veio_acima_de_100) FROM lakehouse_vertice.silver.tarefas)
+  UNION ALL SELECT 4, 'pessoas únicas (523 linhas no RH → 520)', 520,
+         (SELECT COUNT(*) FROM lakehouse_vertice.silver.colaboradores)
+  UNION ALL SELECT 5, 'grafias da CodeForge que viraram 1 fornecedor', 4,
+         (SELECT COUNT(DISTINCT fornecedor_como_veio) FROM lakehouse_vertice.silver.entregas_fornecedor
+          WHERE fornecedor = 'CodeForge Consultoria Ltda')
+  UNION ALL SELECT 6, 'custos com vírgula decimal recuperados', 671,
+         (SELECT COUNT_IF(valor_veio_com_virgula) FROM lakehouse_vertice.silver.custos)
+  UNION ALL SELECT 7, 'custo real total (R$ mi) — igual à noite 1', 193,
+         (SELECT CAST(ROUND(SUM(valor) / 1e6) AS INT) FROM lakehouse_vertice.silver.custos)
+  -- gold: as perguntas do dono
+  UNION ALL SELECT 8, 'projetos críticos (SPI ou CPI < 0,8)', 7,
+         (SELECT COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE situacao = 'crítico')
+  UNION ALL SELECT 9, 'projetos em atenção', 10,
+         (SELECT COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE situacao = 'atenção')
+  UNION ALL SELECT 10, 'estouro previsto (R$ mil) — o mesmo da noite 1', 6465,
+         (SELECT CAST(ROUND(SUM(estouro_previsto) / 1e3) AS INT) FROM lakehouse_vertice.gold.projeto_situacao_atual
+          WHERE status = 'em_andamento')
+  UNION ALL SELECT 11, 'melancias (farol verde, SPI < 0,9)', 4,
+         (SELECT COUNT_IF(melancia) FROM lakehouse_vertice.gold.projeto_situacao_atual)
+  UNION ALL SELECT 12, 'rupturas de capacidade previstas hoje', 15,
+         (SELECT COUNT_IF(ruptura_prevista) FROM lakehouse_vertice.gold.cobertura_capacidade)
+  UNION ALL SELECT 13, 'entregas de fornecedor em atraso hoje', 5,
+         (SELECT COUNT(*) FROM lakehouse_vertice.gold.entregas_em_atraso)
+  UNION ALL SELECT 14, 'CodeForge: prazo real ÷ prometido (×100)', 141,
+         (SELECT CAST(ROUND(fator_atraso * 100) AS INT) FROM lakehouse_vertice.gold.desempenho_fornecedor
+          WHERE fornecedor = 'CodeForge Consultoria Ltda')
+  UNION ALL SELECT 15, 'SREs < 20% de uso nas últimas 12 semanas', 2,
+         (SELECT COUNT(*) FROM (SELECT colaborador_id FROM lakehouse_vertice.gold.utilizacao_pessoa_semana
+                                WHERE papel = 'sre' AND semana > DATE'2026-07-24'
+                                GROUP BY colaborador_id HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2))
   -- IA e métricas
-  UNION ALL SELECT 14, 'RDOs estruturados (todos)', 13730,
-         (SELECT COUNT(*) FROM lakehouse_atlas.gold.rdo_estruturado)
-  UNION ALL SELECT 15, 'RDOs da P011 com falta de equipamento (90 dias)', 37,
-         (SELECT COUNT(*) FROM lakehouse_atlas.gold.rdo_estruturado
-          WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso = 'falta_equipamento')
-  UNION ALL SELECT 16, 'metric views criadas (mv_*)', 5,
-         (SELECT COUNT(*) FROM lakehouse_atlas.information_schema.tables
+  UNION ALL SELECT 16, 'status semanais estruturados (todos)', 3911,
+         (SELECT COUNT(*) FROM lakehouse_vertice.gold.status_estruturado)
+  UNION ALL SELECT 17, 'semanas do PRJ-011 com falta de SRE (90 dias)', 12,
+         (SELECT COUNT(*) FROM lakehouse_vertice.gold.status_estruturado
+          WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio = 'falta_sre')
+  UNION ALL SELECT 18, 'postmortems estruturados', 101,
+         (SELECT COUNT(*) FROM lakehouse_vertice.gold.postmortem_estruturado)
+  UNION ALL SELECT 19, 'metric views criadas (mv_*)', 5,
+         (SELECT COUNT(*) FROM lakehouse_vertice.information_schema.tables
           WHERE table_schema = 'gold' AND table_name LIKE 'mv\_%' AND table_type = 'METRIC_VIEW')
-  UNION ALL SELECT 17, 'obras críticas pela metric view', 7,
-         (SELECT CAST(MEASURE(obras_criticas) AS INT) FROM lakehouse_atlas.gold.mv_obras)
+  UNION ALL SELECT 20, 'projetos críticos pela metric view', 7,
+         (SELECT CAST(MEASURE(projetos_criticos) AS INT) FROM lakehouse_vertice.gold.mv_projetos)
 )
 SELECT n, item, esperado, obtido, CASE WHEN esperado = obtido THEN 'ok' ELSE 'CONFIRA' END AS status
 FROM v ORDER BY n;

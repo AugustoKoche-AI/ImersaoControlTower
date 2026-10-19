@@ -9,7 +9,7 @@ import {
   useIsMobile,
 } from '@databricks/appkit-ui/react';
 import { Menu } from 'lucide-react';
-import { ObrasPage } from './pages/obras/ObrasPage';
+import { ProjetosPage } from './pages/projetos/ProjetosPage';
 import { SimuladorPage } from './pages/simulador/SimuladorPage';
 import { DecisoesPage } from './pages/decisoes/DecisoesPage';
 import { GeniePage } from './pages/genie/GeniePage';
@@ -34,7 +34,7 @@ function NavLinks({ className, linkClass, onClick }: { className?: string; linkC
   return (
     <nav className={className}>
       <NavLink to="/" end className={linkClass} onClick={onClick}>
-        Obras em risco
+        Projetos em risco
       </NavLink>
       <NavLink to="/simulador" className={linkClass} onClick={onClick}>
         Simulador
@@ -56,7 +56,7 @@ function Layout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b px-4 md:px-6 py-3 flex items-center gap-4">
-        <h1 className="text-lg font-semibold text-foreground">Torre de Controle · Atlas</h1>
+        <h1 className="text-lg font-semibold text-foreground">Projeto Farol · Vértice</h1>
         {/* Desktop nav — hidden below md breakpoint */}
         <NavLinks className="hidden md:flex gap-1" linkClass={navLinkClass} />
         {/* Mobile nav — visible below md breakpoint */}
@@ -70,7 +70,7 @@ function Layout() {
             </Button>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle>Torre de Controle</SheetTitle>
+                <SheetTitle>Projeto Farol</SheetTitle>
               </SheetHeader>
               <NavLinks className="flex flex-col gap-1" linkClass={mobileNavLinkClass} onClick={() => setMobileNavOpen(false)} />
             </SheetContent>
@@ -89,7 +89,7 @@ const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      { path: '/', element: <ObrasPage /> },
+      { path: '/', element: <ProjetosPage /> },
       { path: '/simulador', element: <SimuladorPage /> },
       { path: '/decisoes', element: <DecisoesPage /> },
       { path: '/perguntar', element: <GeniePage /> },

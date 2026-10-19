@@ -1,110 +1,105 @@
-# Prompt 1 · O agente que lê contrato — "e o que o contrato diz?"
+# Prompt 1 · O agente que lê contrato e manual — "e o que o contrato diz?"
 
-**Entrega:** 8 contratos em PDF viram três tabelas (texto, cláusulas, resumo
-estruturado) e uma view de exposição em R$, e o Genie **"Torre de Controle ·
-Diretoria + Contratos"** passa a responder com a cláusula. **Deploy nº 1** = Genie publicado.
+**Entrega:** 8 contratos de fornecedor e o manual de tecnologias em PDF viram tabelas (elementos,
+cláusulas, seções do manual, resumo tipado), duas views que respondem o dono em R$ e em datas
+(multa a cobrar e aviso prévio), e o Genie **"Farol · Diretoria + Contratos"** passa a responder
+citando a cláusula e a seção do manual. **Deploy nº 1** = Genie publicado.
 
-> A gold já responde *por que* a obra atrasou. A pergunta seguinte da diretoria é
-> sempre a mesma: **"e o que o contrato diz?"** Tem multa? Chuva dá prorrogação?
-> O guindaste era nosso ou do cliente? A resposta está em PDF, e PDF não é coluna.
+> A gold já responde *quem* está atrasado e *por quê*. A pergunta seguinte do dono é sempre outra:
+> **"e o que o contrato diz?"** Dá para cobrar multa da consultoria que atrasou? Qual contrato renova
+> sozinho se ninguém avisar? E o manual da casa, o que manda fazer? A resposta está em PDF, e PDF não é coluna.
 
 ---
 
 ## O que mostrar antes
 
-Abra o PDF `contrato_P011.pdf` no volume (`bronze/raw/documentos/contratos/`) e leia
-em voz alta as cláusulas 4, 5 e 6. Depois pergunte ao Genie da noite 2:
+Abra o PDF `contrato_codeforge_consultoria_ltda.pdf` no volume (`bronze/raw/documentos/contratos/`)
+e leia em voz alta as cláusulas 4 (renovação) e 6 (multa). Depois pergunte ao Genie da noite 2:
 
 ```
-"Por que a obra P011 atrasou e o que o contrato diz sobre isso?"
-→ ele acha a causa (falta de guindaste), mas não tem o contrato.
+"Quanto a Vértice pode cobrar de multa da CodeForge?"
+→ ele sabe que a CodeForge atrasa (×1,41), mas não tem o contrato.
 ```
 
 **Enquanto o Claude Code trabalha, você explica:**
 
-- **`ai_parse_document`** lê a página, não o arquivo: devolve os elementos (título,
-  parágrafo) em VARIANT. Um `concat_ws` junta o texto.
-- **Uma linha por cláusula** é o truque que faz o agente **citar** a fonte. O Genie
-  não "lembra" do PDF: ele faz `SELECT texto FROM contratos_clausulas WHERE clausula_numero = 6`.
-- **`ai_query` com JSON schema** obriga o modelo a devolver número, booleano e enum.
-  É a diferença entre "um texto bonito" e um dado que dá para somar. Sem a descrição
-  de cada campo, o prazo de aditivo veio 0 em metade dos contratos no ensaio.
-- **Knowledge Assistant e Supervisor Agent** viraram legado no Free Edition. O agente
-  da Atlas é um Genie com as cláusulas numa tabela: mais simples e auditável.
+- **`ai_parse_document`** lê a página, não o arquivo: devolve os elementos com o **tipo**
+  (`title`, `section_header`, `text`). É a chamada cara: roda uma vez e vira tabela.
+- **Uma linha por cláusula** é o truque que faz o agente **citar** a fonte. O Genie não "lembra" do
+  PDF: ele faz `SELECT texto FROM contratos_clausulas WHERE titulo LIKE 'MULTA%'`. O mesmo vale para o manual.
+- **`ai_extract` sem schema** devolve texto: `"0,5% do valor da entrega atrasada por dia corrido"`.
+  **Com JSON schema tipado**, devolve `0.5`. É a diferença entre "um texto bonito" e um dado que dá para
+  somar. A descrição de cada campo é o que a IA lê: escreva como se fosse para um estagiário.
+- **Knowledge Assistant e Supervisor Agent** viraram legado no Free Edition. O agente da Vértice é um
+  Genie com as cláusulas e o manual em tabelas: mais simples e auditável (dá para ver o SQL).
 
 ---
 
 ## O prompt
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar.
+Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar. Use a skill
+databricks-ai-functions.
 
 Crie a pasta aulas/aula-04-engenheiro-ia/meu-agente/ com o agente que lê os
-contratos da Atlas. Perfil: <perfil> (sempre --profile).
+contratos de fornecedor e o manual da Vértice. Perfil: <perfil> (sempre --profile).
 
 1. meu-agente/01-contratos.sql, executável com
    python3 scripts/run_sql.py meu-agente/01-contratos.sql --profile <perfil>
-   (use a API de statements, não o aitools query). Quatro objetos na gold,
-   com COMMENT em todos (é o que o Genie lê):
-   a) gold.contratos_texto: read_files dos PDFs em
-      /Volumes/lakehouse_atlas/bronze/raw/documentos/contratos/ (binaryFile),
-      ai_parse_document(content), texto = concat_ws dos elementos;
-      projeto_id extraído do nome do arquivo (contrato_P011.pdf → P011).
-   b) gold.contratos_clausulas: uma linha por cláusula (projeto_id,
-      clausula_numero INT, titulo, texto). Normalize os espaços (o PDF quebra
-      linha no meio da frase) e corte em "CLÁUSULA N - ".
-   c) gold.contratos_resumo: ai_query('databricks-meta-llama-3-3-70b-instruct',
-      ..., responseFormat => JSON schema strict) com os campos multa_dia_pct
-      (number), teto_multa_pct (number), chuva_da_prorrogacao (boolean),
-      icamento_responsavel e estrutura_fornecida_por (enum contratada|contratante),
-      prazo_aditivo_dias (integer), reajuste (string), bonus_antecipacao
-      (boolean). Descreva cada campo no schema. Lembre: a Atlas é a CONTRATADA.
-   d) gold.contratos_exposicao (view): junta obra_situacao_atual, contratos_resumo
-      e a contagem de RDOs de chuva e de falta_equipamento; multa_estimada =
-      valor_contrato × min(atraso_projetado_dias × multa_dia_pct, teto) / 100 e
-      multa_no_teto.
+   (API de statements, não o aitools query). Na gold, com COMMENT em tudo (é o que o Genie lê):
+   a) gold.documentos_elementos: read_files (binaryFile) dos PDFs em
+      /Volumes/lakehouse_vertice/bronze/raw/documentos/contratos/ e .../manual/,
+      ai_parse_document(content, map('version','2.0')), posexplode dos elementos:
+      tipo_documento, documento, ordem, tipo (title/section_header/text), conteudo.
+   b) gold.contratos_clausulas: uma linha por cláusula (fornecedor, clausula_numero INT,
+      titulo, texto). Cada texto pertence à última section_header "CLÁUSULA N - TÍTULO"
+      antes dele (last_value ignorando nulos). O fornecedor sai da linha "CONTRATADA: ...".
+   c) gold.manual_secoes: uma linha por seção do manual (secao_numero, titulo, texto), mesmo método.
+   d) Um SELECT de demonstração com ai_extract SEM schema (lista de nomes de campo) em 3
+      contratos, para a turma ver que volta texto.
+   e) gold.contratos_resumo: ai_extract(texto, JSON schema, map('version','2.0')) com os campos
+      objeto, valor_anual (number), data_fim_vigencia (string AAAA-MM-DD), renovacao_automatica
+      (boolean), aviso_previo_dias (integer), multa_atraso_pct_dia (number, nulo se não há),
+      teto_multa_pct (number), sla e reajuste (string). Descrição em cada campo; peça
+      "em português" nos campos de texto. Leia com :response:campo::TIPO.
+   f) view gold.contratos_multa_fornecedor: silver.entregas_fornecedor entregue com atraso ou
+      em aberto vencida; dias de atraso até a entrega (ou até 16/10/2026); multa_cobravel =
+      valor × least(dias × multa % ao dia, teto) / 100; na_vigencia_atual = data_prometida
+      nos 12 meses que terminam no fim da vigência.
+   g) view gold.contratos_avisos: data_limite_aviso = fim da vigência − aviso prévio,
+      dias até ela a partir de 16/10/2026, situacao_aviso (vencido / vence em até 60 dias / ok)
+      e o_que_fazer conforme renovacao_automatica.
 
-2. meu-agente/gerar_genie.py gera meu-agente/diretoria-contratos-genie.json
-   (serialized_space v2, ids de 32 caracteres em ordem) com: contratos_*,
-   obra_situacao_atual, rdo_estruturado, utilizacao_equipamento_semana,
-   utilizacao_equipe_semana, cobertura_estoque, pedidos_em_atraso,
-   desempenho_fornecedor, mv_obras, e score_estouro_30d SÓ se existir.
-   Instruções: HOJE = 2026-10-16; a Atlas é a CONTRATADA (nunca "cobrar a
-   contratada"); sempre citar número e trecho da cláusula; regras de leitura
-   (chuva_da_prorrogacao, içamento da contratada não dá prorrogação, prazo do
-   aditivo); "em risco" = atenção + crítico somados. Exemplos de SQL para:
-   "Por que a obra P011 atrasou e o que o contrato diz sobre isso?",
-   "Qual a multa estimada de cada obra com contrato?",
-   "Onde tenho guindaste parado que poderia ir para a P011?".
+2. meu-agente/gerar_genie.py: escreve meu-agente/diretoria-contratos-genie.json (NÃO use a
+   extensão .geniespace.json) com as tabelas contratos_*, manual_secoes, projeto_situacao_atual,
+   status_estruturado, utilizacao_pessoa_semana, cobertura_capacidade, entregas_em_atraso,
+   desempenho_fornecedor e a metric view mv_projetos. Inclua gold.score_estouro_30d SÓ se
+   existir (databricks tables exists). Instruções: a Vértice é a CONTRATANTE (multa é dinheiro
+   que ela cobra); hoje = 16/10/2026; cite cláusula e seção do manual; "na vigência atual" =
+   na_vigencia_atual; manual: freeze é a seção 4, SRE a 5, farol a 8. Exemplos de SQL para
+   "quanto cobrar da CodeForge", "aviso prévio" e "o que o manual diz sobre o freeze".
 
-3. Rode e me mostre:
-   python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/meu-agente/01-contratos.sql --profile <perfil>
-   SELECT * EXCEPT(arquivo) FROM lakehouse_atlas.gold.contratos_resumo ORDER BY 1
-   python3 aulas/aula-04-engenheiro-ia/meu-agente/gerar_genie.py --profile <perfil>
-   python3 scripts/genie.py publicar aulas/aula-04-engenheiro-ia/meu-agente/diretoria-contratos-genie.json \
-     --titulo "Torre de Controle · Diretoria + Contratos" --profile <perfil>
-   python3 scripts/genie.py perguntar "Torre de Controle · Diretoria + Contratos" \
-     "Por que a obra P011 atrasou e o que o contrato diz sobre isso?" --profile <perfil>
-   python3 scripts/genie.py benchmark "Torre de Controle · Diretoria + Contratos" \
+3. Publique e teste:
+   python3 scripts/genie.py publicar meu-agente/diretoria-contratos-genie.json \
+     --titulo "Farol · Diretoria + Contratos" --profile <perfil>
+   python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" \
      aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile <perfil>
-NÃO use o título "Torre de Controle · Diretoria": é o Genie da noite 2.
+   Se errar, ajuste as instruções (não as perguntas) e publique de novo.
 ```
 
 ---
 
 ## O que conferir
 
-- `contratos_clausulas`: **88 linhas** (11 por contrato).
-- `contratos_resumo`: chuva dá prorrogação em **P002, P011, P014**; içamento do cliente só na **P005**;
-  bônus por antecipação em **P018 e P033**.
-- `contratos_exposicao`: P011 com **R$ 1.876.298,00** de multa estimada; P005 **no teto**.
-- O Genie responde a pergunta da P011 com **falta de equipamento (37 RDOs, 23,5 dias)**, cita a
-  **cláusula 6** (guindaste é da contratada, não dá prorrogação) e a **cláusula 5** (chuva pode ser
-  pleiteada se registrada no RDO em 48 h).
-- Benchmark: **≥ 8/10** (no ensaio: 9/10 na 1ª rodada, **10/10** depois de ensinar que "em risco" é um número só).
-
-> *"O Genie não leu o PDF agora. Ele leu ontem à noite, uma vez, e guardou cada cláusula numa linha.
-> Hoje ele só faz um SELECT. É por isso que ele cita a fonte, e é por isso que dá para auditar."*
+- `gold.contratos_clausulas` com **72** linhas (9 por contrato) e `gold.manual_secoes` com **10**.
+- O SELECT sem schema mostra `"multa_atraso": "0,2% do valor da entrega atrasada por dia corrido, limitada a 5%..."`.
+- `contratos_resumo`: CodeForge com `multa_atraso_pct_dia = 0.5` e `teto_multa_pct = 10.0`; QualiTest com
+  `renovacao_automatica = false`; NuvemSul com aviso prévio de 90 dias.
+- `contratos_multa_fornecedor`: **R$ 1.122.967,65** a cobrar da CodeForge na vigência atual (120 entregas;
+  R$ 3,24 mi no histórico desde 2024).
+- `contratos_avisos`: DataPrime e NuvemSul **vencidos** (renovaram sozinhos em 01 e 02/10); Observa360 vence
+  em 15 dias (31/10) e QualiTest em 46 (01/12), e a QualiTest **não renova sozinha**.
+- Benchmark: **10/10** no ensaio.
 
 ---
 
@@ -112,11 +107,12 @@ NÃO use o título "Torre de Controle · Diretoria": é o Genie da noite 2.
 
 | Sintoma | Causa | Correção |
 |---|---|---|
-| `contratos_texto.texto` vazio | caminho do volume errado | `LIST '/Volumes/lakehouse_atlas/bronze/raw/documentos/contratos/'` |
-| `contratos_clausulas` com 8 linhas | o split não achou "CLÁUSULA N - " | normalize espaços antes do split (`regexp_replace(texto, '\\s+', ' ')`) |
-| `prazo_aditivo_dias = 0` em alguns contratos | campo sem descrição no schema | descreva cada campo no JSON schema |
-| Genie: "recomendo cobrar a contratada" | o modelo não sabe que a Atlas é a contratada | instrução explícita: a Atlas é a CONTRATADA |
-| `Table ... score_estouro_30d does not exist` ao publicar | a noite 3 ainda não rodou (ou está recriando a tabela) | o gerador só inclui o score se a tabela existir; rode de novo |
-| Benchmark erra "quantas obras em risco?" com 2 linhas | o Genie quebrou por situação | exemplo de SQL com `COUNT(*)` único e a instrução "em risco = um número só" |
+| `Knowledge Assistant is now a legacy feature` | o Free Edition não cria mais KA nem Supervisor | é o motivo do agente ser um Genie |
+| Cláusula com o título colado no texto | cortou por regex de título | use o `type = 'section_header'` do ai_parse_document |
+| `multa_atraso_pct_dia` vem como texto | ai_extract sem schema (lista de nomes) | passe o JSON schema com `"type": "number"` |
+| Campo de texto em outra língua | o modelo improvisou | `"description": "... em português"` |
+| Genie: "a Vértice deve pagar a multa" | o modelo não sabe quem é a contratante | instrução explícita: a Vértice é a CONTRATANTE |
+| Publicar Genie: `score_estouro_30d does not exist` | a noite 3 não rodou | o gerador só inclui o score se a tabela existir |
+| Sobrescreveu o Genie da noite 2 | publicou com o título "Farol · Diretoria" | use "Farol · Diretoria + Contratos"; restaure a noite 2 com `bundle deploy` do `vertice` |
 
-**Tempo medido:** SQL dos contratos ~30 s (8 PDFs); publicar o Genie ~5 s; benchmark de 10 perguntas ~3 min.
+**Tempo medido:** os 9 PDFs (parse + extração) em ~1 min no SQL warehouse serverless.

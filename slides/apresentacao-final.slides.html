@@ -1,0 +1,280 @@
+<!-- titulo: Projeto Farol · apresentação final -->
+
+<!-- 1 · CAPA -->
+<section class="slide hero">
+  <div class="kicker">Imersão Databricks + Claude Code · apresentação final</div>
+  <h1>Projeto Farol<br><span class="grad">a Torre de Controle</span></h1>
+  <p class="sub" style="margin-top:36px;">De engenheiro de dados a CTO em 4 noites: como a Vértice Tecnologia passou a saber, toda segunda de manhã, quais projetos estão atrasados, quanto isso custa, quem está parado e o que vai dar errado no próximo mês.</p>
+  <img class="logo" alt="Jornada de Dados" style="height:44px;">
+</section>
+
+<!-- 2 · O PROBLEMA -->
+<section class="slide">
+  <div class="kicker">O problema que queremos resolver</div>
+  <h2>Ninguém sabia dizer <span class="grad">quais projetos estão atrasados</span></h2>
+  <div class="grid g2" style="gap:28px;">
+    <div class="card hl"><div class="tag">A Vértice</div>
+      <ul class="list">
+        <li>60 projetos de clientes, R$ 305 mi de carteira, 520 pessoas</li>
+        <li>cada gerente controla o projeto numa ferramenta: <b>20 no Excel, 25 no ClickUp, 15 no MS Project</b></li>
+        <li>o PMO consolida tudo à mão, toda sexta</li>
+        <li>o farol do status semanal está quase todo verde</li>
+      </ul></div>
+    <div class="card"><div class="tag">O custo de não saber</div>
+      <ul class="list">
+        <li>o atraso aparece quando <b>o cliente reclama</b></li>
+        <li>o escopo cresce e ninguém cobra o aditivo</li>
+        <li>gente parada num projeto, faltando em outro</li>
+        <li>banco de horas e crédito de cloud acabam sem aviso</li>
+      </ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 3 · AS PERGUNTAS -->
+<section class="slide">
+  <div class="kicker">O pedido do dono ao novo CTO</div>
+  <h2>Quatro perguntas, em português</h2>
+  <div class="grid g2" style="gap:24px;">
+    <div class="card hl"><div class="tag">1 · atraso</div><div class="lbl" style="font-size:32px; color:#fff; font-weight:700; line-height:1.25;">Quais projetos estão atrasados, e de quais clientes?</div></div>
+    <div class="card hl"><div class="tag">2 · dinheiro</div><div class="lbl" style="font-size:32px; color:#fff; font-weight:700; line-height:1.25;">Quanto esse atraso vai me custar?</div></div>
+    <div class="card"><div class="tag">3 · gente</div><div class="lbl" style="font-size:32px; color:#fff; font-weight:700; line-height:1.25;">Tenho gente parada enquanto outro projeto pede gente?</div></div>
+    <div class="card"><div class="tag">4 · futuro</div><div class="lbl" style="font-size:32px; color:#fff; font-weight:700; line-height:1.25;">O que vai dar errado no próximo mês, e o que eu faço agora?</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">E uma pergunta que ele não fez, mas devia: <b>posso confiar no farol que os gerentes me mostram?</b></p>
+  [[RODAPE]]
+</section>
+
+<!-- 4 · POR QUE É DIFÍCIL -->
+<section class="slide">
+  <div class="kicker">Por que é difícil</div>
+  <h2><span class="grad">Três formatos</span>, oito sistemas, nenhuma resposta</h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card hl"><div class="tag">Excel · 20 planilhas</div><div class="lbl" style="color:#fff;">data em texto <b>ou</b> número de série · % como "45%" ou 0.45 · linha de TOTAL no fim</div></div>
+    <div class="card hl"><div class="tag">ClickUp · 25 listas JSON</div><div class="lbl" style="color:#fff;">datas em milissegundos · % e baseline dentro de campos aninhados · status de 12 jeitos</div></div>
+    <div class="card hl"><div class="tag">MS Project · 15 XML</div><div class="lbl" style="color:#fff;">tarefas-resumo que somam duas vezes · fase na tarefa de cima · horas em PT40H0M0S</div></div>
+  </div>
+  <div style="text-align:center; font-size:44px; color:var(--cyan); margin:18px 0;">↓ e para responder o dono, cruzar com ↓</div>
+  <div class="grid g3" style="gap:18px;">
+    <div class="card"><div class="tag">PMO</div><div class="lbl">status semanal em texto livre, farol do gerente</div></div>
+    <div class="card"><div class="tag">RH e timesheet</div><div class="lbl">520 pessoas, quem está onde e quanto trabalhou</div></div>
+    <div class="card"><div class="tag">Financeiro</div><div class="lbl">custos com vírgula decimal e estornos</div></div>
+    <div class="card"><div class="tag">Compras</div><div class="lbl">consultoria escrita de 4 jeitos, banco de horas e cloud</div></div>
+    <div class="card"><div class="tag">Incidentes</div><div class="lbl">postmortems em texto livre</div></div>
+    <div class="card"><div class="tag">Documentos</div><div class="lbl">contratos e manual em PDF</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 5 · A SOLUÇÃO -->
+<section class="slide">
+  <div class="kicker">A solução · um fluxo só, da fonte à decisão</div>
+  <h2 style="margin-bottom:24px;">A arquitetura do Projeto Farol</h2>
+  <div class="diagrama">
+<pre class="mermaid">
+flowchart LR
+  subgraph FON["Fontes"]
+    direction TB
+    A1["Excel · ClickUp · Project"]
+    A2["Status semanal · postmortems"]
+    A3["RH · timesheet · financeiro · compras"]
+    A4["Contratos e manual (PDF)"]
+  end
+  subgraph LH["Lakehouse · Unity Catalog · lakehouse_vertice"]
+    direction TB
+    BR[("Bronze<br/>read_files: CSV, Excel,<br/>JSON, XML · como veio")]:::bronze
+    SI[("Silver<br/>as 3 ferramentas num<br/>modelo só · EXPECT")]:::silver
+    GO[("Gold<br/>KPIs · IA nos textos<br/>Metric Views")]:::gold
+    BR --> SI --> GO
+  end
+  subgraph INT["Inteligência"]
+    ML["Modelo de estouro<br/>em 30 dias<br/>MLflow + UC"]:::ml
+    AG["Agente de contratos<br/>e do manual<br/>ai_parse_document + ai_extract"]:::ml
+  end
+  subgraph CON["Decisão"]
+    DB["Dashboard AI/BI"]:::uso
+    GE["Genie em português"]:::uso
+    AP["App da Torre<br/>+ Lakebase"]:::uso
+  end
+  FON --> BR
+  GO --> ML --> GO
+  A4 --> AG --> GE
+  GO --> DB
+  GO --> GE
+  GO --> AP
+  classDef bronze fill:#3a2a18,stroke:#C98B4B,color:#fff
+  classDef silver fill:#1d2a2a,stroke:#9FB0AA,color:#fff
+  classDef gold fill:#3a3214,stroke:#E8C34A,color:#fff
+  classDef ml fill:#2b1a4a,stroke:#9B6BDB,color:#fff
+  classDef uso fill:#0e3a44,stroke:#22C2F4,color:#fff
+</pre>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 6 · AS 4 NOITES -->
+<section class="slide">
+  <div class="kicker">Como chegamos lá · 4 noites, 4 chapéus do CTO</div>
+  <h2>Cada noite responde uma parte do dono</h2>
+  <table class="t">
+    <tr><th>Noite</th><th>Chapéu</th><th>O que nasce</th><th>A pergunta respondida</th></tr>
+    <tr><td>1 · 19/10</td><td>Analista</td><td>bronze das 3 ferramentas, SPI e CPI em SQL, 1º dashboard</td><td>1 e 2, num rascunho à mão</td></tr>
+    <tr><td>2 · 20/10</td><td>Engenheiro de Dados</td><td>pipeline que integra tudo, IA nos textos, KPIs governados, Genie</td><td>1, 2 e 3, todo dia, com teste</td></tr>
+    <tr><td>3 · 21/10</td><td>Cientista de Dados</td><td>modelo de estouro em 30 dias, score por projeto</td><td>4: o que vai dar errado</td></tr>
+    <tr><td>4 · 22/10</td><td>Engenheiro de IA</td><td>agente de contratos, app da Torre, decisão no Lakebase</td><td>4: e o que eu faço agora</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<!-- 7 · NOITE 1 -->
+<section class="slide">
+  <div class="kicker">Noite 1 · o Databricks inteiro, pelo navegador</div>
+  <h2 style="margin-bottom:24px;">O mesmo comando lê qualquer formato</h2>
+  <div class="grid g2" style="gap:24px; grid-template-columns: 1.2fr 0.8fr;">
+    <div class="diagrama" style="height:720px; flex:none;">
+<pre class="mermaid">
+flowchart TB
+  V[("Volume<br/>bronze.raw")] --> RF["read_files<br/>excel · json · xml · csv"]
+  RF --> BZ[("13 tabelas<br/>bronze")]:::bronze
+  BZ --> UN["exemplo 05<br/>UNION ALL<br/>das 3 ferramentas"]
+  UN --> SPI["SPI e CPI<br/>dos 41 projetos"]
+  SPI --> DSH["Dashboard"]:::uso
+  BZ --> GN["Genie sem<br/>curadoria"]:::erro
+  classDef bronze fill:#3a2a18,stroke:#C98B4B,color:#fff
+  classDef uso fill:#0e3a44,stroke:#22C2F4,color:#fff
+  classDef erro fill:#3a1a1a,stroke:#FF5F46,color:#fff
+</pre>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <div class="card hl"><div class="num md">17 de 41</div><div class="lbl">projetos em risco, 7 críticos, nas três ferramentas</div></div>
+      <div class="card"><div class="num md">4</div><div class="lbl">projetos "melancia": farol verde com SPI abaixo de 0,9</div></div>
+      <div class="card"><div class="num md">0 de 4</div><div class="lbl">perguntas do dono certas no Genie sem curadoria</div></div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 8 · NOITE 2 -->
+<section class="slide">
+  <div class="kicker">Noite 2 · a integração vira produto</div>
+  <h2 style="margin-bottom:24px;">Seis prompts, seis deploys, um job</h2>
+  <div class="diagrama">
+<pre class="mermaid">
+flowchart LR
+  C["conferência<br/>da bronze"] --> M["medalhão Lakeflow<br/>silver.tarefas = Excel ∪ ClickUp ∪ Project<br/>gold: situação de hoje + fato semanal"]:::pipe
+  M --> T["10 testes"]
+  M --> S["status com IA<br/>ai_classify + ai_extract"]:::ia
+  M --> P["postmortems<br/>ai_extract tipado"]:::ia
+  T --> MV["5 metric views"]:::gold
+  S --> MV
+  P --> MV
+  MV --> D["Dashboard"]:::uso
+  MV --> G["Genie · 20/20"]:::uso
+  classDef pipe fill:#0b2a5c,stroke:#467CF6,color:#fff
+  classDef ia fill:#2b1a4a,stroke:#9B6BDB,color:#fff
+  classDef gold fill:#3a3214,stroke:#E8C34A,color:#fff
+  classDef uso fill:#0e3a44,stroke:#22C2F4,color:#fff
+</pre>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 9 · NOITE 3 -->
+<section class="slide">
+  <div class="kicker">Noite 3 · o pipeline passa a prever</div>
+  <h2 style="margin-bottom:24px;">Quem vai estourar nos próximos 30 dias</h2>
+  <div class="grid g2" style="gap:24px; grid-template-columns: 1.2fr 0.8fr;">
+    <div class="diagrama" style="height:720px; flex:none;">
+<pre class="mermaid">
+flowchart TB
+  F[("gold.fato_projeto_semana<br/>+ status_estruturado")]:::gold --> FE["features<br/>projeto × semana<br/>só olhando para trás"]
+  FE --> TR["treino com corte<br/>no tempo · baselines"]
+  TR --> MO["modelo no Unity Catalog<br/>MLflow · @prod"]:::ml
+  MO --> SC[("gold.score_estouro_30d<br/>prob · ranking · motivos")]:::gold
+  classDef gold fill:#3a3214,stroke:#E8C34A,color:#fff
+  classDef ml fill:#2b1a4a,stroke:#9B6BDB,color:#fff
+</pre>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <div class="card hl"><div class="tag">AUC</div><div class="num md">0,92</div><div class="lbl">contra 0,50 da regra atual</div></div>
+      <div class="card"><div class="tag">Antecedência</div><div class="num md">40 dias</div><div class="lbl">9 de 10 estouros do teste avisados no top 5, em média 40 dias antes</div></div>
+      <div class="card"><div class="tag">O momento "uau"</div><div class="lbl" style="color:#fff;"><b>PRJ-024</b>, marketplace do varejo: ok hoje (SPI 0,91) e <b>49%</b> de chance de estourar. O freeze de 01/11 vem aí, e o crédito de cloud acaba em 19 dias.</div></div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 10 · NOITE 4 -->
+<section class="slide">
+  <div class="kicker">Noite 4 · o projeto ganha uma URL</div>
+  <h2 style="margin-bottom:24px;">Do dado à decisão registrada</h2>
+  <div class="diagrama">
+<pre class="mermaid">
+flowchart LR
+  PDF["8 contratos + manual<br/>(PDF)"] --> PD["ai_parse_document"] --> EX["ai_extract<br/>schema tipado"]
+  EX --> CT[("gold.contratos<br/>multa · aviso prévio · SLA")]:::gold
+  CT --> GC["Genie<br/>Diretoria + Contratos"]:::uso
+  GO[("gold + score")]:::gold --> APP["App da Torre<br/>AppKit"]:::uso
+  GC --> APP
+  APP --> SIM["simulador<br/>realocar pessoa ociosa"]
+  SIM --> LB[("Lakebase<br/>decisão aprovada<br/>quem · quando · quanto")]:::lb
+  classDef gold fill:#3a3214,stroke:#E8C34A,color:#fff
+  classDef uso fill:#0e3a44,stroke:#22C2F4,color:#fff
+  classDef lb fill:#0b2a5c,stroke:#467CF6,color:#fff
+</pre>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- 11 · AS RESPOSTAS -->
+<section class="slide">
+  <div class="kicker">As quatro perguntas, respondidas no dado da Vértice</div>
+  <h2>O que o dono ouve na segunda de manhã</h2>
+  <table class="t tight" style="font-size:22px;">
+    <tr><th>Pergunta</th><th>Resposta</th><th>De onde vem</th></tr>
+    <tr><td>Quais projetos estão atrasados?</td><td><b>17 de 41</b>, 7 críticos, de 13 clientes; nas três ferramentas</td><td>silver.tarefas + projeto_situacao_atual</td></tr>
+    <tr><td>Quanto vai custar?</td><td><b>R$ 6,47 mi</b> de estouro previsto; margem da carteira em 20,4%</td><td>mv_projetos</td></tr>
+    <tr><td>Tenho gente parada?</td><td><b>Duas SREs seniores a ~5%</b> no PRJ-007, enquanto o PRJ-011 pede SRE há 12 semanas</td><td>timesheet + status com IA</td></tr>
+    <tr><td>O que vai dar errado?</td><td><b>22 projetos</b> com risco alto ou médio no modelo, 5 deles ainda "ok" hoje · 15 contratos de capacidade acabando · freeze de 01/11 nos 3 e-commerces</td><td>modelo + cobertura_capacidade</td></tr>
+    <tr><td>E o que eu faço agora?</td><td>realocar a SRE COL0017 para o PRJ-011 (<b>19 dias</b> recuperados), cobrar <b>R$ 1,12 mi</b> de multa da CodeForge, pedir aditivo dos contratos que acabam</td><td>app + Lakebase + agente de contratos</td></tr>
+    <tr><td>Posso confiar no farol?</td><td><b>Não sempre:</b> 32 faróis verdes, 24 projetos ok pelo número, 4 melancias</td><td>farol do gerente × SPI</td></tr>
+  </table>
+  [[RODAPE]]
+</section>
+
+<!-- 12 · ROI -->
+<section class="slide">
+  <div class="kicker">O valor para o negócio</div>
+  <h2><span class="grad">≈ R$ 3,0 mi</span> no ano 1, para R$ 0,4 mi de custo</h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card hl"><div class="tag">Escopo cobrado do cliente</div><div class="num md">R$ 1,66 mi</div><div class="lbl">50% dos R$ 3,31 mi de estouro nos projetos com escopo crescendo sem aditivo</div></div>
+    <div class="card"><div class="tag">Multa de fornecedor</div><div class="num md">R$ 0,56 mi</div><div class="lbl">50% dos R$ 1,12 mi cobráveis da CodeForge pelo contrato (0,5% ao dia, teto de 10%)</div></div>
+    <div class="card"><div class="tag">Gente parada</div><div class="num md">R$ 0,78 mi</div><div class="lbl">as 2 SREs a ~5%, realocadas e acima de 80% de uso por 1 ano</div></div>
+  </div>
+  <p class="small" style="margin-top:22px;">Premissas explícitas no pitch.md: recuperar 50% do escopo e da multa; custo de plataforma + 1 engenheiro de dados por 6 meses. Fora da conta: os 19 dias de cronograma do PRJ-011, as 15 rupturas de capacidade e os R$ 21,4 mi/ano de contratos que renovaram sozinhos porque ninguém viu o aviso prévio.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 13 · POR QUE DATABRICKS -->
+<section class="slide">
+  <div class="kicker">Por que esta stack</div>
+  <h2>Uma plataforma, do arquivo à decisão</h2>
+  <div class="grid g3" style="gap:22px;">
+    <div class="card"><div class="tag">Ingestão</div><div class="lbl" style="color:#fff;">read_files lê Excel, JSON e XML sem conversão; volume no Unity Catalog</div></div>
+    <div class="card"><div class="tag">Engenharia</div><div class="lbl" style="color:#fff;">Lakeflow declarativo com EXPECT, bundle no Git, job serverless</div></div>
+    <div class="card"><div class="tag">IA no dado</div><div class="lbl" style="color:#fff;">ai_classify, ai_extract e ai_parse_document em SQL, sem endpoint</div></div>
+    <div class="card"><div class="tag">Governança</div><div class="lbl" style="color:#fff;">Metric Views: o KPI definido uma vez, igual no dashboard, no Genie e no app</div></div>
+    <div class="card"><div class="tag">ML</div><div class="lbl" style="color:#fff;">MLflow e registro no Unity Catalog, score em lote na gold</div></div>
+    <div class="card"><div class="tag">Produto</div><div class="lbl" style="color:#fff;">Apps + Lakebase: a decisão volta para o dado, com dono e horário</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">E o <b>Claude Code</b> com as skills oficiais do Databricks escrevendo cada camada, um prompt e um deploy por vez.</p>
+  [[RODAPE]]
+</section>
+
+<!-- 14 · FECHO -->
+<section class="slide hero">
+  <div class="kicker">O pitch em uma frase</div>
+  <h2 style="font-size:72px; line-height:1.15;">"São <span class="grad">17 projetos</span> em risco e R$ 6,5 milhões de margem em jogo. A Torre avisa <span class="grad">40 dias antes</span>, mostra a causa e registra a decisão."</h2>
+  <p class="sub" style="margin-top:30px;">Repositório: <b>github.com/lvgalvao/ImersaoControlTower</b> · tudo no Databricks Free Edition</p>
+  [[RODAPE]]
+</section>

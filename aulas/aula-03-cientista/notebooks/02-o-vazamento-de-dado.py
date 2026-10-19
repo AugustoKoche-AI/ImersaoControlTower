@@ -7,13 +7,14 @@
 # MAGIC | | Como divide | O que acontece |
 # MAGIC |---|---|---|
 # MAGIC | A | no tempo (treina até março, testa de abril em diante) | o número honesto |
-# MAGIC | B | aleatório, linha a linha | a semana 20 da obra treina, a 21 testa: o modelo "cola" |
-# MAGIC | C | no tempo, mas com uma feature do futuro (o índice daqui a 4 semanas) | AUC 0,997, e o teste do prompt 2 barra |
+# MAGIC | B | aleatório, linha a linha | a semana 20 do projeto treina, a 21 testa: o modelo "cola" |
+# MAGIC | C | no tempo, mas com uma feature do futuro (o índice daqui a 4 semanas) | AUC 0,99, e o teste do prompt 2 barra |
 # MAGIC
 # MAGIC Só leitura: não grava nada, não registra modelo.
 
 # COMMAND ----------
 
+import json
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -22,17 +23,17 @@ from sklearn.model_selection import train_test_split
 
 FEATURES = [
     "spi", "cpi", "indice_min", "d_indice_min_4s", "pct_fisico", "pct_prazo",
-    "d_spi_4s", "d_cpi_4s", "d_cpi_8s", "semanas_cpi_caindo", "cpi_ultimas_4s", "spi_ultimas_4s",
-    "ociosidade_4s", "rupturas_previstas", "pct_subcontrato_4s", "pct_mao_de_obra_4s",
-    "rdo_chuva_4s", "rdo_falta_material_4s", "rdo_falta_equipamento_4s", "rdo_mao_de_obra_4s",
-    "rdo_com_ocorrencia_4s",
+    "d_spi_4s", "d_cpi_4s", "d_spi_8s", "d_cpi_8s", "semanas_cpi_caindo", "cpi_ultimas_4s", "spi_ultimas_4s",
+    "ociosidade_4s", "rupturas_capacidade", "pct_consultoria_4s", "pct_cloud_4s", "saidas_12s", "incidentes_8s",
+    "status_freeze_4s", "status_falta_sre_4s", "status_fornecedor_4s", "status_rotatividade_4s",
+    "status_escopo_4s", "status_retrabalho_4s", "status_com_bloqueio_4s",
 ]
-d = spark.table("lakehouse_atlas.gold.features_obra_semana").toPandas().sort_values(["projeto_id", "semana"])
+d = spark.table("lakehouse_vertice.gold.features_projeto_semana").toPandas().sort_values(["projeto_id", "semana"])
 d["semana"] = pd.to_datetime(d["semana"])
 d[FEATURES] = d[FEATURES].astype(float)
 # a feature proibida: o pior índice (menor entre SPI e CPI) de 4 semanas DEPOIS da linha.
-# Num sistema real ela entra sem ninguém perceber: é a "medição de fechamento do mês" que chega
-# atrasada e é gravada na linha da semana em que a medição foi feita.
+# Num sistema real ela entra sem ninguém perceber: é o "% concluído revisado" que o gerente corrige
+# um mês depois e que alguém grava em cima da linha da semana original.
 d["indice_daqui_a_4_semanas"] = d.groupby("projeto_id")["indice_min"].shift(-4).astype(float)
 r = d[d["alvo_pior_indice_30d"].notna() & (d["pct_prazo"] > 0.15)].copy()
 
@@ -54,14 +55,20 @@ resultado = pd.DataFrame([
                                                               no_tempo_teste.dropna(subset=["indice_daqui_a_4_semanas"]),
                                                               FEATURES + ["indice_daqui_a_4_semanas"])),
 ], columns=["experimento", "auc"])
-resultado["passa no teste do prompt 2 (AUC < 0,995)?"] = resultado["auc"] < 0.995
+resultado["passa no teste do prompt 2 (AUC < 0,98)?"] = resultado["auc"] < 0.98
 display(resultado)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Medido em 18/10/2026:** A 0,974 · B 0,984 · C 0,997.
+# MAGIC **Medido em 18/10/2026:** A 0,922 · B 0,917 · C 0,991.
 # MAGIC
-# MAGIC **A lição:** o B parece melhor que o A e é mentira — na segunda-feira o modelo não tem a semana seguinte
-# MAGIC para colar. O C é o vazamento clássico: uma coluna que só existe depois do fato. Por isso o prompt 2 tem um
-# MAGIC `assert auc < 0.995`. **Modelo bom demais é bug até prova em contrário.**
+# MAGIC **A lição:** desta vez a divisão aleatória (B) não inflou o número — e isso não prova nada. Ela mede uma
+# MAGIC situação que o modelo nunca vai enfrentar: na segunda-feira ele não tem a semana seguinte para colar. Às vezes
+# MAGIC infla, às vezes não, e você só descobre depois. Por isso a regra é sempre dividir **no tempo**.
+# MAGIC O C é o vazamento clássico: uma coluna que só existe depois do fato, e o AUC salta para 0,99. Por isso o
+# MAGIC prompt 2 tem um `assert auc < 0.98`. **Modelo bom demais é bug até prova em contrário.**
+
+# COMMAND ----------
+
+dbutils.notebook.exit(json.dumps({l["experimento"]: round(float(l["auc"]), 4) for _, l in resultado.iterrows()}))

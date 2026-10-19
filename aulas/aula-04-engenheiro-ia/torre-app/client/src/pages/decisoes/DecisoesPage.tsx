@@ -12,7 +12,7 @@ interface Decisao {
   justificativa: string;
   horas_recuperadas_mes: string | null;
   economia_mes: string | null;
-  multa_evitada: string | null;
+  dias_recuperados: string | null;
   usuario: string;
   criado_em: string;
 }
@@ -31,7 +31,7 @@ export function DecisoesPage() {
   return (
     <div className="space-y-6 w-full max-w-6xl mx-auto">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Decisões da diretoria</h2>
+        <h2 className="text-2xl font-bold text-foreground">Decisões do dono e do CTO</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Gravadas no Lakebase (Postgres), tabela <code>torre.decisoes</code>, com o usuário do login e o horário.
         </p>
@@ -48,7 +48,7 @@ export function DecisoesPage() {
                 <tr>
                   <th className="py-2 w-[5%]">Nº</th><th className="w-[13%]">Quando</th><th className="w-[16%]">Recurso</th>
                   <th className="w-[9%]">Decisão</th><th className="w-[26%]">Justificativa</th>
-                  <th className="w-[10%] text-right">Multa evitada</th><th className="w-[21%] pl-3">Por</th>
+                  <th className="w-[10%] text-right">Ociosidade evitada/mês</th><th className="w-[21%] pl-3">Por</th>
                 </tr>
               </thead>
               <tbody>
@@ -59,7 +59,7 @@ export function DecisoesPage() {
                     <td>{d.recurso_id}: {d.projeto_origem} → {d.projeto_destino}</td>
                     <td className={d.decisao === 'aprovada' ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-muted-foreground'}>{d.decisao}</td>
                     <td className="truncate" title={d.justificativa}>{d.justificativa}</td>
-                    <td className="text-right">{d.multa_evitada == null ? '—' : reais(d.multa_evitada)}</td>
+                    <td className="text-right">{d.economia_mes == null ? '—' : reais(d.economia_mes)}</td>
                     <td className="pl-3 truncate">{d.usuario}</td>
                   </tr>
                 ))}

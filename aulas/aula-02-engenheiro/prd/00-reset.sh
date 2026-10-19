@@ -4,21 +4,21 @@
 #   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>            # SIMULA: só lista o que sairia
 #   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar   # apaga de verdade
 #
-# O que sai:   job atlas_torre, pipeline atlas_medalhao (e com ele todas as tabelas
+# O que sai:   job vertice_farol, pipeline vertice_medalhao (e com ele todas as tabelas
 #              silver e gold que ele criou), dashboard e Genie da noite 2,
-#              gold.rdo_estruturado e as metric views gold.mv_*.
-# O que FICA:  o catálogo lakehouse_atlas, a BRONZE e o volume com os arquivos
+#              gold.status_estruturado, gold.postmortem_estruturado e as metric views gold.mv_*.
+# O que FICA:  o catálogo lakehouse_vertice, a BRONZE e o volume com os arquivos
 #              (são da noite 1). Este script nunca toca na bronze.
 #
-# Por padrão o destroy usa o bundle de referência (aulas/aula-02-engenheiro/atlas).
+# Por padrão o destroy usa o bundle de referência (aulas/aula-02-engenheiro/vertice).
 # Se você construiu o seu em outra pasta, passe-a: BUNDLE_DIR=caminho bash 00-reset.sh <perfil> --apagar
 set -euo pipefail
 
 PERFIL="${1:?uso: 00-reset.sh <perfil> [--apagar]}"
 APAGAR="${2:-}"
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
-BUNDLE_DIR="${BUNDLE_DIR:-$RAIZ/aulas/aula-02-engenheiro/atlas}"
-CAT=lakehouse_atlas
+BUNDLE_DIR="${BUNDLE_DIR:-$RAIZ/aulas/aula-02-engenheiro/vertice}"
+CAT=lakehouse_vertice
 
 sql() { python3 "$RAIZ/scripts/run_sql.py" /dev/stdin --profile "$PERFIL" --quiet --continuar; }
 
@@ -41,7 +41,7 @@ fi
 echo "== 1/2 destroy do bundle (job, pipeline e suas tabelas, dashboard, Genie)"
 (cd "$BUNDLE_DIR" && databricks bundle destroy --auto-approve --profile "$PERFIL") || echo "   (nada para destruir)"
 
-echo "== 2/2 o que sobra: metric views, rdo_estruturado e as tabelas do pipeline"
+echo "== 2/2 o que sobra: metric views, as tabelas de IA e as tabelas do pipeline"
 # Medido no Free Edition: apagar o pipeline NÃO apaga as materialized views
 # que ele criou. Elas ficam órfãs na silver e na gold — então saem aqui, uma a uma.
 # Só silver e gold: a bronze nunca entra nesta lista.

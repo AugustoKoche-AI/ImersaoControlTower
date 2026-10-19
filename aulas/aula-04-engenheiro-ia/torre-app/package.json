@@ -1,5 +1,5 @@
 {
-  "name": "torre-atlas",
+  "name": "farol-torre",
   "version": "1.0.0",
   "main": "dist/server.js",
   "type": "module",
@@ -26,7 +26,7 @@
   "keywords": [],
   "author": "",
   "license": "Unlicensed",
-  "description": "Torre de Controle da Atlas Engenharia: obras em risco, realocação e aprovação da diretoria",
+  "description": "Projeto Farol da Vértice Tecnologia: projetos em risco, realocação de pessoas e aprovação do dono",
   "dependencies": {
     "@databricks/appkit": "0.76.1",
     "@databricks/appkit-ui": "0.76.1",

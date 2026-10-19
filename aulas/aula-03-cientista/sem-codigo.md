@@ -6,17 +6,19 @@ simples ao mais completo.
 ## 1. A lista de segunda-feira (SQL Editor, copiar e colar)
 
 ```sql
-SELECT ranking, projeto_id, prob_estouro_30d, faixa_risco, principais_fatores
-FROM lakehouse_atlas.gold.score_estouro_30d
-ORDER BY ranking;
+SELECT s.ranking, s.projeto_id, p.nome_projeto, p.cliente, s.prob_estouro_30d, s.faixa_risco, s.principais_fatores
+FROM lakehouse_vertice.gold.score_estouro_30d s
+JOIN lakehouse_vertice.gold.projeto_situacao_atual p USING (projeto_id)
+ORDER BY s.ranking;
 ```
 
 Como ler:
 
-- **prob_estouro_30d = 1,0**: a obra **já** está abaixo de 0,9. A regra de corte acendeu.
-  A coluna de motivos diz por quê (ex.: *"falta de equipamento em 70% dos RDOs"*).
-- **faixa "medio" ou "alto" com prob < 1**: a obra está "ok" para a regra, mas o modelo
-  vê risco de cruzar em 30 dias. **É aqui que está o valor**: hoje, a **P034** (40%).
+- **prob_estouro_30d = 1,0**: o projeto **já** está abaixo de 0,9. A regra de corte acendeu.
+  A coluna de motivos diz por quê (ex.: *"falta de SRE em 4 dos últimos 4 status"*).
+- **faixa "medio" ou "alto" com prob < 1**: o projeto está "ok" para a regra, mas o modelo
+  vê risco de cruzar em 30 dias. **É aqui que está o valor**: hoje, o **PRJ-024**
+  (marketplace de sellers, 49%) e o **PRJ-013** (88%, com o status e a planilha discordando).
 - **"sem sinal de piora"**: pode tirar da pauta.
 
 ## 2. O que o modelo vale (para defender na reunião)
@@ -25,21 +27,22 @@ Como ler:
 SELECT ROUND(auc, 3) AS acerto_modelo, ROUND(auc_baseline_folga, 3) AS acerto_regra_simples,
        estouros_avisados || ' de ' || estouros_teste AS estouros_avisados,
        ROUND(antecedencia_media_dias) AS dias_de_antecedencia
-FROM lakehouse_atlas.gold.modelo_metricas;
+FROM lakehouse_vertice.gold.modelo_metricas;
 ```
 
-A frase: *"das 7 obras que estouraram desde abril, 6 apareceriam na lista das 5 mais
-arriscadas da semana, em média 45 dias antes. A regra de hoje avisou zero antes."*
+A frase: *"dos 10 projetos que estouraram desde abril, 9 apareceriam na lista dos 5 mais
+arriscados da semana, em média 40 dias antes. A regra de hoje avisou zero antes."*
 
 ## 3. Perguntar em português (Genie Code no SQL Editor)
 
 No SQL Editor, abra o assistente e peça:
 
-- *"Liste as obras de gold.score_estouro_30d com faixa medio ou alto que estão com
-  situação ok em gold.obra_situacao_atual."*
-- *"Para a obra P034, mostre a evolução semanal de spi e cpi em gold.features_obra_semana
-  desde junho de 2026."*
+- *"Liste os projetos de gold.score_estouro_30d com faixa medio ou alto que estão com
+  situação ok em gold.projeto_situacao_atual."*
+- *"Para o projeto PRJ-024, mostre a evolução semanal de spi e cpi em gold.features_projeto_semana
+  desde outubro de 2025."* (repare no que aconteceu no freeze da Black Friday do ano passado)
 
 Confira a resposta com a tabela "O que deve aparecer na tela" do [README](README.md).
 
-> O Genie da diretoria, que responde isso sem você escrever nada, é o primeiro prompt da noite 4.
+> O Genie que responde isso sem você escrever nada, junto com o que dizem os contratos e o
+> manual da Vértice, é o primeiro prompt da noite 4.

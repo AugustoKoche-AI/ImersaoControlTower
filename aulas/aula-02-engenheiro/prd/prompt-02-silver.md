@@ -1,7 +1,8 @@
-# Prompt 2 · Silver — a limpeza com contrato
+# Prompt 2 · Silver — as três ferramentas viram uma
 
-**Entrega:** o pipeline declarativo `atlas_medalhao` com as 12 tabelas silver,
-limpas e tipadas, com as regras de qualidade declaradas como `EXPECT`.
+**Entrega:** o pipeline declarativo `vertice_medalhao` com a silver: o cadastro do
+PMO, a **`silver.tarefas` que integra Excel, ClickUp e MS Project**, e as outras
+tabelas limpas e tipadas, com as regras de qualidade declaradas como `EXPECT`.
 **Deploy nº 2.**
 
 > **A entrega mais importante da noite. Não corte.**
@@ -10,114 +11,132 @@ limpas e tipadas, com as regras de qualidade declaradas como `EXPECT`.
 
 ## O que mostrar antes
 
-A sujeira **com número**, não com adjetivo. Quatro queries na bronze, três minutos:
+O rascunho da noite 1 (`bronze.rascunho_tarefas`) funcionou. Mostre por que ele não
+serve como produto, com número:
 
 ```sql
--- 1 · a vírgula decimal: o CAST quebra...
-SELECT SUM(CAST(valor_real AS DECIMAL(18,2))) FROM lakehouse_atlas.bronze.custos;
--- [CAST_INVALID_INPUT] The value '31262,81' ... cannot be cast
+-- 1 · a view da noite 1 mora dentro de uma query: se alguém esquecer a linha de TOTAL...
+SELECT SUM(CAST(horas_previstas AS DOUBLE)) AS com_total,
+       SUM(CAST(horas_previstas AS DOUBLE)) FILTER (WHERE tarefa <> 'TOTAL') AS sem_total
+FROM lakehouse_vertice.bronze.excel_tarefas
+WHERE horas_previstas NOT LIKE '%h';
+-- o Excel inteiro "dobra" de tamanho
 
--- ...e o try_cast "funciona": joga 540 lançamentos fora em silêncio
-SELECT ROUND(SUM(try_cast(valor_real AS DECIMAL(18,2))) / 1e6, 2) AS errado,
-       ROUND(SUM(CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2))) / 1e6, 2) AS certo
-FROM lakehouse_atlas.bronze.custos;
--- 556,09 × 572,85: R$ 16,8 milhões sumiram sem erro nenhum
+-- 2 · ...ou as tarefas-resumo do Project
+SELECT Summary, SUM(CAST(regexp_extract(Work, 'PT([0-9]+)H', 1) AS DOUBLE)) AS horas
+FROM lakehouse_vertice.bronze.msproject_tarefas GROUP BY Summary;
+-- as tarefas-resumo somam o DOBRO das tarefas de verdade
 
--- 2 · o mesmo fornecedor, quatro fornecedores
-SELECT fornecedor, COUNT(*) FROM lakehouse_atlas.bronze.compras
-WHERE lower(fornecedor) LIKE '%norte%' GROUP BY 1;
+-- 3 · a vírgula decimal: o try_cast "funciona" e joga 671 lançamentos fora em silêncio
+SELECT ROUND(SUM(try_cast(valor AS DECIMAL(18,2))) / 1e6, 2) AS errado,
+       ROUND(SUM(CAST(replace(valor, ',', '.') AS DECIMAL(18,2))) / 1e6, 2) AS certo
+FROM lakehouse_vertice.bronze.custos;
+-- 187,94 × 193,35: R$ 5,4 milhões sumiram sem erro nenhum
 
--- 3 · tarefa 117% concluída
-SELECT tarefa_id, pct_concluido FROM lakehouse_atlas.bronze.tarefas
-WHERE CAST(pct_concluido AS DOUBLE) > 100 ORDER BY 2 DESC LIMIT 5;
-
--- 4 · a equipe que existe duas vezes
-SELECT * FROM lakehouse_atlas.bronze.equipes WHERE equipe_id = 'EQP014';
+-- 4 · a mesma consultoria, quatro fornecedores
+SELECT fornecedor, COUNT(*) FROM lakehouse_vertice.bronze.entregas_fornecedor
+WHERE lower(fornecedor) LIKE '%forge%' GROUP BY 1;
 ```
 
 **Enquanto ele trabalha, você explica:**
 
-- **Declarativo é dizer O QUE, não COMO.** Cada arquivo diz "a silver.custos é
+- **Declarativo é dizer O QUE, não COMO.** Cada arquivo diz "a silver.tarefas é
   isto". O Lakeflow lê os `FROM`, descobre a ordem, roda em paralelo o que dá e
   desenha o grafo. Você não escreve orquestração.
-- **A tarefa de 117% é a decisão da noite.** A tentação é `LEAST(pct, 100)`: o
-  número fica plausível e errado. Só que o valor certo **existe** em outro
-  sistema: o boletim de medição semanal. Limpar bem é ir buscar a fonte
-  confiável, não inventar um valor bonito. (Na noite 1 cortamos em 100; vamos
-  ver quanto isso escondia no prompt 3.)
-- **Estorno não é sujeira.** Valor negativo em custo é um lançamento revertido.
-  Jogar fora inflaria o custo; manter sem flag polui. Fica, com a coluna `estorno`.
-- **`EXPECT ... ON VIOLATION FAIL UPDATE` é contrato.** Se amanhã o ERP mandar
-  uma data num terceiro formato, o pipeline para em vez de gravar nulo. A regra
-  é da tabela, não do script que rodou naquele dia.
+- **A integração é um contrato de colunas.** Cada ferramenta vira uma visão com as
+  MESMAS colunas (projeto, fase, tarefa, baseline, realizado, %, horas) e as três são
+  empilhadas. A ferramenta nova que aparecer amanhã é só mais uma visão.
+- **O de-para é dado, não código.** Quem diz que a lista 901200095028 do ClickUp é o
+  PRJ-012 é o cadastro do PMO (`silver.projetos`). Quando o código falta, o pipeline
+  casa pelo nome — e o `EXPECT achou_o_projeto` garante que nenhuma tarefa ficou órfã.
+- **`EXPECT ... ON VIOLATION FAIL UPDATE` é contrato.** Se amanhã um gerente digitar
+  "Planilha Google" como ferramenta, o pipeline para em vez de gravar nulo. A regra é
+  da tabela, não do script que rodou naquele dia.
 
 ---
 
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-atlas/. A bronze está
-conferida. Agora a silver: limpar, tipar e declarar o contrato.
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A bronze está
+conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
+declarar o contrato.
 
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
-resources/atlas_medalhao.pipeline.yml com name atlas_medalhao, catalog
+resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
 ${var.catalog}, schema silver, serverless: true, photon: true, e libraries com
 um glob em ../src/silver/** (o prompt 3 vai acrescentar ../src/gold/**).
 
 Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
-existe no pipeline). Leia a bronze pelo nome completo
-lakehouse_atlas.bronze.<tabela>; dentro do pipeline, referencie as tabelas
-silver só pelo nome. COMMENT em toda tabela dizendo o que foi limpo.
+existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
+Leia a bronze pelo nome completo lakehouse_vertice.bronze.<tabela>; dentro do
+pipeline, referencie as tabelas silver só pelo nome. COMMENT em toda tabela.
+Siga a tabela de sujeiras da seção 3 do prd/CLAUDE.md.
 
 Um arquivo por assunto em src/silver/:
 
-01-projetos.sql
-- data_inicio vem em yyyy-MM-dd e dd/MM/yyyy: coalesce de dois try_to_date.
-  Guarde data_veio_em_formato_br (boolean).
-- uf vem 'MG', 'mg', ' MG ': upper(trim()).
-- valor_contrato e orcamento_custo (renomeie para orcamento) em DECIMAL(18,2).
-- EXPECT data_inicio IS NOT NULL e length(uf) = 2, ambos FAIL UPDATE.
+01-projetos.sql — o cadastro do PMO (é o de-para da integração)
+- data_inicio em yyyy-MM-dd e dd/MM/yyyy: coalesce de dois try_to_date.
+- ferramenta escrita de 8 jeitos → 'excel', 'clickup' ou 'msproject'
+  (guarde ferramenta_como_veio). codigo_ferramenta vazio → NULL.
+- EXPECT data_inicio IS NOT NULL e ferramenta IN (...), FAIL UPDATE.
 
-02-cronograma.sql — avanco_semanal e tarefas
-- avanco_semanal tipado (data_medicao DATE, pct_concluido DOUBLE), EXPECT
-  pct entre 0 e 100.
-- tarefas: 52 tarefas têm pct_concluido > 100. NÃO corte em 100. Use a ÚLTIMA
-  medição do boletim (o % só sobe, então max(pct) por tarefa no
-  avanco_semanal) e marque pct_corrigido_pela_medicao. EXPECT pct entre 0 e
-  100 e valor_planejado > 0, FAIL UPDATE.
+02-tarefas.sql — AS TRÊS FERRAMENTAS VIRAM UMA
+Três CREATE TEMPORARY VIEW com as MESMAS colunas (projeto_id, ferramenta,
+id_na_ferramenta, fase, tarefa, responsavel, inicio_baseline, fim_baseline,
+inicio_real, fim_real, pct_como_veio, horas, status_na_ferramenta):
+- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se o
+  código faltar, o PRJ-xxx do nome do arquivo. Datas: com '/' é dd/MM/yyyy,
+  senão é número de série do Excel: date_add(DATE'1899-12-30', CAST(x AS INT)).
+  %: com '%' tire o '%' e troque vírgula por ponto; sem '%' é fração (× 100).
+  Horas: tire o 'h'. TIRE a linha onde tarefa = 'TOTAL'.
+- tarefas_clickup: projeto pelo de-para (codigo_ferramenta = list_id) e, se o
+  código faltar, pelo nome da lista. Datas em milissegundos:
+  to_date(timestamp_millis(CAST(x AS BIGINT))). % e baseline estão em
+  custom_fields: filter(custom_fields, f -> f.name = 'Progresso (%)')[0].value
+  (e 'Início baseline', 'Fim baseline', 'Fase'). Horas = time_estimate / 3600000.
+  Status de 12 jeitos → concluida / a_fazer / em_andamento.
+- tarefas_msproject: projeto pelo de-para (codigo_ferramenta = arquivo). Só
+  Summary = 0 (as tarefas-resumo somam as de baixo). A fase é a última
+  tarefa-resumo de OutlineLevel 1 antes da tarefa:
+  last_value(CASE WHEN OutlineLevel = 1 THEN Name END, true) OVER (PARTITION
+  BY arquivo ORDER BY UID). Baseline.Start/Finish, ActualStart/ActualFinish,
+  PercentComplete, horas de 'PT40H0M0S'.
+MATERIALIZED VIEW tarefas = UNION ALL das três, com tarefa_id
+(projeto-ferramenta-id), pct_concluido = least(pct_como_veio, 100) e a flag
+pct_veio_acima_de_100. EXPECT projeto_id IS NOT NULL (achou_o_projeto),
+pct entre 0 e 100 e horas > 0, todos FAIL UPDATE.
 
-03-custos.sql
-- valor_real tem 540 linhas com vírgula decimal: replace(',', '.') ANTES do
-  CAST. Nunca try_cast (jogaria R$ 16,8 mi fora em silêncio).
-- estorno (valor negativo) FICA na tabela e ganha a coluna estorno.
-- coluna semana = sexta-feira da semana: date_add(date_trunc('WEEK', data), 4).
-- EXPECT valor IS NOT NULL, FAIL UPDATE.
+03-status-e-custos.sql
+- status_semanal: data_status DATE, farol em minúsculas (EXPECT farol IN
+  ('verde','amarelo','vermelho') FAIL UPDATE), pct_concluido INT, flag
+  status_vazio ('', 'N/A', 'ver ata da reunião') — NÃO descarte.
+- custos: valor com 671 vírgulas decimais: replace(',', '.') ANTES do CAST,
+  nunca try_cast. estorno (negativo) FICA, com a coluna estorno. semana =
+  sexta da semana: date_add(date_trunc('WEEK', data), 4).
 
-04-suprimentos.sql — materiais, compras, estoque
-- compras: o mesmo fornecedor vem com 4 grafias ('Metalúrgica Norte Aço
-  Ltda', 'Metalurgica Norte Aco', 'METALÚRGICA NORTE AÇO LTDA', 'Norte Aço
-  Metalúrgica'). Normalize tudo que tiver 'norte a' para
-  'Metalúrgica Norte Aço Ltda' e guarde fornecedor_como_veio.
-  data_entrega vazia = pedido em aberto (não é sujeira). Crie
-  lead_time_real_dias, em_aberto e em_atraso (em aberto e data_prometida
-  antes de DATE'2026-10-16').
-- estoque: saldo negativo (erro de inventário) vira 0 com flag.
+04-pessoas.sql
+- colaboradores: COL0102, COL0257 e COL0433 aparecem duas vezes (nome e papel
+  em CAIXA ALTA). Mantenha o cadastro com papel em minúsculas (row_number).
+- alocacoes tipada; apontamentos com semana = semana_inicio + 4 (sexta).
 
-05-recursos.sql — equipes, apontamentos, equipamentos, uso_equipamentos
-- equipes: EQP014, EQP057 e EQP101 aparecem duas vezes (função em CAIXA ALTA,
-  UF em minúscula, headcount diferente). DISTINCT não resolve. Mantenha o
-  cadastro com funcao em minúsculas (row_number por equipe_id).
-- apontamentos e uso_equipamentos com coluna semana (sexta-feira), como em custos.
+05-fornecedores-e-capacidade.sql
+- entregas_fornecedor: a CodeForge vem de 4 jeitos ('CodeForge Consultoria
+  Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA LTDA', 'Code Forge
+  Consultoria'): normalize (replace(lower(x), ' ', '') LIKE '%codeforge%') e
+  guarde fornecedor_como_veio. data_entrega vazia = em aberto (não é sujeira).
+  prazo_real_dias, dias_de_atraso_na_entrega, em_aberto e em_atraso (em
+  aberto e data_prometida antes de DATE'2026-10-16').
+- contratos_capacidade tipada; consumo_capacidade com saldo negativo → 0 e flag.
 
-06-rdo.sql
-- rdo: 82 RDOs vazios ('', 'N/A', 'ver RDO físico'). NÃO descarte: flag rdo_vazio.
+06-postmortems.sql — tipado, EXPECT severidade IN ('SEV1','SEV2','SEV3').
 
-Acrescente ao job atlas_torre a tarefa medalhao (pipeline_task apontando para
-${resources.pipelines.atlas_medalhao.id}), depois de conferencia_bronze.
+Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
+para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
 Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
-  databricks bundle run atlas_medalhao --profile <perfil>
+  databricks bundle run vertice_medalhao --profile <perfil>
 ```
 
 ---
@@ -125,20 +144,27 @@ Rode e me mostre a saída:
 ## O que conferir
 
 ```sql
--- a limpeza NÃO mudou o custo: o mesmo número da noite 1
-SELECT ROUND(SUM(valor) / 1e6, 2) FROM lakehouse_atlas.silver.custos;                 -- 572,85
+-- as três ferramentas, num modelo só
+SELECT ferramenta, COUNT(DISTINCT projeto_id) AS projetos, COUNT(*) AS tarefas
+FROM lakehouse_vertice.silver.tarefas GROUP BY 1;
+-- excel 20 · 1.643 | clickup 25 · 2.119 | msproject 15 · 1.155
 
-SELECT COUNT(*), COUNT(DISTINCT equipe_id) FROM lakehouse_atlas.silver.equipes;         -- 120 e 120
-SELECT fornecedor, COUNT(DISTINCT fornecedor_como_veio) FROM lakehouse_atlas.silver.compras
-WHERE fornecedor LIKE '%Norte%' GROUP BY 1;                                              -- 1 fornecedor, 4 grafias
-SELECT COUNT_IF(pct_corrigido_pela_medicao) FROM lakehouse_atlas.silver.tarefas;          -- 52
+-- a limpeza NÃO mudou o custo: o mesmo número da noite 1
+SELECT ROUND(SUM(valor) / 1e6, 2) FROM lakehouse_vertice.silver.custos;               -- 193,35
+
+SELECT COUNT(*), COUNT(DISTINCT colaborador_id) FROM lakehouse_vertice.silver.colaboradores;   -- 520 e 520
+SELECT fornecedor, COUNT(DISTINCT fornecedor_como_veio) FROM lakehouse_vertice.silver.entregas_fornecedor
+WHERE fornecedor LIKE 'CodeForge%' GROUP BY 1;                                         -- 1 fornecedor, 4 grafias
+SELECT COUNT_IF(pct_veio_acima_de_100) FROM lakehouse_vertice.silver.tarefas;             -- 11
 ```
 
-Abra o pipeline no workspace: o grafo com as 12 tabelas e, em cada uma, a aba
-**Data quality** mostrando quantas linhas cada `EXPECT` avaliou.
+Abra o pipeline no workspace: o grafo com as três visões temporárias desaguando em
+`tarefas` e, em cada tabela, a aba **Data quality** mostrando quantas linhas cada
+`EXPECT` avaliou.
 
-> *"Eu converti 540 valores, juntei quatro fornecedores em um e tirei três
-> equipes duplicadas. O custo total não mudou um centavo. É esse o teste."*
+> *"Juntei vinte planilhas, vinte e cinco listas do ClickUp e quinze cronogramas do
+> Project numa tabela só. Nenhuma tarefa ficou sem projeto, e o custo total não mudou
+> um centavo. É esse o teste."*
 
 ---
 
@@ -146,10 +172,11 @@ Abra o pipeline no workspace: o grafo com as 12 tabelas e, em cada uma, a aba
 
 | Sintoma | Causa | Correção |
 |---|---|---|
-| `CREATE OR REPLACE ... not supported` | Sintaxe de SQL comum dentro do pipeline | `CREATE OR REFRESH MATERIALIZED VIEW` |
-| `CAST_INVALID_INPUT '31262,81'` | Faltou o `replace` antes do CAST | `CAST(replace(valor_real, ',', '.') AS DECIMAL(18,2))` |
-| Pipeline falha em `pct_entre_0_e_100` | Cortou em 100 em vez de usar a medição, ou esqueceu o `CASE` | É o `EXPECT` funcionando: corrija a regra, não o EXPECT |
+| `CREATE OR REPLACE ... not supported` | Sintaxe de SQL comum dentro do pipeline | `CREATE OR REFRESH MATERIALIZED VIEW` / `CREATE TEMPORARY VIEW` |
+| Pipeline falha em `achou_o_projeto` | Algum arquivo não casou com o cadastro do PMO | Confira o fallback: nome do arquivo (Excel) e nome da lista (ClickUp) |
+| Pipeline falha em `pct_entre_0_e_100` | Faltou o `least(…, 100)` ou o % fracionário não foi × 100 | É o `EXPECT` funcionando: corrija a regra, não o EXPECT |
+| `CAST_INVALID_INPUT '45661.0'` | Número de série do Excel com casa decimal | `CAST(CAST(x AS DOUBLE) AS INT)` |
+| `Cannot resolve Baseline.Start` | A bronze do Project foi lida com `inferColumnTypes => false` | Na noite 1 o XML entra com inferência ligada (é o que mantém a struct) |
 | `Update is WAITING_FOR_RESOURCES` por 1 min | Serverless acordando | Normal na primeira execução |
-| `An active update already exists` | Rodou duas vezes | Espere a atual terminar |
 
 **Tempo medido:** deploy ~8 s; pipeline ~2 min na primeira execução.

@@ -14,8 +14,8 @@ interface AppKitComServer {
 
 const SQL = `
   SELECT projeto_id, prob_estouro_30d, ranking, faixa_risco
-  FROM lakehouse_atlas.gold.score_estouro_30d
-  WHERE data_referencia = (SELECT MAX(data_referencia) FROM lakehouse_atlas.gold.score_estouro_30d)`;
+  FROM lakehouse_vertice.gold.score_estouro_30d
+  WHERE data_referencia = (SELECT MAX(data_referencia) FROM lakehouse_vertice.gold.score_estouro_30d)`;
 
 export function registrarRotaScore(appkit: AppKitComServer) {
   appkit.server.extend((app) => {

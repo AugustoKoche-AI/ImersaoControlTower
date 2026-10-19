@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Gera o Genie Agent da noite 4, "Torre de Controle · Diretoria + Contratos", como JSON.
+"""Gera o Genie Agent da noite 4, "Farol · Diretoria + Contratos", como JSON.
 
 Uso:
     python3 aulas/aula-04-engenheiro-ia/torre-app/agente/gerar_genie.py --profile SEU-PERFIL
     python3 scripts/genie.py publicar aulas/aula-04-engenheiro-ia/torre-app/agente/diretoria-contratos-genie.json \
-        --titulo "Torre de Controle · Diretoria + Contratos" --profile SEU-PERFIL
+        --titulo "Farol · Diretoria + Contratos" --profile SEU-PERFIL
 
-É o Genie da noite 2 com uma camada a mais: os CONTRATOS. A diretoria não
-pergunta só "por que atrasou?": pergunta "e o que o contrato diz?". O agente
-cruza RDO (a causa), gold (o tamanho do problema) e cláusula (o direito).
+É o Genie da noite 2 com duas camadas a mais: os CONTRATOS de fornecedor e o
+MANUAL de tecnologias. O dono não pergunta só "quem está atrasado?": pergunta
+"e o que o contrato diz? e o que a nossa regra manda fazer?". O agente cruza o
+status (a causa), a gold (o tamanho do problema), a cláusula (o direito) e o
+manual (a regra da casa).
 
 A tabela do modelo da noite 3 (gold.score_estouro_30d) entra se existir:
 o Genie recusa publicar com tabela inexistente.
@@ -24,7 +26,7 @@ AQUI = pathlib.Path(__file__).resolve().parent
 # Não use a extensão .geniespace.json aqui: o import do código do app recusa
 # ("Requested node type [UNKNOWN] is not supported") e o app não sobe.
 SAIDA = AQUI / "diretoria-contratos-genie.json"
-G = "lakehouse_atlas.gold"
+G = "lakehouse_vertice.gold"
 
 
 def ident(prefixo: str, n: int) -> str:
@@ -39,72 +41,76 @@ def existe(tabela: str, profile: str | None) -> bool:
     return r.returncode == 0 and '"table_exists": true' in r.stdout.replace("\n", " ").replace("  ", " ")
 
 
-TABELAS = ["contratos_clausulas", "contratos_exposicao", "contratos_resumo", "cobertura_estoque",
-           "desempenho_fornecedor", "obra_situacao_atual", "pedidos_em_atraso", "rdo_estruturado",
-           "utilizacao_equipamento_semana", "utilizacao_equipe_semana"]
-METRICAS = ["mv_obras"]
+TABELAS = ["contratos_avisos", "contratos_clausulas", "contratos_multa_fornecedor", "contratos_resumo",
+           "cobertura_capacidade", "desempenho_fornecedor", "entregas_em_atraso", "manual_secoes",
+           "projeto_situacao_atual", "status_estruturado", "utilizacao_pessoa_semana"]
+METRICAS = ["mv_projetos"]
 
 INSTRUCOES = [
-    "Você é o assessor da DIRETORIA da Construtora Atlas Engenharia (EPC, 40 obras). A ATLAS É A CONTRATADA em todos os "
-    "contratos; o cliente é a CONTRATANTE. Multa por atraso é CUSTO DA ATLAS, e prorrogação é um direito que a Atlas pleiteia "
-    "ao cliente. Nunca recomende 'cobrar a contratada'. Responda em português, curto, "
-    "com números em reais (R$) e índices com 2 casas. Termine com uma recomendação de uma linha quando a pergunta pedir decisão.",
+    "Você é o assessor do DONO da Vértice Tecnologia (empresa de tecnologia, 520 pessoas, 60 projetos de clientes). "
+    "Nos contratos de fornecedor e SaaS, a VÉRTICE É A CONTRATANTE e o fornecedor é a CONTRATADA: multa por atraso é "
+    "dinheiro que a Vértice pode COBRAR (descontar da fatura do fornecedor). Responda em português, curto, com números em "
+    "reais (R$) e índices com 2 casas. Termine com uma recomendação de uma linha quando a pergunta pedir decisão.",
     "HOJE é 16/10/2026. Nunca use current_date(). 'Últimos 90 dias' = data >= DATE'2026-07-18'; "
-    "'últimas 12 semanas' = semana > DATE'2026-07-24'.",
+    "'últimas 12 semanas' = semana > DATE'2026-07-24'; 'próximos 60 dias' = até 15/12/2026.",
     "KPIs: SPI = EV/PV (< 1 é atraso), CPI = EV/AC (< 1 é estouro). Atenção: SPI ou CPI < 0,9; crítico: < 0,8. "
-    "Fotografia de hoje: obra_situacao_atual (ou mv_obras com MEASURE()). Obras concluídas não entram em risco. "
-    "'Em risco' = atenção + crítico SOMADOS num número só (hoje são 13), a menos que peçam a quebra por situação.",
-    "Causa do atraso: rdo_estruturado (causa_atraso, dias_impacto), contando os últimos 90 dias e ignorando "
-    "'sem_ocorrencia' e 'nao_reportado'.",
-    "CONTRATOS: só 8 obras têm contrato digitalizado (P002, P005, P007, P011, P014, P018, P024, P033). "
-    "contratos_resumo tem os campos estruturados (multa_dia_pct, teto_multa_pct, chuva_da_prorrogacao, "
-    "icamento_responsavel, estrutura_fornecida_por, prazo_aditivo_dias, reajuste, bonus_antecipacao). "
-    "contratos_clausulas tem o texto de cada cláusula: SEMPRE cite o número da cláusula e um trecho curto do texto "
-    "quando responder o que o contrato diz. contratos_exposicao já calcula a multa estimada em R$ "
-    "(valor do contrato × min(atraso projetado × multa diária, teto)).",
-    "Regras de leitura do contrato: se chuva_da_prorrogacao = true, os dias de chuva registrados no RDO (comunicados em 48 h) "
-    "podem ser excluídos do atraso: diga quantos RDOs e dias de chuva a Atlas pode pleitear e quanto isso reduz a multa; "
-    "se false, chuva não afasta multa. Se icamento_responsavel = 'contratada', falta de "
-    "guindaste é risco da Atlas e NÃO dá prorrogação. Aditivo de escopo precisa ser pleiteado em prazo_aditivo_dias "
-    "dias do fato gerador, senão o direito se perde.",
-    "Para 'onde tenho guindaste/equipamento parado', use utilizacao_equipamento_semana nas últimas 12 semanas: "
-    "utilização média abaixo de 20% = ocioso. Para gente parada, utilizacao_equipe_semana (horas_ociosas).",
-    "Quando citar uma obra, use projeto_id e nome (ex.: P011 · Pátio de estocagem de minério Canaã dos Carajás).",
+    "Fotografia de hoje: projeto_situacao_atual com status = 'em_andamento' (ou mv_projetos com MEASURE()). "
+    "'Em risco' = atenção + crítico somados (hoje são 17), a menos que peçam a quebra por situação.",
+    "Causa do atraso: status_estruturado (causa_bloqueio, bloqueio, quem_destrava, dias_impacto) nos últimos 90 dias, "
+    "ignorando 'sem_bloqueio' e 'nao_reportado'. Gente parada: utilizacao_pessoa_semana nas últimas 12 semanas, "
+    "SUM(horas_apontadas) / SUM(horas_disponiveis) < 0,2.",
+    "CONTRATOS: são 8 contratos de fornecedor e SaaS (CodeForge, Pixel Design Studio, QualiTest Brasil, SecureOps Segurança, "
+    "DataPrime Analytics, NuvemSul Cloud, Observa360, CodeVault). contratos_resumo tem os campos estruturados "
+    "(valor_anual, data_fim_vigencia, renovacao_automatica, aviso_previo_dias, multa_atraso_pct_dia, teto_multa_pct, sla, reajuste). "
+    "contratos_clausulas tem o texto de cada cláusula: SEMPRE cite o número da cláusula e um trecho curto quando disser o que o contrato diz. "
+    "Para valores de um contrato específico, filtre contratos_resumo por fornecedor com LIKE (ex.: fornecedor LIKE '%NuvemSul%').",
+    "MULTA de fornecedor: contratos_multa_fornecedor já calcula multa_cobravel por entrega atrasada "
+    "(valor × % ao dia × dias de atraso, com teto). 'Na vigência atual' / 'no contrato atual' = na_vigencia_atual = true; "
+    "sem esse qualificador, informe o total e o da vigência atual. Some multa_cobravel; conte entregas com COUNT(*).",
+    "AVISO PRÉVIO: contratos_avisos tem data_limite_aviso (fim da vigência menos aviso prévio), dias_ate_limite e "
+    "situacao_aviso ('vencido', 'vence em até 60 dias', 'ok'). 'Já passou' = 'vencido'; 'próximos 60 dias' = "
+    "'vence em até 60 dias'. Explique o que fazer com a coluna o_que_fazer (depende de renovacao_automatica).",
+    "MANUAL: manual_secoes tem as 10 seções do Manual de Tecnologias da Vértice (secao_numero, titulo, texto): stack, ambientes, "
+    "deploy, CHANGE FREEZE DE VAREJO (seção 4), ALOCAÇÃO DE SRE (seção 5), severidade, postmortem, STATUS SEMANAL E FAROL "
+    "(seção 8), consultorias, segurança. Para 'o que o manual diz' ou 'em qual seção', devolva secao_numero, titulo e texto "
+    "da seção, filtrando por titulo com LIKE.",
+    "Quando citar um projeto, use projeto_id e nome (ex.: PRJ-011 · Checkout e meios de pagamento - Supermercados Bom Preço).",
 ]
 
 EXEMPLOS = [
-    ("Por que a obra P011 atrasou e o que o contrato diz sobre isso?",
-     f"WITH causa AS (SELECT causa_atraso, COUNT(*) AS rdos, SUM(coalesce(dias_impacto, 0)) AS dias_impacto "
-     f"FROM {G}.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' "
-     f"AND causa_atraso NOT IN ('sem_ocorrencia', 'nao_reportado') GROUP BY causa_atraso) "
-     f"SELECT c.causa_atraso, c.rdos, c.dias_impacto, cl.clausula_numero, cl.titulo, cl.texto, "
-     f"e.atraso_projetado_dias, e.multa_estimada "
-     f"FROM causa c CROSS JOIN {G}.contratos_exposicao e "
-     f"LEFT JOIN {G}.contratos_clausulas cl ON cl.projeto_id = 'P011' AND cl.clausula_numero = "
-     f"CASE c.causa_atraso WHEN 'chuva' THEN 5 WHEN 'falta_equipamento' THEN 6 WHEN 'falta_material' THEN 7 ELSE 4 END "
-     f"WHERE e.projeto_id = 'P011' ORDER BY c.rdos DESC"),
-    ("Qual a multa estimada de cada obra com contrato?",
-     f"SELECT projeto_id, obra, situacao, atraso_projetado_dias, multa_dia_pct, teto_multa_pct, multa_estimada, multa_no_teto "
-     f"FROM {G}.contratos_exposicao ORDER BY multa_estimada DESC"),
-    ("Onde tenho guindaste parado que poderia ir para a P011?",
-     f"SELECT equipamento_id, modelo, projeto_id, obra, uf, ROUND(AVG(utilizacao), 3) AS utilizacao_media, "
-     f"SUM(horas_paradas) AS horas_paradas, SUM(custo_ocioso) AS custo_ocioso "
-     f"FROM {G}.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' "
-     f"GROUP BY ALL HAVING AVG(utilizacao) < 0.2 ORDER BY utilizacao_media"),
-    ("Quantas obras estão em risco?",
-     f"SELECT COUNT(*) AS obras_em_risco FROM {G}.obra_situacao_atual "
-     f"WHERE status = 'em_andamento' AND situacao IN ('crítico', 'atenção')"),
-    ("Em quais contratos a chuva dá direito a prorrogação?",
-     f"SELECT r.projeto_id, o.obra, r.chuva_da_prorrogacao, cl.texto AS clausula_5 FROM {G}.contratos_resumo r "
-     f"JOIN {G}.obra_situacao_atual o USING (projeto_id) JOIN {G}.contratos_clausulas cl "
-     f"ON cl.projeto_id = r.projeto_id AND cl.clausula_numero = 5 ORDER BY r.projeto_id"),
+    ("Quanto a Vértice pode cobrar de multa da CodeForge?",
+     f"SELECT fornecedor, ROUND(SUM(multa_cobravel), 2) AS multa_total, "
+     f"ROUND(SUM(multa_cobravel) FILTER (WHERE na_vigencia_atual), 2) AS multa_na_vigencia_atual, "
+     f"COUNT(*) FILTER (WHERE na_vigencia_atual) AS entregas_atrasadas_na_vigencia_atual "
+     f"FROM {G}.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' GROUP BY fornecedor"),
+    ("Quais contratos precisam de decisão por causa do aviso prévio?",
+     f"SELECT fornecedor, data_fim_vigencia, aviso_previo_dias, data_limite_aviso, dias_ate_limite, situacao_aviso, o_que_fazer "
+     f"FROM {G}.contratos_avisos WHERE situacao_aviso <> 'ok' ORDER BY dias_ate_limite"),
+    ("O que o manual diz sobre o change freeze?",
+     f"SELECT secao_numero, titulo, texto FROM {G}.manual_secoes WHERE titulo LIKE '%FREEZE%'"),
+    ("Por que o PRJ-011 atrasou e o que o manual manda fazer?",
+     f"WITH causa AS (SELECT causa_bloqueio, COUNT(*) AS semanas FROM {G}.status_estruturado "
+     f"WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') "
+     f"GROUP BY causa_bloqueio) "
+     f"SELECT c.causa_bloqueio, c.semanas, m.secao_numero, m.titulo, m.texto FROM causa c "
+     f"LEFT JOIN {G}.manual_secoes m ON m.secao_numero = CASE c.causa_bloqueio WHEN 'falta_sre' THEN 5 "
+     f"WHEN 'change_freeze' THEN 4 WHEN 'dependencia_fornecedor' THEN 9 ELSE 8 END ORDER BY c.semanas DESC"),
+    ("Qual a multa por atraso e o teto no contrato da CodeForge?",
+     f"SELECT r.fornecedor, r.multa_atraso_pct_dia, r.teto_multa_pct, c.clausula_numero, c.texto "
+     f"FROM {G}.contratos_resumo r JOIN {G}.contratos_clausulas c ON c.fornecedor = r.fornecedor AND c.titulo LIKE 'MULTA%' "
+     f"WHERE r.fornecedor LIKE '%CodeForge%'"),
+    ("Tenho SRE parado que poderia ir para o PRJ-011?",
+     f"SELECT colaborador_id, nome, papel, projeto_id, projeto, ROUND(SUM(horas_apontadas) / SUM(horas_disponiveis), 3) AS utilizacao, "
+     f"SUM(horas_ociosas) AS horas_ociosas, SUM(custo_ocioso) AS custo_ocioso "
+     f"FROM {G}.utilizacao_pessoa_semana WHERE papel = 'sre' AND semana > DATE'2026-07-24' "
+     f"GROUP BY ALL HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2 ORDER BY utilizacao"),
 ]
 
 PERGUNTAS = [
-    "Por que a obra P011 atrasou e o que o contrato diz sobre isso?",
-    "Qual a multa estimada de cada obra com contrato?",
-    "Onde tenho guindaste parado que poderia ir para a P011?",
-    "Quais obras críticas estão expostas a multa?",
+    "Quanto a Vértice pode cobrar de multa da CodeForge?",
+    "Quais contratos precisam de decisão por causa do aviso prévio?",
+    "Por que o PRJ-011 atrasou e o que o manual manda fazer?",
+    "Tenho SRE parado que poderia ir para o PRJ-011?",
 ]
 
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Apaga SÓ o que a noite 4 cria, para ensaiar de novo do zero:
-#   · o app (e o job torre_contratos) do bundle
+#   · o app (e o job farol_contratos) do bundle
 #   · o projeto Lakebase (com a tabela torre.decisoes)
-#   · as tabelas gold.contratos_* e a view gold.contratos_exposicao
-#   · o Genie "Torre de Controle · Diretoria + Contratos"
-# NÃO toca na bronze, silver, gold das noites 2 e 3, nem no Genie "Torre de Controle · Diretoria" (noite 2).
+#   · as tabelas gold.documentos_elementos, gold.contratos_*, gold.manual_secoes e as views de multa e avisos
+#   · o Genie "Farol · Diretoria + Contratos"
+# NÃO toca na bronze, silver, gold das noites 2 e 3, nem no Genie "Farol · Diretoria" (noite 2).
 #
 # Uso:
 #   bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase]           # simula
@@ -13,9 +13,9 @@ set -euo pipefail
 PERFIL="${1:?informe o profile}"
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
 APP_DIR="${2:-$RAIZ/aulas/aula-04-engenheiro-ia/torre-app}"
-LAKEBASE="${3:-torre-atlas}"
+LAKEBASE="${3:-farol-torre}"
 APAGAR=false; [[ "${*: -1}" == "--apagar" ]] && APAGAR=true
-GENIE="Torre de Controle · Diretoria + Contratos"
+GENIE="Farol · Diretoria + Contratos"
 
 rodar() { if $APAGAR; then echo "→ $*"; "$@" || true; else echo "[simulação] $*"; fi; }
 
@@ -29,10 +29,12 @@ rodar databricks postgres delete-project "projects/$LAKEBASE" --purge --profile 
 # 3. tabelas de contrato
 TMP=$(mktemp)
 cat > "$TMP" <<SQL
-DROP VIEW  IF EXISTS lakehouse_atlas.gold.contratos_exposicao;
-DROP TABLE IF EXISTS lakehouse_atlas.gold.contratos_resumo;
-DROP TABLE IF EXISTS lakehouse_atlas.gold.contratos_clausulas;
-DROP TABLE IF EXISTS lakehouse_atlas.gold.contratos_texto
+DROP VIEW  IF EXISTS lakehouse_vertice.gold.contratos_avisos;
+DROP VIEW  IF EXISTS lakehouse_vertice.gold.contratos_multa_fornecedor;
+DROP TABLE IF EXISTS lakehouse_vertice.gold.contratos_resumo;
+DROP TABLE IF EXISTS lakehouse_vertice.gold.contratos_clausulas;
+DROP TABLE IF EXISTS lakehouse_vertice.gold.manual_secoes;
+DROP TABLE IF EXISTS lakehouse_vertice.gold.documentos_elementos
 SQL
 rodar python3 "$RAIZ/scripts/run_sql.py" "$TMP" --profile "$PERFIL" --quiet
 

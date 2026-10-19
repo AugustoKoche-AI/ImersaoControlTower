@@ -9,7 +9,7 @@
 # Uso:  bash scripts/conceder-acesso.sh <perfil> [nome-do-app]
 set -euo pipefail
 PERFIL="${1:?informe o profile}"
-APP="${2:-torre-atlas}"
+APP="${2:-farol-torre}"
 RAIZ="$(cd "$(dirname "$0")/../../../.." && pwd)"
 
 SP=$(databricks apps get "$APP" --profile "$PERFIL" -o json \
@@ -18,10 +18,8 @@ echo "service principal do app $APP: $SP"
 
 TMP=$(mktemp)
 cat > "$TMP" <<SQL
-GRANT USE CATALOG ON CATALOG lakehouse_atlas TO \`$SP\`;
-GRANT USE SCHEMA, SELECT ON SCHEMA lakehouse_atlas.gold TO \`$SP\`;
-GRANT USE SCHEMA ON SCHEMA lakehouse_atlas.silver TO \`$SP\`;
-GRANT SELECT ON TABLE lakehouse_atlas.silver.equipes TO \`$SP\`
+GRANT USE CATALOG ON CATALOG lakehouse_vertice TO \`$SP\`;
+GRANT USE SCHEMA, SELECT ON SCHEMA lakehouse_vertice.gold TO \`$SP\`
 SQL
 python3 "$RAIZ/scripts/run_sql.py" "$TMP" --profile "$PERFIL" --quiet
 rm -f "$TMP"

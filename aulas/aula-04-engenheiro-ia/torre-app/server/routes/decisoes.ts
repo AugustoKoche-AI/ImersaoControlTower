@@ -1,4 +1,4 @@
-// Decisões da diretoria, gravadas no Lakebase (Postgres).
+// Decisões do dono e do CTO, gravadas no Lakebase (Postgres).
 //
 // Por que Postgres e não uma tabela Delta? Porque isto é uma TRANSAÇÃO: uma
 // pessoa clica, uma linha nasce, e ela precisa aparecer na hora para todo
@@ -25,28 +25,28 @@ const CRIAR = [
      projeto_origem   TEXT NOT NULL,
      projeto_destino  TEXT NOT NULL,
      recurso_id       TEXT NOT NULL,
-     tipo             TEXT NOT NULL CHECK (tipo IN ('equipamento', 'equipe')),
+     tipo             TEXT NOT NULL CHECK (tipo IN ('pessoa')),
      decisao          TEXT NOT NULL CHECK (decisao IN ('aprovada', 'recusada')),
      justificativa    TEXT NOT NULL,
      horas_recuperadas_mes NUMERIC(12,1),
      economia_mes     NUMERIC(14,2),
-     multa_evitada    NUMERIC(14,2),
+     dias_recuperados NUMERIC(8,1),
      usuario          TEXT NOT NULL,
      criado_em        TIMESTAMPTZ NOT NULL DEFAULT NOW()
    )`,
 ];
 
 export const DecisaoSchema = z.object({
-  projeto_origem: z.string().regex(/^P\d{3}$/),
-  projeto_destino: z.string().regex(/^P\d{3}$/),
-  recurso_id: z.string().min(3).max(20),
-  tipo: z.enum(['equipamento', 'equipe']),
+  projeto_origem: z.string().regex(/^PRJ-\d{3}$/),
+  projeto_destino: z.string().regex(/^PRJ-\d{3}$/),
+  recurso_id: z.string().regex(/^COL\d{4}$/),
+  tipo: z.enum(['pessoa']),
   decisao: z.enum(['aprovada', 'recusada']),
   justificativa: z.string().trim().min(10, 'Escreva uma justificativa de pelo menos 10 caracteres').max(1000),
   // o warehouse devolve número como string: coerce aceita os dois
   horas_recuperadas_mes: z.coerce.number().nonnegative().optional(),
   economia_mes: z.coerce.number().nonnegative().optional(),
-  multa_evitada: z.coerce.number().nonnegative().optional(),
+  dias_recuperados: z.coerce.number().nonnegative().optional(),
 });
 
 const usuario = (req: Request) => req.header('x-forwarded-email') ?? req.header('x-forwarded-user') ?? 'local@desenvolvimento';
@@ -68,7 +68,7 @@ export async function registrarRotasDecisoes(appkit: AppKitComLakebase) {
       try {
         const { rows } = await appkit.lakebase.query(
           `SELECT id, projeto_origem, projeto_destino, recurso_id, tipo, decisao, justificativa,
-                  horas_recuperadas_mes, economia_mes, multa_evitada, usuario, criado_em
+                  horas_recuperadas_mes, economia_mes, dias_recuperados, usuario, criado_em
            FROM torre.decisoes ORDER BY criado_em DESC LIMIT 200`,
         );
         res.json(rows);
@@ -86,18 +86,18 @@ export async function registrarRotasDecisoes(appkit: AppKitComLakebase) {
       }
       const d = p.data;
       if (d.projeto_origem === d.projeto_destino) {
-        res.status(400).json({ erro: 'Origem e destino são a mesma obra' });
+        res.status(400).json({ erro: 'Origem e destino são o mesmo projeto' });
         return;
       }
       try {
         const { rows } = await appkit.lakebase.query(
           `INSERT INTO torre.decisoes
              (projeto_origem, projeto_destino, recurso_id, tipo, decisao, justificativa,
-              horas_recuperadas_mes, economia_mes, multa_evitada, usuario)
+              horas_recuperadas_mes, economia_mes, dias_recuperados, usuario)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            RETURNING id, criado_em, usuario`,
           [d.projeto_origem, d.projeto_destino, d.recurso_id, d.tipo, d.decisao, d.justificativa,
-           d.horas_recuperadas_mes ?? null, d.economia_mes ?? null, d.multa_evitada ?? null, usuario(req)],
+           d.horas_recuperadas_mes ?? null, d.economia_mes ?? null, d.dias_recuperados ?? null, usuario(req)],
         );
         res.status(201).json(rows[0]);
       } catch (err) {

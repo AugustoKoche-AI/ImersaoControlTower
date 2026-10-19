@@ -7,9 +7,8 @@ CTO, e o dono faz 4 perguntas (quais projetos atrasam e de quais clientes; quant
 outro pede gente; o que vai dar errado no próximo mês). O problema central: os projetos vivem em **Excel (20), ClickUp
 (25) e MS Project (15)**, sem centralização. Noite 1 mostra o Databricks inteiro e junta à mão; noite 2 é a integração.
 
-> **Migração em andamento (18/10/2026):** o case mudou da Construtora Atlas (obras EPC) para a Vértice. A versão
-> Atlas completa está na tag `atlas-out26` (catálogo `lakehouse_atlas`, intocado no workspace). Já migrados: gerador,
-> validador e noite 1. Noites 2 a 4 ainda descrevem a Atlas até serem migradas.
+> O case anterior (outra empresa fictícia) está na tag `atlas-out26`; o catálogo `lakehouse_atlas` e os recursos
+> dele no workspace ficaram intocados. Nada no main depende deles.
 
 Todo o conteúdo é em português e escrito para ser acompanhado ao vivo por um público misto: cerca de metade
 nunca programou ou só fez exercícios.
@@ -21,13 +20,13 @@ Uma pasta por noite, autocontida (README, roteiro, verificação), no mesmo esqu
 
 | Pasta | Noite |
 |---|---|
-| `aulas/aula-01-analista/` | 1 · navegador: setup, bronze, 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
-| `aulas/aula-02-engenheiro/` | 2 · prompts no Claude Code: bundle `atlas`, pipeline Lakeflow, ai_extract nos RDOs, Metric Views, Genie curado |
-| `aulas/aula-03-cientista/` | 3 · prompts: features, modelo de estouro em 30 dias, score em lote |
-| `aulas/aula-04-engenheiro-ia/` | 4 · prompts: app da Torre (AppKit) + Lakebase, agente de contratos, pitch |
+| `aulas/aula-01-analista/` | 1 · navegador: setup, bronze (CSV, Excel, JSON, XML), 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
+| `aulas/aula-02-engenheiro/` | 2 · prompts no Claude Code: bundle `vertice`, pipeline Lakeflow que integra as 3 ferramentas, ai_classify + ai_extract nos status e postmortems, Metric Views, Genie curado |
+| `aulas/aula-03-cientista/` | 3 · prompts: features projeto × semana, modelo de estouro em 30 dias, score por projeto |
+| `aulas/aula-04-engenheiro-ia/` | 4 · prompts: agente de contratos e do manual (ai_parse_document + ai_extract), app da Torre (AppKit) + Lakebase, pitch |
 | `material/` | PRD, gerador do dataset, validador dos padrões, writer de PDF |
 | `scripts/` | `run_sql.py`, `genie.py`, `gerar_notebooks.py`, `gerar_slides.py`, `gerar_prompts.py` |
-| `slides/` | `_modelo.html` (motor dos slides do jornada-ops) + `aula-NN.slides.html` → `aula-NN.html` |
+| `slides/` | `_modelo.html` (motor dos slides do jornada-ops, com Mermaid) + `aula-NN.slides.html` → `aula-NN.html` |
 
 Exemplos novos na aula 01 seguem `exemplo-NN-tema.sql`, com cabeçalho de conceito, pergunta de negócio e
 conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 scripts/gerar_notebooks.py aulas/aula-01-analista`.
@@ -39,7 +38,7 @@ conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 script
 - **Nunca escolha um profile sozinho.** O profile de desenvolvimento desta imersão é `imersao-out26`
   (workspace `dbc-84cd5511-fa25`, o mesmo de agosto, que também tem `lakehouse_rotaperfume`).
 - Ambiente-alvo: **Free Edition, serverless**. Warehouse `Serverless Starter Warehouse` (`666be37e3fededf2`).
-- Catálogo **`lakehouse_vertice`** (o da Atlas, `lakehouse_atlas`, fica como reserva). `CREATE CATALOG` só via SQL:
+- Catálogo **`lakehouse_vertice`**. `CREATE CATALOG` só via SQL:
   a API do UC recusa no Free Edition.
 - Skills oficiais do Databricks instaladas no projeto (`.claude/skills/`, 32 com as experimentais) via
   `databricks aitools install --agents claude-code --scope project --skills-only --experimental`.
@@ -74,10 +73,18 @@ conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 script
 - Lakebase: apagar projeto é exclusão suave por 7 dias e prende o nome (use `delete-project --purge` no reset;
   confira com `list-projects`, não com `get-project`). O build do app roda o typegen **como o service principal**:
   os GRANTs vêm antes do segundo `apps deploy`. Nenhum arquivo `*.geniespace.json` dentro da pasta do app.
+- Free Edition: no máximo **3 apps** por workspace (`maximum limit of 3 apps`). Libere um antes do `bundle deploy` do app.
+- A `sql_task` do job corta o arquivo em todo `;`, inclusive dentro do `$$ ... $$` da metric view: nada de `;` no YAML.
+- Testar o app local (`npm run dev`) cria o schema `torre` no Lakebase com você como dono: apague antes do deploy.
 - O primeiro acesso ao app pede consentimento OAuth ("Authorize"), feito por uma pessoa. Testes automáticos
   usam `Authorization: Bearer $(databricks auth token)`.
-- Nomes de Genie e dashboard são únicos por título nos scripts: os da Vértice começam com "Farol · " / "Projeto Farol · "
-  para não sobrescrever os da Atlas ("Farol · Noite 1 (bronze, sem curadoria)", dashboard "Projeto Farol · Noite 1 (bronze)").
+- Nomes de Genie e dashboard são únicos por título nos scripts: "Farol · Noite 1 (bronze, sem curadoria)", dashboard
+  "Projeto Farol · Noite 1 (bronze)", "Farol · Diretoria" (noite 2, do bundle) e "Farol · Diretoria + Contratos" (noite 4).
+- `ai_classify`/`ai_extract` na versão 2.0 (`map('version','2.0')`) devolvem VARIANT: `:response[0]::STRING` e
+  `:response:campo::DOUBLE`. Com JSON schema tipado o `ai_extract` devolve número ("1 semana" → 7).
+- Bundle renomeado ou copiado: apague a `.databricks/` local antes do primeiro deploy (senão edita os recursos antigos).
+- Slides com Mermaid: `<div class="diagrama"><pre class="mermaid">…</pre></div>`; o motor desenha antes de esconder os
+  slides e sem a escala do palco (senão o Mermaid mede o texto encolhido e corta os rótulos).
 
 Aprendizados detalhados de cada noite: `aulas/<noite>/APRENDIZADOS.md`.
 
@@ -104,10 +111,20 @@ lê as 3 ferramentas em Python). Um `random.Random` por assunto (`f"{seed}:{nome
 
 ## Números de referência
 
-Noites 2 a 4 (ainda Atlas, a remedir na Vértice) · Noite 2 (gold): estouro R$ 42,36 mi (a noite 1 dá R$ 41,9 mi porque corta % > 100 com `LEAST`, o que é ponto de aula) ·
-SPI/CPI da carteira 0,95/0,94 · 97 rupturas · 27 pedidos em atraso · Genie 20/20.
-Noite 3: AUC 0,973 (regra atual 0,50; folga 0,966) · 6 de 7 estouros no top 5, 45 dias antes · P034 "ok" com prob 0,40.
-Noite 4: 88 cláusulas · multa P011 R$ 1,88 mi · simulador EQ0017 → P011: 7,8 dias e R$ 82,6 mil · ROI ≈ R$ 12,9 mi.
+Noite 2 (gold): os mesmos 7 críticos, 10 em atenção, 4 melancias e R$ 6,47 mi da noite 1 (a fotografia de hoje faz a
+mesma conta sobre silver.tarefas) · SPI/CPI da carteira 0,92/0,97 · margem projetada 20,4% · 4.917 tarefas na silver
+(Excel 1.643, ClickUp 2.119, Project 1.155) · 15 rupturas de capacidade (de 56 contratos) · 5 entregas em atraso, todas
+da CodeForge (×1,41, 0% no prazo) · SREs COL0017/COL0018 a ~5,5% no PRJ-007 · PRJ-011: falta_sre 12 semanas, 57 dias ·
+IA: 163 status (2 min) e 101 postmortems (1 min) · Genie "Farol · Diretoria" 20/20 · verificação 20/20.
+
+Noite 3: features_projeto_semana 4.235 linhas · AUC 0,92 (regra atual 0,50; folga 0,87) · 9 de 10 estouros do teste no
+top 5, 40 dias antes · score: 18 alto, 4 médio, 19 baixo · "uau": PRJ-024 ok hoje (SPI 0,91) com prob 0,49 (freeze +
+cloud acabando) · vazamento: corte no tempo 0,92, aleatório 0,92, índice do futuro 0,99 · assert antivazamento < 0,98 ·
+job vertice_farol com 9 tarefas, 4 a 5 min. PRJ-013 tem status (43%) e planilha (45%) que não batem: lição de qualidade.
+Noite 4: 8 contratos, 72 cláusulas, 10 seções do manual · multa cobrável da CodeForge R$ 1,12 mi (vigência atual) ·
+NuvemSul e DataPrime renovaram sozinhos (R$ 21,4 mi/ano) · Genie "Farol · Diretoria + Contratos" 10/10 · simulador
+COL0017 → PRJ-011: 19 dias e R$ 22,1 mil/mês de saldo · ROI ≈ R$ 3,0 mi no ano 1 contra R$ 0,4 mi · app `farol-torre`
+testado local; o workspace atingiu o limite de 3 apps do Free Edition (liberar um antes do deploy).
 
 ### Noite 1 (Vértice)
 

@@ -1,0 +1,99 @@
+# O job do Projeto Farol — a sequência que a noite 2 constrói.
+#
+# Abra o DAG no workspace depois de cada deploy: o desenho crescendo é a melhor
+# tela da aula.
+#
+#   prompt 1  conferencia_bronze
+#   prompt 2  + medalhao (pipeline Lakeflow: silver, as 3 ferramentas viram uma)
+#   prompt 3  + (o mesmo pipeline ganha a gold) + testes_de_qualidade
+#   prompt 4  + status_com_ia + postmortem_com_ia
+#   prompt 5  + metricas_governadas
+#   noite 3   + ml_features → ml_modelo → ml_score
+#
+# A ordem não é sugestão: cada camada lê a anterior. Se a conferência da bronze
+# falhar, nada roda — e é isso que impede o dashboard de mostrar meio dado com
+# cara de dado inteiro.
+
+resources:
+  jobs:
+    vertice_farol:
+      name: vertice_farol
+      description: Projeto Farol da Vértice Tecnologia — conferência, medalhão (Excel + ClickUp + MS Project), IA nos status e postmortems, testes e métricas governadas.
+
+      # Toda segunda às 6h, depois do status de sexta (pausado em dev pelo preset do databricks.yml).
+      schedule:
+        quartz_cron_expression: "0 0 6 ? * MON"
+        timezone_id: America/Sao_Paulo
+
+      tasks:
+        # ── 1. a bronze está inteira? ─────────────────────────────────
+        - task_key: conferencia_bronze
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/conferencia/00-conferencia-bronze.sql
+
+        # ── 2. o medalhão: silver e gold num pipeline declarativo ─────
+        - task_key: medalhao
+          depends_on: [{ task_key: conferencia_bronze }]
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.vertice_medalhao.id}
+
+        # ── 3. os testes que quebram o job antes de quebrar o dashboard
+        - task_key: testes_de_qualidade
+          depends_on: [{ task_key: medalhao }]
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/testes/testes.sql
+
+        # ── 4. o texto livre vira coluna ──────────────────────────────
+        - task_key: status_com_ia
+          depends_on: [{ task_key: medalhao }]
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/ia/status_estruturado.sql
+
+        - task_key: postmortem_com_ia
+          depends_on: [{ task_key: medalhao }]
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/ia/postmortem_estruturado.sql
+
+        # ── 5. os KPIs definidos uma vez só ───────────────────────────
+        - task_key: metricas_governadas
+          depends_on:
+            - { task_key: testes_de_qualidade }
+            - { task_key: status_com_ia }
+            - { task_key: postmortem_com_ia }
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/metricas/metricas.sql
+
+        # ── noite 3 · ML é mais uma camada do mesmo pipeline ─────────
+        # 6. as features: uma linha por projeto e semana, só olhando para trás
+        - task_key: ml_features
+          depends_on: [{ task_key: metricas_governadas }]
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/ml/01-features.sql
+
+        # 7. o modelo: baseline, treino, testes, MLflow e Unity Catalog (@prod)
+        - task_key: ml_modelo
+          depends_on: [{ task_key: ml_features }]
+          notebook_task:
+            notebook_path: ../src/ml/02-modelo.py
+            base_parameters:
+              catalog: ${var.catalog}
+
+        # 8. o score de hoje: a lista que o dono abre na segunda
+        - task_key: ml_score
+          depends_on: [{ task_key: ml_modelo }]
+          notebook_task:
+            notebook_path: ../src/ml/03-score.py
+            base_parameters:
+              catalog: ${var.catalog}

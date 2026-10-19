@@ -17,7 +17,7 @@ import subprocess
 
 import psycopg
 
-ENDPOINT = "projects/torre-atlas/branches/production/endpoints/primary"
+ENDPOINT = "projects/farol-torre/branches/production/endpoints/primary"
 
 
 def cli(*args: str, profile: str) -> dict:
@@ -34,7 +34,7 @@ def main() -> None:
     usuario = cli("current-user", "me", profile=a.profile)["userName"]
     with psycopg.connect(host=host, dbname="databricks_postgres", user=usuario, password=token, sslmode="require") as c:
         linhas = c.execute(
-            "SELECT id, criado_em, usuario, recurso_id, projeto_origem, projeto_destino, decisao, multa_evitada "
+            "SELECT id, criado_em, usuario, recurso_id, projeto_origem, projeto_destino, decisao, economia_mes, dias_recuperados "
             "FROM torre.decisoes ORDER BY id DESC LIMIT 20").fetchall()
     print(f"torre.decisoes em {host}: {len(linhas)} linha(s)")
     for l in linhas:

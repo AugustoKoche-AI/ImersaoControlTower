@@ -1,22 +1,42 @@
 [
-  {"pergunta": "Qual a multa estimada da obra P011?",
-   "sql_referencia": "SELECT multa_estimada FROM lakehouse_atlas.gold.contratos_exposicao WHERE projeto_id = 'P011'"},
-  {"pergunta": "Em quais contratos a chuva dá direito a prorrogação de prazo?",
-   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_resumo WHERE chuva_da_prorrogacao"},
-  {"pergunta": "Em qual obra os guindastes são responsabilidade do cliente?",
-   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_resumo WHERE icamento_responsavel = 'contratante'"},
-  {"pergunta": "Qual a multa por dia de atraso e o teto da multa no contrato da P005?",
-   "sql_referencia": "SELECT multa_dia_pct, teto_multa_pct FROM lakehouse_atlas.gold.contratos_resumo WHERE projeto_id = 'P005'"},
-  {"pergunta": "Quais contratos têm bônus por conclusão antecipada?",
-   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_resumo WHERE bonus_antecipacao"},
-  {"pergunta": "Qual obra com contrato já está com a multa estimada no teto?",
-   "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.contratos_exposicao WHERE multa_no_teto"},
-  {"pergunta": "Qual o total de multas estimadas nas obras com contrato digitalizado?",
-   "sql_referencia": "SELECT SUM(multa_estimada) FROM lakehouse_atlas.gold.contratos_exposicao"},
-  {"pergunta": "Quais guindastes tiveram utilização média abaixo de 20% nas últimas 12 semanas?",
-   "sql_referencia": "SELECT equipamento_id FROM lakehouse_atlas.gold.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' GROUP BY equipamento_id HAVING AVG(utilizacao) < 0.2"},
-  {"pergunta": "Qual foi a causa de atraso mais frequente nos RDOs da obra P011 nos últimos 90 dias?",
-   "sql_referencia": "SELECT causa_atraso FROM lakehouse_atlas.gold.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso NOT IN ('sem_ocorrencia', 'nao_reportado') GROUP BY causa_atraso ORDER BY COUNT(*) DESC LIMIT 1"},
-  {"pergunta": "Quantas obras em andamento estão em atenção ou críticas?",
-   "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE status = 'em_andamento' AND situacao IN ('crítico', 'atenção')"}
+  {
+    "pergunta": "Quanto a Vértice pode cobrar de multa da CodeForge na vigência atual do contrato?",
+    "sql_referencia": "SELECT ROUND(SUM(multa_cobravel), 2) FROM lakehouse_vertice.gold.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' AND na_vigencia_atual"
+  },
+  {
+    "pergunta": "Quantas entregas da CodeForge atrasaram na vigência atual do contrato?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' AND na_vigencia_atual"
+  },
+  {
+    "pergunta": "Qual a multa por dia de atraso e o teto da multa no contrato da CodeForge?",
+    "sql_referencia": "SELECT multa_atraso_pct_dia, teto_multa_pct FROM lakehouse_vertice.gold.contratos_resumo WHERE fornecedor LIKE '%CodeForge%'"
+  },
+  {
+    "pergunta": "Quais contratos já passaram da data limite do aviso prévio?",
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos_avisos WHERE situacao_aviso = 'vencido'"
+  },
+  {
+    "pergunta": "Quais contratos têm a data limite do aviso prévio nos próximos 60 dias?",
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos_avisos WHERE situacao_aviso = 'vence em até 60 dias'"
+  },
+  {
+    "pergunta": "Qual contrato não tem renovação automática?",
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.contratos_resumo WHERE NOT renovacao_automatica"
+  },
+  {
+    "pergunta": "Quantos dias de aviso prévio exige o contrato da NuvemSul Cloud?",
+    "sql_referencia": "SELECT aviso_previo_dias FROM lakehouse_vertice.gold.contratos_resumo WHERE fornecedor LIKE '%NuvemSul%'"
+  },
+  {
+    "pergunta": "Em qual seção do manual está a regra do change freeze de varejo?",
+    "sql_referencia": "SELECT secao_numero FROM lakehouse_vertice.gold.manual_secoes WHERE titulo LIKE '%FREEZE%'"
+  },
+  {
+    "pergunta": "Em qual seção do manual está a regra de alocação de SRE?",
+    "sql_referencia": "SELECT secao_numero FROM lakehouse_vertice.gold.manual_secoes WHERE titulo LIKE '%SRE%'"
+  },
+  {
+    "pergunta": "Quais SREs estão com utilização abaixo de 20% nas últimas 12 semanas?",
+    "sql_referencia": "SELECT colaborador_id FROM lakehouse_vertice.gold.utilizacao_pessoa_semana WHERE papel = 'sre' AND semana > DATE'2026-07-24' GROUP BY colaborador_id HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2"
+  }
 ]

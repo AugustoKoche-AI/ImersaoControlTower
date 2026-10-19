@@ -1,0 +1,147 @@
+# Prompt 4 · Texto com IA — o status e o postmortem viram coluna
+
+**Entrega:** `gold.status_estruturado` (causa do bloqueio, o bloqueio, quem destrava e
+dias de impacto, tirados dos 3.911 status semanais) e `gold.postmortem_estruturado`
+(serviço, causa raiz, duração e usuários afetados dos 101 postmortems). **Deploy nº 4.**
+
+---
+
+## O que mostrar antes
+
+Um status de verdade e a pergunta que ele responde:
+
+```sql
+SELECT data_status, farol, texto_status FROM lakehouse_vertice.silver.status_semanal
+WHERE projeto_id = 'PRJ-011' ORDER BY data_status DESC LIMIT 5;
+-- "Bloqueios: Sem SRE alocado: pipeline de deploy quebrado e ninguém para corrigir."
+-- "Bloqueios: Ambiente de homologação fora do ar há 5 dias, sem responsável de infraestrutura."
+```
+
+*"A causa do atraso do PRJ-011 está escrita aqui, toda sexta, há doze semanas. Ninguém
+cruzou isso com o timesheet, onde duas SREs estão paradas em outro projeto."*
+
+E a IA, ao vivo, em duas linhas:
+
+```sql
+SELECT ai_classify('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimado: 1 semana.',
+         '["change_freeze","falta_sre","dependencia_fornecedor","rotatividade","mudanca_escopo","bug_retrabalho","aprovacao_cliente","sem_bloqueio"]',
+         map('version','2.0')):response[0]::STRING;
+-- falta_sre
+
+SELECT ai_extract('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimado: 1 semana.',
+         '{"bloqueio":{"type":"string"},"quem_destrava":{"type":"string"},"dias_impacto":{"type":"number","description":"1 semana = 7"}}',
+         map('version','2.0')):response;
+-- {"bloqueio":"Sem SRE alocado e pipeline de deploy quebrado","quem_destrava":"Time SRE","dias_impacto":7}
+```
+
+**Enquanto ele trabalha, você explica:**
+
+- **`ai_classify` escolhe; `ai_extract` tira.** A classificação põe o texto numa lista
+  fechada (dá para agrupar). A extração tira campos — e com o **schema tipado** da versão
+  2.0 o `dias_impacto` já sai como **número**: "1 semana" vira 7, e dá para somar.
+- **IA custa, e custa por linha.** Medimos neste workspace: as duas funções juntas levam
+  ~5 s por status. Os 3,9 mil levariam uma hora de warehouse. Então cada ferramenta onde
+  ela é a certa:
+  - **regra** para o que tem padrão fixo: a semana sem bloqueio (três em cada quatro
+    status) e o status vazio. Custo zero, resposta exata.
+  - **IA** para o texto com bloqueio dos últimos 90 dias (~160 status, ~2 minutos).
+  - **palavra-chave** para o histórico antigo, onde a resposta não muda decisão.
+- **O postmortem é o caso de ouro do `ai_extract`.** A duração vem escrita de três jeitos
+  ("37 minutos", "1h25min", "das 14h10 às 15h45"). Regra nenhuma pega os três; o schema
+  `duracao_minutos: number` pega.
+- **`MERGE` incremental.** A tarefa só processa texto que ainda não está na tabela. Na
+  semana que vem ela processa só os status da semana que vem. Não reprocesse o passado.
+
+---
+
+## O prompt
+
+```
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
+vira coluna: o status semanal e os postmortems. Use as funções de IA na versão
+2.0 (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+
+1. src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+   a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
+      COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
+      bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
+      'palavra_chave'), texto_status, _classificado_em.
+      NÃO é CREATE OR REPLACE: a tabela acumula, e a IA não pode ser refeita
+      a cada execução.
+   b. MERGE INTO ... WHEN NOT MATCHED THEN INSERT, só com os status da
+      silver.status_semanal que ainda não estão na tabela (LEFT ANTI JOIN por
+      projeto_id e data_status). Para cada status:
+      - metodo = 'regra' se status_vazio ou se o texto (minúsculas) diz
+        'bloqueios: nenhum', 'sem bloqueios' ou 'nada relevante';
+        'ia' se data_status >= DATE'2026-07-18' (últimos 90 dias);
+        senão 'palavra_chave'.
+      - causa_bloqueio: 'nao_reportado' se vazio; 'sem_bloqueio' na regra;
+        na IA, ai_classify com a lista ["change_freeze","falta_sre",
+        "dependencia_fornecedor","rotatividade","mudanca_escopo",
+        "bug_retrabalho","aprovacao_cliente","sem_bloqueio"]; na
+        palavra-chave, RLIKE: freeze|congelamento|janela de deploy →
+        change_freeze; sre|infraestrutura|ambiente de homologação → falta_sre;
+        forge|consultoria|fornecedor → dependencia_fornecedor; saída de|
+        rotatividade|onboarding → rotatividade; escopo|change request|regra de
+        negócio → mudanca_escopo; bugs|regressão|refazendo → bug_retrabalho;
+        aprovação do cliente|homologação do cliente → aprovacao_cliente.
+      - só na IA: ai_extract com JSON schema tipado: bloqueio (string),
+        quem_destrava (string), dias_impacto (number, "1 semana = 7").
+      - dias_impacto fora da IA: regex em 'impacto estimado de N dias' e
+        'impacto estimado: 1 semana' (= 7).
+   c. No fim, um SELECT de leitura: quantos status por metodo e causa.
+
+2. src/ia/postmortem_estruturado.sql (sql_task)
+   Tabela lakehouse_vertice.gold.postmortem_estruturado (CREATE TABLE IF NOT
+   EXISTS + MERGE incremental por incidente_id) com: incidente_id, projeto_id,
+   data, severidade, e, por ai_extract com JSON schema tipado:
+   servico_afetado (string), causa_raiz (string), duracao_minutos (number,
+   "duração total convertida para minutos; 1h25min = 85"), usuarios_afetados
+   (number). E categoria_causa por ai_classify em ["deploy_sem_teste",
+   "configuracao","capacidade","dependencia_externa","pipeline_sem_dono"].
+   São só ~100 textos: a IA roda em todos. SELECT final: incidentes e horas
+   fora do ar por categoria.
+
+Acrescente ao job as tarefas status_com_ia e postmortem_com_ia, as duas
+depois de medalhao (em paralelo com testes_de_qualidade).
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
+```
+
+---
+
+## O que conferir
+
+```sql
+-- a pergunta "por que o PRJ-011 atrasou?" agora tem resposta em dado
+SELECT causa_bloqueio, COUNT(*) AS semanas, SUM(coalesce(dias_impacto, 0)) AS dias_de_impacto
+FROM lakehouse_vertice.gold.status_estruturado
+WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18'
+  AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado')
+GROUP BY 1 ORDER BY 2 DESC;
+-- falta_sre · 12 semanas · 57 dias de impacto declarado
+
+-- e o que a IA tirou dos postmortems
+SELECT categoria_causa, COUNT(*) AS incidentes, ROUND(SUM(duracao_minutos) / 60, 1) AS horas_fora_do_ar
+FROM lakehouse_vertice.gold.postmortem_estruturado GROUP BY 1 ORDER BY 2 DESC;
+-- deploy_sem_teste na frente: é o padrão dos squads com rotatividade
+```
+
+**Rode a tarefa de novo:** o `MERGE` insere zero linhas e termina em segundos. É o
+incremental funcionando — e a conta de IA que não se paga duas vezes.
+
+---
+
+## Se der errado
+
+| Sintoma | Causa | Correção |
+|---|---|---|
+| A tarefa leva mais de 10 minutos | IA rodando em todos os 3,9 mil status | Confira o `metodo`: só os últimos 90 dias **com bloqueio** vão para a IA |
+| `dias_impacto` vem como texto `"7"` | `ai_extract` sem schema (versão 1) | JSON schema com `"type": "number"` e `map('version','2.0')`, lido com `::DOUBLE` |
+| `causa_bloqueio` nulo nas linhas da IA | Leu o VARIANT sem `:response[0]` | `ai_classify(...):response[0]::STRING` |
+| `TABLE_OR_VIEW_ALREADY_EXISTS` | Usou CREATE TABLE sem IF NOT EXISTS | `CREATE TABLE IF NOT EXISTS` (a tabela acumula) |
+| Rodou de novo e inseriu tudo outra vez | Faltou o LEFT ANTI JOIN | O MERGE só recebe o que ainda não está na tabela |
+
+**Tempo medido:** status ~2 min (163 textos na IA) e postmortems ~1 min (101 textos), em paralelo.

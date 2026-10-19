@@ -42,14 +42,19 @@ Regra de corte: **SPI ou CPI < 0,9 = atenção · < 0,8 = crítico.**
 | Banco de horas da consultoria acaba sem aviso | ruptura de capacidade prevista com 30 dias | o aditivo sai antes de o time parar |
 | Decisão de realocação por WhatsApp e e-mail | aprovação no app, gravada com usuário e horário | decisão rastreável e auditável |
 
-Medido no dado da Vértice na noite 1 (as noites seguintes acrescentam os seus números):
+Medido no dado da Vértice ao fim das 4 noites:
 
 | O que a Torre mostra | Valor |
 |---|---|
 | Projetos em risco · críticos | **17 de 41 · 7**, espalhados nas três ferramentas |
 | Estouro previsto se nada mudar | **R$ 6,47 mi** |
 | Farol verde com SPI abaixo de 0,9 | **4 projetos** (32 faróis verdes; pelo número, 24 projetos ok) |
-| Piores prazos | PRJ-016 (SPI 0,63, +298 dias) · PRJ-011 (SPI 0,77, +155 dias) |
+| Gente parada | **2 SREs seniores a ~5%** no PRJ-007, enquanto o PRJ-011 pede SRE há 12 semanas |
+| Antecedência do modelo de estouro | **9 de 10** estouros avisados, em média **40 dias** antes (AUC 0,92; a regra atual: 0,50) |
+| Genie em português | **20/20** (portfólio) e **10/10** (contratos e manual) no benchmark |
+| Multa cobrável da CodeForge pelo contrato | **R$ 1,12 mi** (0,5% ao dia, teto de 10%) |
+| Rupturas de capacidade · entregas em atraso | **15 · 5** (todas da CodeForge) |
+| ROI do pitch (premissas explícitas) | **≈ R$ 3,0 mi** no ano 1 contra R$ 0,4 mi de custo |
 
 **Para o aluno:** um projeto completo de ponta a ponta no GitHub, o tipo de entrega que toda empresa que vive de
 projeto compra, e o pitch pronto para vender para o dono.
@@ -86,10 +91,10 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
 | **3** | qua 21/10 | Cientista de Dados | Quais vão estourar nos próximos 30 dias? | modelo no Unity Catalog, score por projeto com motivo | prompts no Claude Code | [`aula-03-cientista`](aulas/aula-03-cientista) |
 | **4** | qui 22/10 | Engenheiro de IA | E o dono, que não escreve SQL? | agente de contratos e manual, app da Torre com aprovação no Lakebase, pitch de 3 min | prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
 
-> As pastas das noites 2 a 4 estão sendo migradas para o case da Vértice. Cada uma fica pronta na véspera da sua noite.
-
 **Apresentações** (abra o `.html` no navegador; ← → navega, F tela cheia):
-[visão geral do case](slides/visao-geral.html) · [noite 1](slides/aula-01.html)
+[visão geral do case](slides/visao-geral.html) ·
+[noite 1](slides/aula-01.html) · [noite 2](slides/aula-02.html) · [noite 3](slides/aula-03.html) · [noite 4](slides/aula-04.html) ·
+[**apresentação final**](slides/apresentacao-final.html) (o problema, as arquiteturas em Mermaid e os resultados)
 
 ```
   noite 1             noite 2               noite 3                noite 4
@@ -207,8 +212,13 @@ slides/                        as apresentações de cada noite (abra o .html no
 | Padrões da história | `python3 material/validar_padroes.py --dados ./dados` | `TODOS OS PADRÕES OK` |
 | Noite 1 no workspace | `python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile P` | 22 × `ok` |
 | Genie da noite 1 | `python3 scripts/genie.py perguntar "Farol · Noite 1 (bronze, sem curadoria)" "Quanto esse atraso vai me custar?" --profile P` | resposta errada, de propósito |
-
-As linhas das noites 2 a 4 entram quando cada noite for migrada.
+| Job completo (noites 2 e 3) | `cd aulas/aula-02-engenheiro/vertice && databricks bundle deploy --profile P && databricks bundle run vertice_farol --profile P` | 9 tarefas verdes, ~4 a 5 min |
+| Noite 2 | `python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile P` | 20 × `ok` |
+| Genie da noite 2 | `python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile P` | 20/20 |
+| Noite 3 | `python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile P` | 17 × `ok` |
+| Noite 4 | `python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile P` | 12 × `ok` |
+| Genie de contratos | `python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile P` | 10/10 |
+| App + Lakebase | `cd aulas/aula-04-engenheiro-ia/torre-app && npm test` e `python3 scripts/ver_decisoes.py` | 5 testes; a aprovação aparece no Postgres |
 
 ---
 
@@ -228,6 +238,7 @@ As linhas das noites 2 a 4 entram quando cada noite for migrada.
 | Lakeflow Declarative Pipelines (SQL) com `EXPECT` | ✅ | silver e gold |
 | Registro de modelo no Unity Catalog | ⚠️ falha com o MLflow do serverless (`s3:PutObject ... explicit deny`) | `%pip install -U "mlflow-skinny[databricks]>=2.21,<3"` + `restartPython()` |
 | Knowledge Assistant e Supervisor Agent | ❌ "legacy", não cria mais | agente de contratos com `ai_parse_document` + Genie |
+| Databricks Apps | ⚠️ no máximo 3 apps por workspace | libere um antes do deploy da noite 4 |
 | Endpoint de modelo próprio (Model Serving) | ❌ só modelos de base | o score de estouro roda em lote e grava na gold |
 
 ---

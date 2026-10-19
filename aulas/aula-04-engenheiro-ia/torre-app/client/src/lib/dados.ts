@@ -23,13 +23,19 @@ export const indice = (v: unknown) =>
   num(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const CAUSAS: Record<string, string> = {
-  chuva: 'chuva',
-  falta_material: 'falta de material',
-  falta_equipamento: 'falta de equipamento',
-  mao_de_obra: 'mão de obra',
-  retrabalho: 'retrabalho',
-  cliente: 'cliente',
-  sem_ocorrencia: '—',
+  change_freeze: 'change freeze',
+  falta_sre: 'falta de SRE',
+  dependencia_fornecedor: 'fornecedor atrasado',
+  rotatividade: 'rotatividade',
+  mudanca_escopo: 'escopo sem aditivo',
+  bug_retrabalho: 'bug e retrabalho',
+  aprovacao_cliente: 'aprovação do cliente',
+  sem_bloqueio: '—',
+};
+
+/** Qual causa do status cada papel destrava (o simulador só sugere destino compatível). */
+export const CAUSA_DO_PAPEL: Record<string, 'dias_falta_sre' | 'dias_rotatividade'> = {
+  sre: 'dias_falta_sre',
 };
 
 /** Cor semântica da situação: vermelho é crítico, âmbar é atenção. */

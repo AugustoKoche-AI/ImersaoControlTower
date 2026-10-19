@@ -1,7 +1,8 @@
 # 🧾 Os prompts, na ordem
 
-A Torre de Controle da Atlas Engenharia — da bronze crua ao Genie que explica
-por que a obra atrasou — sai de **prompts colados em sequência no Claude Code**.
+O Projeto Farol, a Torre de Controle da Vértice Tecnologia — das planilhas, listas do ClickUp e
+cronogramas do Project até o Genie que responde as quatro perguntas do dono — sai de
+**prompts colados em sequência no Claude Code**.
 Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 > **Cada prompt termina com um deploy.** Não junte dois: o valor do formato
@@ -9,16 +10,16 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo silver + gold, RDO com IA, 5 metric views, dashboard e Genie |
-| [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score em lote |
-| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | Genie da diretoria, o app da Torre e o agente de contratos |
+| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status e postmortems com IA, 5 metric views, dashboard e Genie |
+| [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
+| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | o agente de contratos e do manual, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
 ## Antes do primeiro prompt
 
-A noite 1 precisa estar feita: o catálogo `lakehouse_atlas` com a bronze
-carregada (12 tabelas). Se não estiver, rode o
+A noite 1 precisa estar feita: o catálogo `lakehouse_vertice` com a bronze
+carregada (13 tabelas). Se não estiver, rode o
 [`00-carregar-dados`](aulas/aula-01-analista/00-carregar-dados.py) e o
 [`01-ingestao-bronze.sql`](aulas/aula-01-analista/01-ingestao-bronze.sql).
 
@@ -28,17 +29,16 @@ brew tap databricks/tap && brew install databricks     # Windows: winget install
 databricks auth login --profile <perfil>
 databricks auth profiles                                # o seu aparece com Valid: YES
 
-# 2 · o Claude Code e as skills oficiais do Databricks
+# 2 · o Claude Code (as skills oficiais do Databricks já vêm em .claude/skills)
 npm install -g @anthropic-ai/claude-code
-databricks aitools install
 
 # 3 · conferir que a bronze está lá
 python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile <perfil>
 ```
 
-**A pasta `aulas/aula-02-engenheiro/meu-atlas/` nasce vazia** — é o prompt 1 que
-a preenche. A pasta `atlas/` ao lado é o gabarito. Se você já rodou antes, zere
-com `BUNDLE_DIR=aulas/aula-02-engenheiro/meu-atlas bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar`.
+**A pasta `aulas/aula-02-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
+a preenche. A pasta `vertice/` ao lado é o gabarito. Se você já rodou antes, zere
+com `BUNDLE_DIR=aulas/aula-02-engenheiro/meu-vertice bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar`.
 
 Nos prompts abaixo, **troque `<perfil>` pelo seu profile**.
 

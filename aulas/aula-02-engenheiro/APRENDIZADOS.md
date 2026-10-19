@@ -1,33 +1,35 @@
 # Aprendizados do ensaio da noite 2 · Free Edition, 18/10/2026
 
 Medido no workspace `dbc-84cd5511` (profile `imersao-out26`), construindo o
-bundle `atlas` do zero, apagando com `prd/00-reset.sh --apagar` e reconstruindo.
+bundle `vertice` sobre a bronze da noite 1.
 
 ## O que falhou e como foi resolvido
 
 | # | O que aconteceu | Mensagem | Solução adotada |
 |---|---|---|---|
-| 1 | `lag()` dentro de `SUM()` no pipeline | `It is not allowed to use a window function inside an aggregate function` | CTE com o `lag()` (delta por tarefa) e `SUM` no CTE seguinte |
-| 2 | Genie do bundle no deploy do zero | `Failed to fetch tables for the agent ... Table 'lakehouse_atlas.gold.x' does not exist` | O Genie exige as tabelas. Do zero: deploy → run → deploy. Na aula acontece natural: o Genie só entra no prompt 6 |
+| 1 | Função de janela dentro de agregação no pipeline | `It is not allowed to use a window function inside an aggregate function` | CTE com a janela (`last_value`, `SUM OVER`) e a conta no CTE seguinte |
+| 2 | Genie do bundle no deploy do zero | `Failed to fetch tables for the agent ... Table 'lakehouse_vertice.gold.x' does not exist` | O Genie exige as tabelas. Do zero: deploy → run → deploy. Na aula acontece natural: o Genie só entra no prompt 6 |
 | 3 | IDs do `serialized_space` | `Duplicate question ID ... first seen in config.sample_questions[0]` | IDs de 32 caracteres: prefixo + número com zero à esquerda até 32 (não truncar) |
-| 4 | `bundle destroy` apagou o pipeline, mas não as tabelas | 20 materialized views órfãs na silver e gold | `00-reset.sh` apaga uma a uma via `information_schema` (só silver e gold) |
-| 5 | `bundle run` logo após um deploy | `An active update '...' already exists for pipeline` | Esperar o update terminar; não rodar duas vezes |
-| 6 | Genie API com erro de rede | `Post ".../start-conversation": EOF` | `scripts/genie.py` com retry (EOF, 429, 5xx) e erro por pergunta no benchmark |
-| 7 | Benchmark marcou errado uma resposta certa | Genie devolveu `2270,4`; referência arredondava para `2270` | Comparador com 2 casas e aceitando colunas extras do Genie; referência sem `ROUND(..., 0)` |
+| 4 | `bundle destroy` apaga o pipeline, mas não as tabelas | materialized views órfãs na silver e gold | `00-reset.sh` apaga uma a uma via `information_schema` (só silver e gold) |
+| 5 | XML do Project lido com `inferColumnTypes => false` | a `Baseline` vira texto (`<Number>0</Number>...`) | No XML e no JSON a inferência fica ligada: é ela que mantém a estrutura |
+| 6 | `ai_extract` sem schema | todo campo volta como texto (`"7"`) | Versão 2.0 com JSON schema tipado: `{"dias_impacto":{"type":"number"}}` e `map('version','2.0')` |
+| 7 | Genie curado, 1ª rodada do benchmark: 18/20 | ranking feito na metric view com `HAVING` inválido; cliente repetido por projeto | Duas instruções: ranking em `projeto_situacao_atual`; "quais clientes" = um por cliente. 20/20 |
+| 8 | "O que vai dar errado no próximo mês?" | `FAILED` | Exemplo de SQL com `UNION ALL` de ruptura de capacidade, entregas atrasadas e freeze |
+| 9 | Bundle copiado de outro projeto com a pasta `.databricks/` junto | o deploy editaria os recursos do projeto antigo | Apagar a `.databricks/` local antes do primeiro deploy de um bundle copiado ou renomeado |
 
-## O que funciona (e não funcionava em agosto)
+## O que funciona (medido em 18/10/2026)
 
-| Recurso | Status em 18/10/2026 |
+| Recurso | Status |
 |---|---|
 | Lakeflow Spark Declarative Pipelines serverless em SQL, com `EXPECT ... FAIL UPDATE` | ✅ ~2 min por execução |
-| Pipeline escrevendo em dois schemas (silver padrão + `lakehouse_atlas.gold.x`) | ✅ |
+| `CREATE TEMPORARY VIEW` dentro do pipeline (uma visão por ferramenta) | ✅ aparecem no grafo, não no catálogo |
+| Pipeline escrevendo em dois schemas (silver padrão + `lakehouse_vertice.gold.x`) | ✅ |
 | `pipeline_task` dentro do job do bundle (`${resources.pipelines.x.id}`) | ✅ |
 | Metric views (`WITH METRICS LANGUAGE YAML`, v1.1, `comment`, `synonyms`, `joins using`, `filter`) | ✅ via `sql_task` ou API de statements |
 | Metric view pelo `aitools tools query` | ❌ achata a indentação do YAML |
-| `ai_classify` no SQL Warehouse | ✅ ~3,7 linhas/s (500 RDOs em 2 min 15 s) |
+| `ai_classify` e `ai_extract` versão 2.0 no SQL Warehouse | ✅ ~5 s por texto com as duas; 163 status em ~2 min |
 | Dashboard e Genie como recurso do bundle (`dashboards`, `genie_spaces`) | ✅ |
 | Genie com metric views como fonte (`data_sources.metric_views`) | ✅ |
-| Lakebase | ✅ cria projeto (`databricks postgres create-project`) — testado pelo pai |
 | Knowledge Assistant e Supervisor Agent | ❌ "legacy feature ... use Genie Agents instead" |
 
 ## Tempos medidos
@@ -36,20 +38,25 @@ bundle `atlas` do zero, apagando com `prd/00-reset.sh --apagar` e reconstruindo.
 |---|---|
 | `bundle validate` | ~3 s |
 | `bundle deploy` (primeiro / seguintes) | ~10 s / ~7 s |
-| Pipeline silver + gold (primeira execução, com cold start) | ~2 min 30 s |
-| Tarefa `rdo_com_ia` (977 RDOs na IA) | ~3 min na 1ª; **6,5 s** na seguinte (MERGE incremental) |
-| Job `atlas_torre` completo, do zero | **5 min 31 s** (1ª) e **5 min 42 s** (após reset) |
-| `00-reset.sh --apagar` | ~20 s + drop das 20 views |
-| Benchmark de 20 perguntas no Genie | ~6 min 25 s · **19/20** na 1ª rodada, **20/20** no Genie recriado do zero |
+| Pipeline silver + gold (primeira execução, com cold start) | ~2 min |
+| Tarefa `status_com_ia` (163 status na IA) | ~2 min |
+| Tarefa `postmortem_com_ia` (101 postmortems) | ~1 min |
+| 5 metric views | ~20 s |
+| Benchmark de 20 perguntas no Genie | ~6 min · **18/20** na 1ª rodada, **20/20** depois de duas instruções |
 
 ## Decisões de modelagem que viraram conteúdo de aula
 
-- **% acima de 100 → última medição do boletim**, não `LEAST(pct, 100)`. Isso
-  muda o estouro previsto de R$ 41,9 mi (noite 1) para R$ 42,36 mi: o atalho
-  escondia R$ 0,46 mi.
-- **Ruptura prevista** = cobertura < dias até a próxima entrega **prometida**;
-  se a promessa já venceu, conta o lead time contratado. Dá 97 rupturas (o
-  `material/validar_padroes.py` usa a versão ingênua `max(0, dias)` e dá 76).
-- **IA só onde ela é a certa:** regra para "sem ocorrência" (8.878 RDOs), IA nos
-  últimos 90 dias com ocorrência (977), palavra-chave no histórico (3.875).
-  `MERGE` incremental: a segunda execução não chama a IA de novo.
+- **A integração é um contrato de colunas.** Cada ferramenta vira uma `TEMPORARY VIEW` com
+  as mesmas 13 colunas; a `silver.tarefas` é o `UNION ALL`. O teste 3 prova que nada se
+  perdeu: as horas do Excel na silver = a soma das linhas de TOTAL das planilhas.
+- **O de-para é dado.** `silver.projetos` diz qual arquivo ou lista é qual projeto. Quando o
+  código falta, casa pelo nome do arquivo (Excel) ou da lista (ClickUp), e o
+  `EXPECT achou_o_projeto` garante que nenhuma tarefa fica órfã.
+- **O histórico vem do status semanal.** As ferramentas só guardam o % de hoje. O fato
+  semanal usa o % do status de cada sexta; a fotografia de hoje usa as tarefas. O teste 9
+  confere que os dois concordam hoje (diferença < 1%).
+- **% acima de 100 → 100 com flag.** Não há medição melhor em outro sistema (as
+  ferramentas só guardam o % de hoje): a decisão honesta é cortar e sinalizar (`pct_veio_acima_de_100`, 11 tarefas).
+- **IA só onde ela é a certa:** regra para "sem bloqueio" (2.954 status), IA nos últimos 90
+  dias com bloqueio (163), palavra-chave no histórico (794). `MERGE` incremental: a segunda
+  execução não chama a IA de novo.

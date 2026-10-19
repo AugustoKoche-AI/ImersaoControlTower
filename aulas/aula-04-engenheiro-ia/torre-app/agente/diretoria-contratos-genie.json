@@ -5,25 +5,25 @@
       {
         "id": "e1000000000000000000000000000001",
         "question": [
-          "Por que a obra P011 atrasou e o que o contrato diz sobre isso?"
+          "Quanto a Vértice pode cobrar de multa da CodeForge?"
         ]
       },
       {
         "id": "e1000000000000000000000000000002",
         "question": [
-          "Qual a multa estimada de cada obra com contrato?"
+          "Quais contratos precisam de decisão por causa do aviso prévio?"
         ]
       },
       {
         "id": "e1000000000000000000000000000003",
         "question": [
-          "Onde tenho guindaste parado que poderia ir para a P011?"
+          "Por que o PRJ-011 atrasou e o que o manual manda fazer?"
         ]
       },
       {
         "id": "e1000000000000000000000000000004",
         "question": [
-          "Quais obras críticas estão expostas a multa?"
+          "Tenho SRE parado que poderia ir para o PRJ-011?"
         ]
       }
     ]
@@ -31,42 +31,45 @@
   "data_sources": {
     "tables": [
       {
-        "identifier": "lakehouse_atlas.gold.cobertura_estoque"
+        "identifier": "lakehouse_vertice.gold.cobertura_capacidade"
       },
       {
-        "identifier": "lakehouse_atlas.gold.contratos_clausulas"
+        "identifier": "lakehouse_vertice.gold.contratos_avisos"
       },
       {
-        "identifier": "lakehouse_atlas.gold.contratos_exposicao"
+        "identifier": "lakehouse_vertice.gold.contratos_clausulas"
       },
       {
-        "identifier": "lakehouse_atlas.gold.contratos_resumo"
+        "identifier": "lakehouse_vertice.gold.contratos_multa_fornecedor"
       },
       {
-        "identifier": "lakehouse_atlas.gold.desempenho_fornecedor"
+        "identifier": "lakehouse_vertice.gold.contratos_resumo"
       },
       {
-        "identifier": "lakehouse_atlas.gold.obra_situacao_atual"
+        "identifier": "lakehouse_vertice.gold.desempenho_fornecedor"
       },
       {
-        "identifier": "lakehouse_atlas.gold.pedidos_em_atraso"
+        "identifier": "lakehouse_vertice.gold.entregas_em_atraso"
       },
       {
-        "identifier": "lakehouse_atlas.gold.rdo_estruturado"
+        "identifier": "lakehouse_vertice.gold.manual_secoes"
       },
       {
-        "identifier": "lakehouse_atlas.gold.score_estouro_30d"
+        "identifier": "lakehouse_vertice.gold.projeto_situacao_atual"
       },
       {
-        "identifier": "lakehouse_atlas.gold.utilizacao_equipamento_semana"
+        "identifier": "lakehouse_vertice.gold.score_estouro_30d"
       },
       {
-        "identifier": "lakehouse_atlas.gold.utilizacao_equipe_semana"
+        "identifier": "lakehouse_vertice.gold.status_estruturado"
+      },
+      {
+        "identifier": "lakehouse_vertice.gold.utilizacao_pessoa_semana"
       }
     ],
     "metric_views": [
       {
-        "identifier": "lakehouse_atlas.gold.mv_obras"
+        "identifier": "lakehouse_vertice.gold.mv_projetos"
       }
     ]
   },
@@ -75,14 +78,15 @@
       {
         "id": "e2000000000000000000000000000001",
         "content": [
-          "Você é o assessor da DIRETORIA da Construtora Atlas Engenharia (EPC, 40 obras). A ATLAS É A CONTRATADA em todos os contratos; o cliente é a CONTRATANTE. Multa por atraso é CUSTO DA ATLAS, e prorrogação é um direito que a Atlas pleiteia ao cliente. Nunca recomende 'cobrar a contratada'. Responda em português, curto, com números em reais (R$) e índices com 2 casas. Termine com uma recomendação de uma linha quando a pergunta pedir decisão.\n",
-          "HOJE é 16/10/2026. Nunca use current_date(). 'Últimos 90 dias' = data >= DATE'2026-07-18'; 'últimas 12 semanas' = semana > DATE'2026-07-24'.\n",
-          "KPIs: SPI = EV/PV (< 1 é atraso), CPI = EV/AC (< 1 é estouro). Atenção: SPI ou CPI < 0,9; crítico: < 0,8. Fotografia de hoje: obra_situacao_atual (ou mv_obras com MEASURE()). Obras concluídas não entram em risco. 'Em risco' = atenção + crítico SOMADOS num número só (hoje são 13), a menos que peçam a quebra por situação.\n",
-          "Causa do atraso: rdo_estruturado (causa_atraso, dias_impacto), contando os últimos 90 dias e ignorando 'sem_ocorrencia' e 'nao_reportado'.\n",
-          "CONTRATOS: só 8 obras têm contrato digitalizado (P002, P005, P007, P011, P014, P018, P024, P033). contratos_resumo tem os campos estruturados (multa_dia_pct, teto_multa_pct, chuva_da_prorrogacao, icamento_responsavel, estrutura_fornecida_por, prazo_aditivo_dias, reajuste, bonus_antecipacao). contratos_clausulas tem o texto de cada cláusula: SEMPRE cite o número da cláusula e um trecho curto do texto quando responder o que o contrato diz. contratos_exposicao já calcula a multa estimada em R$ (valor do contrato × min(atraso projetado × multa diária, teto)).\n",
-          "Regras de leitura do contrato: se chuva_da_prorrogacao = true, os dias de chuva registrados no RDO (comunicados em 48 h) podem ser excluídos do atraso: diga quantos RDOs e dias de chuva a Atlas pode pleitear e quanto isso reduz a multa; se false, chuva não afasta multa. Se icamento_responsavel = 'contratada', falta de guindaste é risco da Atlas e NÃO dá prorrogação. Aditivo de escopo precisa ser pleiteado em prazo_aditivo_dias dias do fato gerador, senão o direito se perde.\n",
-          "Para 'onde tenho guindaste/equipamento parado', use utilizacao_equipamento_semana nas últimas 12 semanas: utilização média abaixo de 20% = ocioso. Para gente parada, utilizacao_equipe_semana (horas_ociosas).\n",
-          "Quando citar uma obra, use projeto_id e nome (ex.: P011 · Pátio de estocagem de minério Canaã dos Carajás).\n",
+          "Você é o assessor do DONO da Vértice Tecnologia (empresa de tecnologia, 520 pessoas, 60 projetos de clientes). Nos contratos de fornecedor e SaaS, a VÉRTICE É A CONTRATANTE e o fornecedor é a CONTRATADA: multa por atraso é dinheiro que a Vértice pode COBRAR (descontar da fatura do fornecedor). Responda em português, curto, com números em reais (R$) e índices com 2 casas. Termine com uma recomendação de uma linha quando a pergunta pedir decisão.\n",
+          "HOJE é 16/10/2026. Nunca use current_date(). 'Últimos 90 dias' = data >= DATE'2026-07-18'; 'últimas 12 semanas' = semana > DATE'2026-07-24'; 'próximos 60 dias' = até 15/12/2026.\n",
+          "KPIs: SPI = EV/PV (< 1 é atraso), CPI = EV/AC (< 1 é estouro). Atenção: SPI ou CPI < 0,9; crítico: < 0,8. Fotografia de hoje: projeto_situacao_atual com status = 'em_andamento' (ou mv_projetos com MEASURE()). 'Em risco' = atenção + crítico somados (hoje são 17), a menos que peçam a quebra por situação.\n",
+          "Causa do atraso: status_estruturado (causa_bloqueio, bloqueio, quem_destrava, dias_impacto) nos últimos 90 dias, ignorando 'sem_bloqueio' e 'nao_reportado'. Gente parada: utilizacao_pessoa_semana nas últimas 12 semanas, SUM(horas_apontadas) / SUM(horas_disponiveis) < 0,2.\n",
+          "CONTRATOS: são 8 contratos de fornecedor e SaaS (CodeForge, Pixel Design Studio, QualiTest Brasil, SecureOps Segurança, DataPrime Analytics, NuvemSul Cloud, Observa360, CodeVault). contratos_resumo tem os campos estruturados (valor_anual, data_fim_vigencia, renovacao_automatica, aviso_previo_dias, multa_atraso_pct_dia, teto_multa_pct, sla, reajuste). contratos_clausulas tem o texto de cada cláusula: SEMPRE cite o número da cláusula e um trecho curto quando disser o que o contrato diz. Para valores de um contrato específico, filtre contratos_resumo por fornecedor com LIKE (ex.: fornecedor LIKE '%NuvemSul%').\n",
+          "MULTA de fornecedor: contratos_multa_fornecedor já calcula multa_cobravel por entrega atrasada (valor × % ao dia × dias de atraso, com teto). 'Na vigência atual' / 'no contrato atual' = na_vigencia_atual = true; sem esse qualificador, informe o total e o da vigência atual. Some multa_cobravel; conte entregas com COUNT(*).\n",
+          "AVISO PRÉVIO: contratos_avisos tem data_limite_aviso (fim da vigência menos aviso prévio), dias_ate_limite e situacao_aviso ('vencido', 'vence em até 60 dias', 'ok'). 'Já passou' = 'vencido'; 'próximos 60 dias' = 'vence em até 60 dias'. Explique o que fazer com a coluna o_que_fazer (depende de renovacao_automatica).\n",
+          "MANUAL: manual_secoes tem as 10 seções do Manual de Tecnologias da Vértice (secao_numero, titulo, texto): stack, ambientes, deploy, CHANGE FREEZE DE VAREJO (seção 4), ALOCAÇÃO DE SRE (seção 5), severidade, postmortem, STATUS SEMANAL E FAROL (seção 8), consultorias, segurança. Para 'o que o manual diz' ou 'em qual seção', devolva secao_numero, titulo e texto da seção, filtrando por titulo com LIKE.\n",
+          "Quando citar um projeto, use projeto_id e nome (ex.: PRJ-011 · Checkout e meios de pagamento - Supermercados Bom Preço).\n",
           "Probabilidade de estouro nos próximos 30 dias: score_estouro_30d (prob_estouro_30d de 0 a 1, ranking, faixa_risco, principais_fatores), modelo treinado na noite 3. Use a data_referencia mais recente.\n"
         ]
       }
@@ -91,46 +95,55 @@
       {
         "id": "e3000000000000000000000000000001",
         "question": [
-          "Por que a obra P011 atrasou e o que o contrato diz sobre isso?"
+          "Quanto a Vértice pode cobrar de multa da CodeForge?"
         ],
         "sql": [
-          "WITH causa AS (SELECT causa_atraso, COUNT(*) AS rdos, SUM(coalesce(dias_impacto, 0)) AS dias_impacto FROM lakehouse_atlas.gold.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso NOT IN ('sem_ocorrencia', 'nao_reportado') GROUP BY causa_atraso) SELECT c.causa_atraso, c.rdos, c.dias_impacto, cl.clausula_numero, cl.titulo, cl.texto, e.atraso_projetado_dias, e.multa_estimada FROM causa c CROSS JOIN lakehouse_atlas.gold.contratos_exposicao e LEFT JOIN lakehouse_atlas.gold.contratos_clausulas cl ON cl.projeto_id = 'P011' AND cl.clausula_numero = CASE c.causa_atraso WHEN 'chuva' THEN 5 WHEN 'falta_equipamento' THEN 6 WHEN 'falta_material' THEN 7 ELSE 4 END WHERE e.projeto_id = 'P011' ORDER BY c.rdos DESC"
+          "SELECT fornecedor, ROUND(SUM(multa_cobravel), 2) AS multa_total, ROUND(SUM(multa_cobravel) FILTER (WHERE na_vigencia_atual), 2) AS multa_na_vigencia_atual, COUNT(*) FILTER (WHERE na_vigencia_atual) AS entregas_atrasadas_na_vigencia_atual FROM lakehouse_vertice.gold.contratos_multa_fornecedor WHERE fornecedor LIKE '%CodeForge%' GROUP BY fornecedor"
         ]
       },
       {
         "id": "e3000000000000000000000000000002",
         "question": [
-          "Qual a multa estimada de cada obra com contrato?"
+          "Quais contratos precisam de decisão por causa do aviso prévio?"
         ],
         "sql": [
-          "SELECT projeto_id, obra, situacao, atraso_projetado_dias, multa_dia_pct, teto_multa_pct, multa_estimada, multa_no_teto FROM lakehouse_atlas.gold.contratos_exposicao ORDER BY multa_estimada DESC"
+          "SELECT fornecedor, data_fim_vigencia, aviso_previo_dias, data_limite_aviso, dias_ate_limite, situacao_aviso, o_que_fazer FROM lakehouse_vertice.gold.contratos_avisos WHERE situacao_aviso <> 'ok' ORDER BY dias_ate_limite"
         ]
       },
       {
         "id": "e3000000000000000000000000000003",
         "question": [
-          "Onde tenho guindaste parado que poderia ir para a P011?"
+          "O que o manual diz sobre o change freeze?"
         ],
         "sql": [
-          "SELECT equipamento_id, modelo, projeto_id, obra, uf, ROUND(AVG(utilizacao), 3) AS utilizacao_media, SUM(horas_paradas) AS horas_paradas, SUM(custo_ocioso) AS custo_ocioso FROM lakehouse_atlas.gold.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' GROUP BY ALL HAVING AVG(utilizacao) < 0.2 ORDER BY utilizacao_media"
+          "SELECT secao_numero, titulo, texto FROM lakehouse_vertice.gold.manual_secoes WHERE titulo LIKE '%FREEZE%'"
         ]
       },
       {
         "id": "e3000000000000000000000000000004",
         "question": [
-          "Quantas obras estão em risco?"
+          "Por que o PRJ-011 atrasou e o que o manual manda fazer?"
         ],
         "sql": [
-          "SELECT COUNT(*) AS obras_em_risco FROM lakehouse_atlas.gold.obra_situacao_atual WHERE status = 'em_andamento' AND situacao IN ('crítico', 'atenção')"
+          "WITH causa AS (SELECT causa_bloqueio, COUNT(*) AS semanas FROM lakehouse_vertice.gold.status_estruturado WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') GROUP BY causa_bloqueio) SELECT c.causa_bloqueio, c.semanas, m.secao_numero, m.titulo, m.texto FROM causa c LEFT JOIN lakehouse_vertice.gold.manual_secoes m ON m.secao_numero = CASE c.causa_bloqueio WHEN 'falta_sre' THEN 5 WHEN 'change_freeze' THEN 4 WHEN 'dependencia_fornecedor' THEN 9 ELSE 8 END ORDER BY c.semanas DESC"
         ]
       },
       {
         "id": "e3000000000000000000000000000005",
         "question": [
-          "Em quais contratos a chuva dá direito a prorrogação?"
+          "Qual a multa por atraso e o teto no contrato da CodeForge?"
         ],
         "sql": [
-          "SELECT r.projeto_id, o.obra, r.chuva_da_prorrogacao, cl.texto AS clausula_5 FROM lakehouse_atlas.gold.contratos_resumo r JOIN lakehouse_atlas.gold.obra_situacao_atual o USING (projeto_id) JOIN lakehouse_atlas.gold.contratos_clausulas cl ON cl.projeto_id = r.projeto_id AND cl.clausula_numero = 5 ORDER BY r.projeto_id"
+          "SELECT r.fornecedor, r.multa_atraso_pct_dia, r.teto_multa_pct, c.clausula_numero, c.texto FROM lakehouse_vertice.gold.contratos_resumo r JOIN lakehouse_vertice.gold.contratos_clausulas c ON c.fornecedor = r.fornecedor AND c.titulo LIKE 'MULTA%' WHERE r.fornecedor LIKE '%CodeForge%'"
+        ]
+      },
+      {
+        "id": "e3000000000000000000000000000006",
+        "question": [
+          "Tenho SRE parado que poderia ir para o PRJ-011?"
+        ],
+        "sql": [
+          "SELECT colaborador_id, nome, papel, projeto_id, projeto, ROUND(SUM(horas_apontadas) / SUM(horas_disponiveis), 3) AS utilizacao, SUM(horas_ociosas) AS horas_ociosas, SUM(custo_ocioso) AS custo_ocioso FROM lakehouse_vertice.gold.utilizacao_pessoa_semana WHERE papel = 'sre' AND semana > DATE'2026-07-24' GROUP BY ALL HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2 ORDER BY utilizacao"
         ]
       }
     ]

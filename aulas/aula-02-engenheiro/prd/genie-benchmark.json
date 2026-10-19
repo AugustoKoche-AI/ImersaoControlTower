@@ -1,82 +1,82 @@
 [
   {
-    "pergunta": "Quantas obras em andamento estão em situação crítica?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE situacao = 'crítico'"
+    "pergunta": "Quantos projetos em andamento estão em situação crítica?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' AND situacao = 'crítico'"
   },
   {
-    "pergunta": "Quantas obras em andamento estão em situação de atenção?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE situacao = 'atenção'"
+    "pergunta": "Quantos projetos em andamento estão em situação de atenção?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' AND situacao = 'atenção'"
   },
   {
-    "pergunta": "Quais são os códigos das obras críticas?",
-    "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.obra_situacao_atual WHERE situacao = 'crítico'"
+    "pergunta": "Quais são os códigos dos projetos críticos?",
+    "sql_referencia": "SELECT projeto_id FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' AND situacao = 'crítico'"
   },
   {
-    "pergunta": "Qual é o SPI da obra P011?",
-    "sql_referencia": "SELECT ROUND(spi, 2) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE projeto_id = 'P011'"
+    "pergunta": "Qual é o SPI do projeto PRJ-011?",
+    "sql_referencia": "SELECT ROUND(spi, 2) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE projeto_id = 'PRJ-011'"
   },
   {
-    "pergunta": "Qual é o CPI da obra P018?",
-    "sql_referencia": "SELECT ROUND(cpi, 2) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE projeto_id = 'P018'"
-  },
-  {
-    "pergunta": "Qual é o CPI da carteira em andamento?",
-    "sql_referencia": "SELECT ROUND(MEASURE(cpi), 2) FROM lakehouse_atlas.gold.mv_obras"
+    "pergunta": "Qual é o CPI do projeto PRJ-009?",
+    "sql_referencia": "SELECT ROUND(cpi, 2) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE projeto_id = 'PRJ-009'"
   },
   {
     "pergunta": "Qual é o SPI da carteira em andamento?",
-    "sql_referencia": "SELECT ROUND(MEASURE(spi), 2) FROM lakehouse_atlas.gold.mv_obras"
+    "sql_referencia": "SELECT ROUND(MEASURE(spi), 2) FROM lakehouse_vertice.gold.mv_projetos"
   },
   {
-    "pergunta": "Qual é o estouro de custo previsto total das obras em andamento, em reais?",
-    "sql_referencia": "SELECT MEASURE(estouro_previsto) FROM lakehouse_atlas.gold.mv_obras"
+    "pergunta": "Qual é o CPI da carteira em andamento?",
+    "sql_referencia": "SELECT ROUND(MEASURE(cpi), 2) FROM lakehouse_vertice.gold.mv_projetos"
   },
   {
-    "pergunta": "Qual obra tem o maior estouro de custo previsto? Responda com o código da obra.",
-    "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.obra_situacao_atual ORDER BY estouro_previsto DESC LIMIT 1"
+    "pergunta": "Qual é o estouro previsto total da carteira em andamento, em reais?",
+    "sql_referencia": "SELECT ROUND(MEASURE(estouro_previsto), 2) FROM lakehouse_vertice.gold.mv_projetos"
   },
   {
-    "pergunta": "Quantas obras em andamento têm margem projetada negativa?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.obra_situacao_atual WHERE status = 'em_andamento' AND margem_projetada < 0"
+    "pergunta": "Qual projeto em andamento tem o maior estouro previsto?",
+    "sql_referencia": "SELECT projeto_id FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' ORDER BY estouro_previsto DESC LIMIT 1"
   },
   {
-    "pergunta": "Qual fornecedor entrega mais atrasado em relação ao lead time prometido?",
-    "sql_referencia": "SELECT fornecedor FROM lakehouse_atlas.gold.desempenho_fornecedor ORDER BY fator_atraso DESC LIMIT 1"
+    "pergunta": "Qual projeto em andamento tem o maior atraso projetado em dias?",
+    "sql_referencia": "SELECT projeto_id FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' ORDER BY atraso_projetado_dias DESC LIMIT 1"
   },
   {
-    "pergunta": "Quantos pedidos de compra estão em atraso hoje?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.pedidos_em_atraso"
+    "pergunta": "Quais clientes têm projetos críticos?",
+    "sql_referencia": "SELECT DISTINCT cliente FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' AND situacao = 'crítico'"
   },
   {
-    "pergunta": "Quantos pedidos em atraso são da Metalúrgica Norte Aço?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.pedidos_em_atraso WHERE fornecedor = 'Metalúrgica Norte Aço Ltda'"
+    "pergunta": "Quantos projetos estão com farol verde mas com SPI abaixo de 0,9?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE melancia"
   },
   {
-    "pergunta": "Quantas rupturas de estoque estão previstas hoje?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.cobertura_estoque WHERE ruptura_prevista"
+    "pergunta": "Quais projetos estão com farol verde mas atrasados (SPI abaixo de 0,9)?",
+    "sql_referencia": "SELECT projeto_id FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE melancia"
   },
   {
-    "pergunta": "Qual obra tem mais rupturas de estoque previstas? Responda com o código da obra.",
-    "sql_referencia": "SELECT projeto_id FROM lakehouse_atlas.gold.cobertura_estoque WHERE ruptura_prevista GROUP BY projeto_id ORDER BY COUNT(*) DESC, projeto_id LIMIT 1"
+    "pergunta": "Quantos projetos em andamento são gerenciados no Excel?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento' AND ferramenta = 'excel'"
   },
   {
-    "pergunta": "Quais guindastes tiveram utilização abaixo de 20% nas últimas 12 semanas?",
-    "sql_referencia": "SELECT equipamento_id FROM lakehouse_atlas.gold.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' GROUP BY equipamento_id HAVING SUM(horas_operadas) / SUM(horas_disponiveis) < 0.2"
+    "pergunta": "Qual fornecedor mais atrasa as entregas?",
+    "sql_referencia": "SELECT fornecedor FROM lakehouse_vertice.gold.desempenho_fornecedor ORDER BY fator_atraso DESC LIMIT 1"
   },
   {
-    "pergunta": "Em qual obra estão os guindastes com utilização abaixo de 20% nas últimas 12 semanas? Responda com o código da obra.",
-    "sql_referencia": "SELECT DISTINCT projeto_id FROM (SELECT equipamento_id, projeto_id FROM lakehouse_atlas.gold.utilizacao_equipamento_semana WHERE tipo = 'guindaste' AND semana > DATE'2026-07-24' GROUP BY equipamento_id, projeto_id HAVING SUM(horas_operadas) / SUM(horas_disponiveis) < 0.2)"
+    "pergunta": "Quantas entregas de fornecedor estão em atraso hoje?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.entregas_em_atraso"
   },
   {
-    "pergunta": "Qual foi a principal causa de atraso registrada nos RDOs da obra P011 nos últimos 90 dias, sem contar dias sem ocorrência?",
-    "sql_referencia": "SELECT causa_atraso FROM lakehouse_atlas.gold.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso NOT IN ('sem_ocorrencia', 'nao_reportado') GROUP BY causa_atraso ORDER BY COUNT(*) DESC LIMIT 1"
+    "pergunta": "Quantos contratos de capacidade têm ruptura prevista?",
+    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_vertice.gold.cobertura_capacidade WHERE ruptura_prevista"
   },
   {
-    "pergunta": "Quantos RDOs da obra P011 registraram falta de equipamento nos últimos 90 dias?",
-    "sql_referencia": "SELECT COUNT(*) FROM lakehouse_atlas.gold.rdo_estruturado WHERE projeto_id = 'P011' AND data >= DATE'2026-07-18' AND causa_atraso = 'falta_equipamento'"
+    "pergunta": "Quais SREs estão com utilização abaixo de 20% nas últimas 12 semanas?",
+    "sql_referencia": "SELECT colaborador_id FROM lakehouse_vertice.gold.utilizacao_pessoa_semana WHERE papel = 'sre' AND semana > DATE'2026-07-24' GROUP BY colaborador_id HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2"
   },
   {
-    "pergunta": "Quantas horas ociosas de equipe a obra P011 teve nas últimas 8 semanas?",
-    "sql_referencia": "SELECT SUM(horas_ociosas) FROM lakehouse_atlas.gold.utilizacao_equipe_semana WHERE projeto_id = 'P011' AND semana > DATE'2026-08-21'"
+    "pergunta": "Qual foi a principal causa de bloqueio do projeto PRJ-011 nos últimos 90 dias?",
+    "sql_referencia": "SELECT causa_bloqueio FROM lakehouse_vertice.gold.status_estruturado WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio NOT IN ('sem_bloqueio', 'nao_reportado') GROUP BY causa_bloqueio ORDER BY COUNT(*) DESC LIMIT 1"
+  },
+  {
+    "pergunta": "Qual categoria de causa gerou mais incidentes em produção?",
+    "sql_referencia": "SELECT categoria_causa FROM lakehouse_vertice.gold.postmortem_estruturado GROUP BY categoria_causa ORDER BY COUNT(*) DESC LIMIT 1"
   }
 ]

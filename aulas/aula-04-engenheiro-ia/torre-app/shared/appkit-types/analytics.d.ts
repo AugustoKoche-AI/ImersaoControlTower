@@ -10,31 +10,61 @@ declare module "@databricks/appkit-ui/react" {
         parameters: Record<string, never>;
         result: Array<{
           /** @sqlType BIGINT */
-          obras_em_andamento: number;
+          projetos_em_andamento: number;
           /** @sqlType BIGINT */
-          obras_em_risco: number;
+          projetos_em_risco: number;
           /** @sqlType BIGINT */
-          obras_criticas: number;
+          projetos_criticos: number;
+          /** @sqlType BIGINT */
+          projetos_melancia: number;
           /** @sqlType DECIMAL(28,2) */
           estouro_previsto: number;
           /** @sqlType DECIMAL(28,2) */
           carteira: number;
           /** @sqlType BIGINT */
-          rupturas_previstas: number;
+          rupturas_capacidade: number;
+          /** @sqlType DECIMAL(28,2) */
+          multa_a_cobrar: number;
         }>;
       };
-    obras_risco: {
-        name: "obras_risco";
+    pessoas_ociosas: {
+        name: "pessoas_ociosas";
+        parameters: Record<string, never>;
+        result: Array<{
+          /** @sqlType STRING */
+          colaborador_id: string;
+          /** @sqlType STRING */
+          nome: string;
+          /** @sqlType STRING */
+          papel: string;
+          /** @sqlType STRING */
+          senioridade: string;
+          /** @sqlType STRING */
+          projeto_origem: string;
+          /** @sqlType STRING */
+          projeto_origem_nome: string;
+          /** @sqlType DOUBLE */
+          utilizacao_media: number;
+          /** @sqlType DOUBLE */
+          horas_paradas_semana: number;
+          /** @sqlType DECIMAL(29,2) */
+          custo_ocioso_semana: number;
+          /** @sqlType DECIMAL(10,2) */
+          custo_hora: number;
+        }>;
+      };
+    projetos_risco: {
+        name: "projetos_risco";
         parameters: Record<string, never>;
         result: Array<{
           /** @sqlType STRING */
           projeto_id: string;
           /** @sqlType STRING */
-          obra: string;
+          projeto: string;
           /** @sqlType STRING */
           cliente: string;
           /** @sqlType STRING */
-          uf: string;
+          ferramenta: string;
           /** @sqlType STRING */
           situacao: string;
           /** @sqlType DOUBLE */
@@ -43,52 +73,26 @@ declare module "@databricks/appkit-ui/react" {
           cpi: number;
           /** @sqlType DECIMAL(18,2) */
           estouro_previsto: number;
-          /** @sqlType DECIMAL(24,4) */
+          /** @sqlType DOUBLE */
           margem_projetada: number;
           /** @sqlType INT */
           atraso_projetado_dias: number;
-          /** @sqlType BIGINT */
-          rupturas_previstas: number;
-          /** @sqlType DECIMAL(18,2) */
-          valor_contrato: number;
+          /** @sqlType STRING */
+          farol_do_gerente: string;
+          /** @sqlType STRING */
+          farol_calculado: string;
+          /** @sqlType BOOLEAN */
+          melancia: boolean;
           /** @sqlType STRING */
           causa_principal: string;
           /** @sqlType DOUBLE */
-          dias_falta_equipamento: number;
+          dias_falta_sre: number;
           /** @sqlType DOUBLE */
-          dias_falta_mao_de_obra: number;
-          /** @sqlType DOUBLE */
-          multa_dia_pct: number;
-          /** @sqlType DECIMAL(18,2) */
-          multa_estimada: number;
-          /** @sqlType STRING */
-          icamento_responsavel: string;
-          /** @sqlType BOOLEAN */
-          chuva_da_prorrogacao: boolean;
-        }>;
-      };
-    recursos_ociosos: {
-        name: "recursos_ociosos";
-        parameters: Record<string, never>;
-        result: Array<{
-          /** @sqlType STRING */
-          tipo_recurso: string;
-          /** @sqlType STRING */
-          recurso_id: string;
-          /** @sqlType STRING */
-          descricao: string;
-          /** @sqlType STRING */
-          projeto_origem: string;
-          /** @sqlType STRING */
-          obra_origem: string;
-          /** @sqlType STRING */
-          uf: string;
-          /** @sqlType DOUBLE */
-          utilizacao_media: number;
-          /** @sqlType DOUBLE */
-          horas_paradas_semana: number;
-          /** @sqlType DOUBLE */
-          custo_ocioso_semana: number;
+          dias_rotatividade: number;
+          /** @sqlType BIGINT */
+          rupturas_capacidade: number;
+          /** @sqlType DECIMAL(28,2) */
+          multa_a_cobrar: number;
         }>;
       };
   }

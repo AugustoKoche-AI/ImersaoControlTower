@@ -114,6 +114,12 @@
   .bad { color: #ff6b6b; font-weight: 700; } .ok { color: #3ecf8e; font-weight: 700; } .warn { color: #f6c344; font-weight: 700; }
   .med { border-radius: 14px; padding: 12px 18px; font-weight: 700; font-size: 22px; margin-bottom: 10px; background: var(--card-2); }
   .med.b { color: #C98B4B; } .med.s { color: #9FB0AA; } .med.g { color: #E8C34A; }
+  /* ---- diagramas Mermaid ---- */
+  #stage.desenhando { transform: none !important; }
+  #stage.desenhando .slide { display: flex !important; visibility: hidden; }
+  pre.mermaid { background: transparent; display: flex; justify-content: center; align-items: center; flex: 1; min-height: 0; }
+  pre.mermaid svg { width: 100% !important; height: 100% !important; max-width: none !important; }
+  .diagrama { flex: 1; min-height: 0; display: flex; background: #101016; border: 1px solid var(--line); border-radius: 22px; padding: 22px; }
 </style>
 </head>
 <body>
@@ -124,6 +130,7 @@
 <div id="progress"></div>
 <div id="hint">← → navegar · F tela cheia</div>
 
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script>
 (function () {
   var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
@@ -175,7 +182,22 @@
     if (n >= 1 && n <= slides.length && n - 1 !== i) show(n - 1);
   });
   window.addEventListener('resize', fit);
-  fit(); show(i);
+  fit();
+  // Diagramas Mermaid: desenha com todos os slides "visíveis" (o Mermaid não mede elemento escondido)
+  var diagramas = document.querySelectorAll('pre.mermaid');
+  if (window.mermaid && diagramas.length) {
+    stage.classList.add('desenhando');
+    mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'loose',
+      flowchart: { curve: 'basis', htmlLabels: true, useMaxWidth: true, padding: 18, nodeSpacing: 40, rankSpacing: 60 },
+      themeVariables: { fontFamily: 'Poppins, sans-serif', fontSize: '22px', background: '#101016',
+        primaryColor: '#1E1E24', primaryTextColor: '#F5F6FC', primaryBorderColor: '#467CF6',
+        lineColor: '#22C2F4', secondaryColor: '#25252d', tertiaryColor: '#14141A',
+        clusterBkg: '#16161c', clusterBorder: '#2f2f39', edgeLabelBackground: '#14141A', titleColor: '#22C2F4' } });
+    var fontes = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    fontes.then(function () { return mermaid.run({ nodes: diagramas }); })
+      .catch(function (e) { console.error(e); })
+      .finally(function () { stage.classList.remove('desenhando'); fit(); show(i); });
+  } else { show(i); }
 })();
 </script>
 </body>

@@ -1,14 +1,15 @@
 # 🛠️ Noite 2: Engenheiro de Dados | Imersão Jornada de Dados
 
-**Terça, 20/10/2026, 19h30.** Ontem a turma subiu a bronze clicando, achou dez
-sujeiras na mão e viu o Genie responder **"CPI de 7,01"** com toda a confiança.
-Hoje o projeto vira código: **seis prompts no Claude Code, seis deploys**, e no
-fim a Torre de Controle roda sozinha todo dia às 6h.
+**Terça, 20/10/2026, 19h30.** Ontem o novo CTO da Vértice leu Excel, ClickUp e MS Project
+com o mesmo comando, juntou as três ferramentas à mão numa view e viu o Genie errar as
+quatro perguntas do dono ("nenhum atraso custa nada"). Hoje é a noite da **integração**:
+**seis prompts no Claude Code, seis deploys**, e no fim a Torre roda sozinha toda segunda
+às 6h, com as três ferramentas num modelo só.
 
-> **Domínio:** Construtora Atlas Engenharia, EPC com 40 obras (mineração, óleo e gás, agro)
-> **Pergunta da noite:** *"Como isso roda sozinho todo dia — e certo?"*
+> **Domínio:** Vértice Tecnologia, 60 projetos de clientes em Excel (20), ClickUp (25) e MS Project (15)
+> **Pergunta da noite:** *"Como as três ferramentas viram uma — e isso roda sozinho, certo?"*
 > **Conexão:** a gold de hoje é o que a [noite 3](../aula-03-cientista) usa para
-> prever qual obra vai estourar em 30 dias.
+> prever qual projeto vai estourar em 30 dias.
 
 ---
 
@@ -18,47 +19,49 @@ Sair com a **Torre de Controle rodando como produto**, não como consulta:
 
 | Entrega | Onde | Prova de que funcionou |
 |---|---|---|
-| O projeto como código (bundle) | `meu-atlas/databricks.yml` | `bundle deploy` em 8 segundos |
-| A limpeza com contrato | pipeline Lakeflow, 12 tabelas silver | o custo total **não muda** (R$ 572,85 mi) |
-| O produto de dados | 8 tabelas gold | 7 obras críticas, 6 em atenção |
-| O RDO que vira coluna | `gold.rdo_estruturado` | "P011 atrasou por falta de guindaste" |
-| Os KPIs definidos uma vez | 5 metric views (12 KPIs) | `MEASURE(cpi)` igual no SQL, no dashboard e no Genie |
-| As portas para a diretoria | dashboard de 3 páginas + Genie | benchmark de **20/20** no ensaio |
+| O projeto como código (bundle) | `meu-vertice/databricks.yml` | `bundle deploy` em 8 segundos |
+| **A integração** com contrato | pipeline Lakeflow, `silver.tarefas` + 12 tabelas silver | 60 projetos, 4.917 tarefas, nenhuma órfã; o custo total **não muda** (R$ 193,35 mi) |
+| O produto de dados | 7 tabelas gold | 7 projetos críticos, 10 em atenção, 4 melancias |
+| O texto que vira coluna | `gold.status_estruturado` e `gold.postmortem_estruturado` | "PRJ-011 atrasou por falta de SRE, 12 semanas seguidas" |
+| Os KPIs definidos uma vez | 5 metric views | `MEASURE(cpi)` igual no SQL, no dashboard e no Genie |
+| As portas para o dono | dashboard de 3 páginas + Genie | as 4 perguntas do dono certas; benchmark de **20/20** |
 
 ---
 
 ## 🏗️ A arquitetura
 
 ```
-                       job atlas_torre  (todo dia às 6h, serverless)
- ┌──────────────────────────────────────────────────────────────────────────────────┐
- │                                                                                  │
- │  conferencia_bronze ──► medalhao ──┬──► testes_de_qualidade ──┐                  │
- │  (sql_task)             (pipeline) │    (sql_task, 8 testes)  ├──► metricas_     │
- │  12 contagens           silver ×12 └──► rdo_com_ia ───────────┘    governadas    │
- │  ou raise_error         gold ×8         (regra + ai_classify       (5 metric     │
- │                         EXPECT          + palavra-chave, MERGE)     views)       │
- └──────────────────────────────────────────────────────────────────────────────────┘
+                       job vertice_farol  (toda segunda às 6h, serverless)
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │                                                                                    │
+ │  conferencia_bronze ──► medalhao ──┬──► testes_de_qualidade ──┐                    │
+ │  (sql_task)             (pipeline) │    (sql_task, 10 testes) │                    │
+ │  13 contagens           silver ×13 ├──► status_com_ia ────────┼──► metricas_       │
+ │  ou raise_error         gold ×7    │    (regra + ai_classify  │    governadas      │
+ │                         EXPECT     │     + ai_extract, MERGE) │    (5 metric       │
+ │                                    └──► postmortem_com_ia ────┘     views)         │
+ └────────────────────────────────────────────────────────────────────────────────────┘
         ▲                                                                  │
-   bronze (noite 1)                     dashboard_portfolio ◄── gold + mv_* ──► genie_torre
-   12 tabelas, tudo texto                (bundle, 3 páginas)                    (bundle, 20 perguntas)
+   bronze (noite 1)                      dashboard_portfolio ◄── gold + mv_* ──► genie_farol
+   13 tabelas: CSV, Excel, JSON, XML      (bundle, 3 páginas)                    (bundle, 20 perguntas)
 ```
 
 **O pipeline declarativo por dentro** (o grafo que o Lakeflow desenha sozinho):
 
 ```
-bronze.projetos ─────► silver.projetos ───────► gold.dim_projeto ─────────────┐
-bronze.tarefas ──┐                                                              │
-bronze.avanco ───┴──► silver.avanco_semanal ─► silver.tarefas ─┐               │
-bronze.custos ──────► silver.custos ───────────────────────────┼► gold.fato_projeto_semana ─► gold.obra_situacao_atual
-bronze.apontamentos ► silver.apontamentos ─────────────────────┤        (PV, EV, AC, SPI, CPI, EAC, horas, rupturas)
-bronze.estoque ─────► silver.estoque ──┐                        │
-bronze.compras ─────► silver.compras ──┼────────────────────────┘──► gold.cobertura_estoque · gold.pedidos_em_atraso
-bronze.materiais ───► silver.materiais ┘                              gold.desempenho_fornecedor
-bronze.equipes ─────► silver.equipes ─────────────► gold.utilizacao_equipe_semana
-bronze.equipamentos ► silver.equipamentos ┐
-bronze.uso_equip. ──► silver.uso_equipamentos ┴───► gold.utilizacao_equipamento_semana
-bronze.rdo ─────────► silver.rdo ─────────(job: rdo_com_ia)──► gold.rdo_estruturado
+bronze.projetos ─────────► silver.projetos (o de-para) ──┐
+bronze.excel_tarefas ────► tarefas_excel ─────┐          │
+bronze.clickup_tarefas ──► tarefas_clickup ───┼─► silver.tarefas ─┬─► gold.projeto_situacao_atual (hoje)
+bronze.msproject_tarefas ► tarefas_msproject ─┘   (UNION ALL)     │
+bronze.status_semanal ───► silver.status_semanal ─────────────────┼─► gold.fato_projeto_semana (histórico)
+bronze.custos ───────────► silver.custos ─────────────────────────┤
+bronze.apontamentos ─────► silver.apontamentos ──┐                │
+bronze.colaboradores ────► silver.colaboradores ─┴────────────────┴─► gold.utilizacao_pessoa_semana
+bronze.entregas_forn. ───► silver.entregas_fornecedor ──────────────► gold.desempenho_fornecedor · gold.entregas_em_atraso
+bronze.contratos_cap. ───► silver.contratos_capacidade ─┐
+bronze.consumo_cap. ─────► silver.consumo_capacidade ───┴───────────► gold.cobertura_capacidade
+bronze.postmortems ──────► silver.postmortems ──(job: postmortem_com_ia)──► gold.postmortem_estruturado
+                           silver.status_semanal ──(job: status_com_ia)───► gold.status_estruturado
 ```
 
 ---
@@ -91,14 +94,14 @@ databricks -v
 ### 3. O login (e o erro que todo mundo vê)
 
 ```bash
-databricks auth login --profile atlas
+databricks auth login --profile vertice
 # abre o navegador; escolha o seu workspace Free Edition e autorize
 databricks auth profiles
-# atlas   https://dbc-xxxx.cloud.databricks.com   YES
+# vertice   https://dbc-xxxx.cloud.databricks.com   YES
 ```
 
 Se aparecer `refresh token is invalid` ou `Valid: NO`, rode o `auth login` de
-novo. Daqui em diante, **todo comando leva `--profile atlas`** (ou o nome que
+novo. Daqui em diante, **todo comando leva `--profile vertice`** (ou o nome que
 você escolheu). Nos prompts, troque `<perfil>` por ele.
 
 ### 4. O repositório e a bronze da noite 1
@@ -106,17 +109,19 @@ você escolheu). Nos prompts, troque `<perfil>` por ele.
 ```bash
 git clone https://github.com/lvgalvao/ImersaoControlTower.git
 cd ImersaoControlTower
-python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile atlas
-# 18 linhas "ok". Se não, faça a noite 1 primeiro (00-carregar-dados + 01-ingestao-bronze)
+python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile vertice
+# 22 linhas "ok". Se não, faça a noite 1 primeiro (00-carregar-dados + 01-ingestao-bronze + exemplo 05)
 ```
 
 ### 5. O Claude Code e as skills do Databricks
 
 ```bash
 npm install -g @anthropic-ai/claude-code
-databricks aitools install        # skills oficiais: bundles, pipelines, metric views, Genie
 claude                            # abra na RAIZ do repositório
 ```
+
+As **skills oficiais do Databricks** (bundles, pipelines, metric views, Genie, AI functions)
+já vêm no repositório, em `.claude/skills/`. Para atualizar: `databricks aitools update`.
 
 ### 6. Guard rails antes de dar acesso ao workspace
 
@@ -144,59 +149,63 @@ cada um está no arquivo; a sequência inteira está em [`PROMPTS.md`](../../PRO
 | # | Arquivo | Entrega | Conceito da noite | Tempo medido |
 |---|---|---|---|---|
 | 1 | [`prompt-01-bundle.md`](prd/prompt-01-bundle.md) | bundle + job + conferência da bronze | projeto como código; conferência antes de transformação | ~40 s |
-| 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline declarativo, 12 tabelas silver | **a limpeza é o conteúdo**; `EXPECT` é contrato | ~2 min |
-| 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | fato obra × semana + 7 tabelas gold + 8 testes | o grão; PV/EV/AC acumulados; teste que quebra o job | ~3 min 30 s |
-| 4 | [`prompt-04-rdo-com-ia.md`](prd/prompt-04-rdo-com-ia.md) | `rdo_estruturado` | IA custa por linha: regra, IA e palavra-chave | ~3 min |
-| 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | 5 metric views, 12 KPIs | a fórmula mora num lugar só | ~20 s |
+| 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline declarativo, `silver.tarefas` + 12 tabelas | **a integração é um contrato de colunas**; o de-para é dado; `EXPECT` é contrato | ~2 min |
+| 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | fato projeto × semana + 6 tabelas gold + 10 testes | o grão; de onde vem o histórico; teste que quebra o job | ~3 min |
+| 4 | [`prompt-04-texto-com-ia.md`](prd/prompt-04-texto-com-ia.md) | `status_estruturado` e `postmortem_estruturado` | `ai_classify` escolhe, `ai_extract` tira (com tipo); IA custa por linha | ~2 min |
+| 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | 5 metric views | a fórmula mora num lugar só | ~20 s |
 | 6 | [`prompt-06-dashboard-e-genie.md`](prd/prompt-06-dashboard-e-genie.md) | dashboard + Genie + benchmark | dashboard e IA como código; benchmark é teste | ~6 min |
 
 O contexto que o Claude Code lê antes de cada prompt está em
-[`prd/CLAUDE.md`](prd/CLAUDE.md): o negócio, as 10 sujeiras, a arquitetura e as
+[`prd/CLAUDE.md`](prd/CLAUDE.md): o negócio, as 19 sujeiras, a arquitetura e as
 armadilhas do Free Edition já medidas.
 
 ### O momento "agora entendi"
 
-- **Prompt 2:** quatro fornecedores viram um, 540 valores com vírgula voltam
-  para a soma, três equipes duplicadas somem — e **o custo total não muda um
-  centavo**. É esse o teste de uma boa limpeza.
-- **Prompt 4:** a pergunta "por que a P011 atrasou?" ganha resposta —
-  **falta de guindaste**, 37 RDOs em 90 dias — e dois guindastes de 90 t
-  aparecem **parados em Minas**.
-- **Prompt 6:** o Genie que errou ontem acerta as 20 perguntas do benchmark.
+- **Prompt 2:** vinte planilhas, vinte e cinco listas e quinze cronogramas viram **uma
+  tabela**. As horas de cada planilha batem com a linha de TOTAL que o gerente deixou, as
+  tarefas-resumo do Project saem, e **o custo total não muda um centavo**.
+- **Prompt 3:** as duas SREs paradas no PRJ-007 aparecem no timesheet: 5% de utilização.
+- **Prompt 4:** a pergunta "por que o PRJ-011 atrasou?" ganha resposta — **falta de SRE**,
+  12 semanas seguidas no status, 57 dias de impacto declarado. Junto com o prompt 3, é a
+  pergunta 3 do dono respondida: tem gente parada num projeto enquanto o outro pede gente.
+- **Prompt 6:** o Genie que errou as perguntas do dono ontem acerta as quatro, e as 20 do
+  benchmark.
 
 ---
 
 ## 🔢 O que deve aparecer na tela
 
 Se um número seu divergir, o erro está no código, não no dado (seed 42).
-[`prd/99-verificacao.sql`](prd/99-verificacao.sql) confere tudo de uma vez (17 linhas).
+[`prd/99-verificacao.sql`](prd/99-verificacao.sql) confere tudo de uma vez (20 linhas).
 
 | Métrica | Valor |
 |---|---|
-| Custo real total (silver = bronze) | R$ 572,85 mi |
-| Equipes únicas | 120 (123 linhas no RH) |
-| Grafias da Norte Aço unificadas | 4 → 1 |
-| Tarefas acima de 100% corrigidas pela medição | 52 |
-| Obras em andamento · críticas · em atenção | 36 · **7** · **6** |
-| SPI · CPI da carteira | 0,95 · 0,94 |
-| Estouro previsto (em andamento) | **R$ 42,36 mi** |
-| Margem projetada da carteira | 12,5% |
-| Rupturas de estoque previstas | 97 de 851 itens |
-| Pedidos em atraso | 27 (17 da Norte Aço) |
-| Norte Aço: lead time real ÷ prometido | 1,41 (0% no prazo) |
-| Guindastes com < 20% de uso (12 semanas) | EQ0017 e EQ0018, na P007 (MG) |
-| P011 nos últimos 90 dias | falta de equipamento: 37 RDOs, 23,5 dias de impacto |
-| RDOs classificados por IA / regra / palavra-chave | 977 / 8.878 / 3.875 |
+| Tarefas na silver | 4.917 (Excel 1.643 · ClickUp 2.119 · MS Project 1.155) |
+| Custo real total (silver = bronze) | R$ 193,35 mi |
+| Pessoas únicas | 520 (523 linhas no RH) |
+| Grafias da CodeForge unificadas | 4 → 1 |
+| Projetos em andamento · críticos · em atenção | 41 · **7** · **10** |
+| SPI · CPI da carteira | 0,92 · 0,97 |
+| Estouro previsto (em andamento) | **R$ 6,47 mi** — o mesmo do rascunho da noite 1 |
+| Margem projetada da carteira | 20,4% |
+| Melancias (farol verde, SPI < 0,9) | 4: PRJ-012, PRJ-028, PRJ-034, PRJ-042 |
+| Rupturas de capacidade previstas | 15 de 56 contratos (11 de cloud, 4 de banco de horas) |
+| Entregas em atraso | 5, todas da CodeForge |
+| CodeForge: prazo real ÷ prometido | 1,41 (0% no prazo) |
+| SREs com < 20% de uso (12 semanas) | COL0017 e COL0018, no PRJ-007, ~450 h paradas cada |
+| PRJ-011 nos últimos 90 dias | falta de SRE: 12 semanas, 57 dias de impacto |
+| Status classificados por IA / regra / palavra-chave | 163 / 2.954 / 794 |
+| Postmortems estruturados | 101 (deploy sem teste é a causa nº 1: 44) |
 
-### 🔍 Por que o estouro mudou de R$ 41,9 mi para R$ 42,36 mi?
+### 🔍 Por que o estouro é igual ao da noite 1?
 
-Na noite 1 o `exemplo-06` cortou as 52 tarefas de 117% em 100% (`LEAST`). É o
-atalho mais comum — e está errado. A silver vai buscar o **% medido de verdade**
-no boletim semanal: várias dessas tarefas não estavam concluídas. Com menos
-valor agregado, o CPI piora e o estouro sobe **R$ 0,46 mi**.
+Porque a fotografia de hoje (`projeto_situacao_atual`) faz a mesma conta do rascunho, sobre
+as mesmas tarefas — agora com contrato, teste e reprocessamento automático. O que a noite 2
+acrescenta é o que a noite 1 não tinha como fazer: o **histórico** (o fato semanal, que vem
+do status de cada sexta), a **causa** (a IA lendo o texto) e as **pessoas** (o timesheet).
 
-> *"Limpar com um valor plausível escondeu meio milhão de reais. Limpar com o
-> valor certo é ir buscar a fonte que mede, não inventar o número que parece bom."*
+> *"O rascunho de ontem acertou o número. Mas ele só existia na minha query. Hoje o mesmo
+> número tem dono, teste e roda toda segunda sem eu abrir o computador."*
 
 ---
 
@@ -206,18 +215,18 @@ valor agregado, o CPI piora e o estouro sobe **R$ 0,46 mi**.
 |---|---|---|
 | `refresh token is invalid` | Login expirado | `databricks auth login --profile <perfil>` |
 | `dev_fulano_silver` não existe | `mode: development` no target | `presets: { trigger_pause_status: PAUSED }` |
-| `window function inside an aggregate function` | `SUM(lag(...))` no pipeline | `lag()` num CTE, `SUM` no seguinte |
-| `CAST_INVALID_INPUT '31262,81'` | Vírgula decimal | `replace(',', '.')` antes do CAST |
+| Pipeline falha em `achou_o_projeto` | Arquivo que não casou com o de-para | Fallback pelo nome do arquivo (Excel) e da lista (ClickUp) |
+| `CAST_INVALID_INPUT '1827,44'` | Vírgula decimal | `replace(',', '.')` antes do CAST |
 | `METRIC_VIEW_INVALID_VIEW_DEFINITION` | Rodou a metric view pelo `aitools tools query` | `sql_task` ou `scripts/run_sql.py` |
-| Deploy falha: `Table ... does not exist` (Genie) | Genie criado antes das tabelas | `bundle run atlas_torre` e deploy de novo |
-| A tarefa de IA leva 15+ minutos | IA rodando no histórico inteiro | Filtro dos 90 dias + regra para "sem ocorrência" |
-| Um prompt não entrega | — | O gabarito está em [`atlas/`](atlas): compare o arquivo |
+| Deploy falha: `Table ... does not exist` (Genie) | Genie criado antes das tabelas | `bundle run vertice_farol` e deploy de novo |
+| A tarefa de IA leva 15+ minutos | IA rodando no histórico inteiro | Filtro dos 90 dias + regra para "sem bloqueio" |
+| Um prompt não entrega | — | O gabarito está em [`vertice/`](vertice): compare o arquivo |
 
 ### Para zerar e recomeçar
 
 ```bash
 bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>              # SIMULA: mostra o que sairia
-BUNDLE_DIR=aulas/aula-02-engenheiro/meu-atlas \
+BUNDLE_DIR=aulas/aula-02-engenheiro/meu-vertice \
   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar   # apaga silver, gold e os recursos do bundle
 ```
 
@@ -226,9 +235,9 @@ A bronze e o volume nunca são apagados (são da noite 1).
 ### Para rodar o gabarito inteiro de uma vez
 
 ```bash
-cd aulas/aula-02-engenheiro/atlas
+cd aulas/aula-02-engenheiro/vertice
 databricks bundle deploy --profile <perfil>
-databricks bundle run atlas_torre --profile <perfil>      # ~5 min 40 s do zero
+databricks bundle run vertice_farol --profile <perfil>    # silver, gold, IA, testes, métricas e (noite 3) o modelo
 databricks bundle deploy --profile <perfil>               # 2º deploy: o Genie precisa das tabelas
 python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 ```
@@ -250,17 +259,17 @@ dashboard e Genie. O resultado é o mesmo; o que muda é que ele não fica no Gi
 | `prd/CLAUDE.md` | contexto do projeto para o Claude Code |
 | `prd/prompt-01..06-*.md` | os 6 prompts, com o que mostrar, o que falar e "se der errado" |
 | `prd/genie-benchmark.json` | 20 perguntas com o SQL de referência |
-| `prd/99-verificacao.sql` | os 17 números da noite, esperado × obtido |
+| `prd/99-verificacao.sql` | os 20 números da noite, esperado × obtido |
 | `prd/00-reset.sh` | zera a noite 2 (simula por padrão) |
-| `atlas/` | **o gabarito**: o bundle completo, testado do zero |
-| `atlas/scripts/gerar_dashboard.py`, `gerar_genie.py` | dashboard e Genie gerados por código |
-| `meu-atlas/` | onde o **seu** bundle nasce no prompt 1 |
+| `vertice/` | **o gabarito**: o bundle completo, testado |
+| `vertice/scripts/gerar_dashboard.py`, `gerar_genie.py` | dashboard e Genie gerados por código |
+| `meu-vertice/` | onde o **seu** bundle nasce no prompt 1 |
 | `sem-codigo.md` | a trilha pela interface |
 | `APRENDIZADOS.md` | o que falhou no ensaio do Free Edition e como foi resolvido |
 
 ## ➡️ Amanhã
 
-A gold sabe dizer **quais obras estão** em risco hoje. A pergunta da diretoria
-é outra: **quais vão estourar nos próximos 30 dias?** A `fato_projeto_semana`
-tem a curva de cada obra, semana a semana — é exatamente o que um modelo precisa
+A gold sabe dizer **quais projetos estão** em risco hoje. A pergunta 4 do dono é outra:
+**o que vai dar errado no próximo mês?** A `fato_projeto_semana` tem a curva de cada projeto,
+semana a semana, e o `status_estruturado` tem as causas — é exatamente o que um modelo precisa
 para aprender o padrão antes de ele virar estouro: [noite 3](../aula-03-cientista).

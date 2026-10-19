@@ -8,23 +8,23 @@
 # Uso:  bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh <profile> [--apagar] [--gabarito]
 #       Sem --apagar ele só MOSTRA o que faria.
 #       --gabarito: limpa o workspace mas NÃO mexe em arquivo nenhum (o bundle de
-#       referência aulas/aula-02-engenheiro/atlas guarda o src/ml de propósito).
+#       referência aulas/aula-02-engenheiro/vertice guarda o src/ml de propósito).
 #
 # O que apaga:
 #   1. as tabelas de ML da gold (features, métricas, score)
 #   2. as versões do modelo e o modelo registrado no Unity Catalog
-#   3. o experimento do MLflow (/Users/<você>/atlas)
-#   4. no seu bundle (meu-atlas): a pasta src/ml e as tarefas ml_* do job; e o redeploy
+#   3. o experimento do MLflow (/Users/<você>/vertice)
+#   4. no seu bundle (meu-vertice): a pasta src/ml e as tarefas ml_* do job; e o redeploy
 #   5. a conferência: sai com erro se sobrou alguma coisa
 set -euo pipefail
 
 PROFILE="${1:?uso: bash prd/99-limpar-aula-03.sh <profile> [--apagar] [--gabarito]}"
 CONFIRMA="${2:-}"
 GABARITO="${3:-}"
-CATALOGO="${CATALOGO:-lakehouse_atlas}"
+CATALOGO="${CATALOGO:-lakehouse_vertice}"
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
-BUNDLE="$RAIZ/aulas/aula-02-engenheiro/meu-atlas"
-TABELAS=(features_obra_semana modelo_metricas score_estouro_30d)
+BUNDLE="$RAIZ/aulas/aula-02-engenheiro/meu-vertice"
+TABELAS=(features_projeto_semana modelo_metricas score_estouro_30d)
 MODELO="$CATALOGO.gold.modelo_estouro_30d"
 
 echo "profile:  $PROFILE"
@@ -52,10 +52,10 @@ databricks registered-models delete "$MODELO" --profile "$PROFILE" >/dev/null 2>
 
 echo "→ experimento do MLflow..."
 EU=$(databricks current-user me --profile "$PROFILE" -o json | python3 -c 'import sys,json;print(json.load(sys.stdin)["userName"])')
-databricks workspace delete "/Users/$EU/atlas" --recursive --profile "$PROFILE" >/dev/null 2>&1 || echo "   (pasta não existia)"
+databricks workspace delete "/Users/$EU/vertice" --recursive --profile "$PROFILE" >/dev/null 2>&1 || echo "   (pasta não existia)"
 
 if [ "$GABARITO" != "--gabarito" ] && [ -d "$BUNDLE" ]; then
-  echo "→ código local da noite 3 no meu-atlas..."
+  echo "→ código local da noite 3 no meu-vertice..."
   rm -rf "$BUNDLE/src/ml"
   for f in "$BUNDLE"/resources/*.job.yml; do
     [ -f "$f" ] || continue
@@ -68,7 +68,7 @@ p.write_text(s.rstrip() + "\n")
 PY
   done
   if [ -f "$BUNDLE/databricks.yml" ]; then
-    echo "→ redeploy do meu-atlas..."
+    echo "→ redeploy do meu-vertice..."
     (cd "$BUNDLE" && databricks bundle deploy --profile "$PROFILE" 2>&1 | tail -3) || true
   fi
 fi
@@ -76,7 +76,7 @@ fi
 echo
 echo "── conferindo ──────────────────────────────────────────────"
 RESTO=$(databricks tables list "$CATALOGO" gold --profile "$PROFILE" -o json 2>/dev/null \
-        | grep -cE '"name": *"(features_obra_semana|modelo_metricas|score_estouro_30d)"' || true)
+        | grep -cE '"name": *"(features_projeto_semana|modelo_metricas|score_estouro_30d)"' || true)
 MODELOS=$(databricks registered-models list --catalog-name "$CATALOGO" --schema-name gold --profile "$PROFILE" -o json 2>/dev/null \
           | grep -c 'modelo_estouro_30d' || true)
 echo "  tabelas da noite 3 que sobraram: ${RESTO:-0}"
