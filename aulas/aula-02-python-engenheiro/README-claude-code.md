@@ -74,78 +74,6 @@ flowchart LR
 
 ---
 
-## 🔥 Aquecimento: Python no Databricks, antes do terminal
-
-Na empresa, o dado não chega pronto: alguém precisa ir buscar. Quando a fonte não tem conector, entra o
-Python. O caminho é o mesmo da noite 1: **extrair** (o Python pede à API), **pousar** (o JSON no volume,
-do jeito que veio) e **carregar** (o `read_files` cria a tabela na bronze). Tudo no navegador, sem IA:
-primeiro você vê o Python fazendo o trabalho.
-
-1. No Databricks: **New › Notebook**, com a computação **serverless** (ela tem internet).
-2. Cole uma célula de cada vez e rode (Shift+Enter).
-
-**Célula 1 · extrair**
-
-```python
-# 1 · EXTRAIR: o Python pede o dado à API
-import requests                # conversa com a API (HTTP)
-
-url = "https://brasilapi.com.br/api/feriados/v1/2026"
-resposta = requests.get(url, timeout=30)
-resposta.raise_for_status()    # se a API cair, para aqui com o erro, em vez de seguir com nada
-
-feriados = resposta.json()     # o JSON vira uma lista do Python: um dicionário por feriado
-print(len(feriados), "feriados")
-feriados[:3]
-```
-
-**Célula 2 · pousar**
-
-```python
-# 2 · POUSAR: o arquivo vai para o volume, do jeito que veio
-import json, os               # json e os já vêm no Python
-
-pasta = "/Volumes/lakehouse_vertice/bronze/raw/feriados"
-os.makedirs(pasta, exist_ok=True)              # a pasta nova precisa existir
-
-with open(f"{pasta}/feriados_2026.json", "w") as arquivo:
-    json.dump(feriados, arquivo, ensure_ascii=False)
-
-os.listdir(pasta)                              # deve aparecer: ['feriados_2026.json']
-```
-
-**Célula 3 · carregar**
-
-```sql
-%sql
--- 3 · CARREGAR: o mesmo read_files da noite 1, agora numa pasta nova do volume
-CREATE OR REPLACE TABLE lakehouse_vertice.bronze.feriados
-COMMENT 'Feriados nacionais de 2026, da BrasilAPI. Ingestão por API: Python busca, o arquivo pousa no volume, o read_files carrega.'
-AS SELECT date AS data, name AS feriado, type AS tipo, weekday AS dia_da_semana,
-          _metadata.file_name AS arquivo
-FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/feriados/', format => 'json', multiLine => true)
-```
-
-**Célula 4 · conferir**
-
-```sql
-%sql
--- Deve aparecer: 02/11 (segunda), 15/11 (domingo) e 20/11 (sexta).
--- 2 dias úteis a menos em novembro, logo no começo do freeze da Black Friday.
-SELECT data, feriado, dia_da_semana
-FROM lakehouse_vertice.bronze.feriados
-WHERE data BETWEEN '2026-11-01' AND '2026-11-30'
-ORDER BY data
-```
-
-Deve aparecer: 14 feriados no ano; em novembro, **2 em dia útil** (02/11 e 20/11; o 15/11 é domingo),
-bem no começo do freeze da Black Friday.
-
-**Travou?** Importe o notebook pronto: **Workspace › Import › URL** e cole
-`https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/00-api-feriados.py`
-
----
-
 ## 🚀 Antes do prompt 1: o passo a passo, do zero
 
 A noite 1 foi toda pelo navegador. A noite 2 precisa de **terminal** (a tela onde se digitam
@@ -237,7 +165,7 @@ Viu `refresh token is invalid` ou `Valid: NO`? Rode o `auth login` de novo.
 ```bash
 databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile vertice
 # apontamentos, clickup_tarefas, colaboradores, custos, entregas_fornecedor,
-# excel_tarefas, msproject_tarefas, projetos, status_semanal (+ feriados, do aquecimento)
+# excel_tarefas, msproject_tarefas, projetos, status_semanal (+ feriados, da noite 2)
 ```
 
 Faltam tabelas? Faça a noite 1 primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
@@ -317,7 +245,7 @@ Pronto. Agora é prompt a prompt.
 ## 📋 Os prompts da noite, prontos para copiar
 
 Cole um de cada vez no Claude Code, na raiz do seu repositório (`projeto-farol`). Espere terminar,
-confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`. Antes do prompt 1, faça o aquecimento (lá em cima).
+confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`. A bronze vem da noite 2.
 
 ### Prompt 1 · O bundle: o projeto vira código (~40 s)
 
@@ -858,7 +786,6 @@ python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 |---|---|
 | `prd/CLAUDE.md` | contexto do projeto para o Claude Code |
 | `prd/prompt-01..05-*.md` | os 5 prompts, com o que mostrar, o que falar e "se der errado" |
-| `00-api-feriados.py` | o notebook do aquecimento: busca a API, pousa no volume e carrega a bronze |
 | `prd/genie-benchmark.json` | 20 perguntas com o SQL de referência |
 | `prd/99-verificacao.sql` | os 20 números da noite, esperado × obtido |
 | `prd/00-reset.sh` | zera a noite 2 (simula por padrão) |
