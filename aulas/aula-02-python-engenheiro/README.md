@@ -613,7 +613,9 @@ como em qualquer servidor ou na própria AWS. Quem preenche os valores é o **jo
 chega ao notebook como um *widget* com o mesmo nome, e a célula abaixo passa os widgets para o ambiente.
 
 - **Rodando na mão:** aparecem 4 caixinhas no topo do notebook. Cole os valores da tabela de conexão.
-- **Rodando pelo job:** os valores vêm dos **Job parameters** (etapa 4). Ninguém digita nada.
+- **Rodando pelo job:** os valores vêm dos **Parameters** da tarefa (etapa 4). Ninguém digita nada.
+- **Ou pelo campo Environment variables (Beta)** da tarefa: aí os valores já chegam no `os.environ`, e a
+  célula usa direto, sem caixinha.
 
 Os nomes `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` são o padrão da AWS: o `boto3` encontra as chaves
 sozinho no ambiente, sem você passar no código.
@@ -626,8 +628,10 @@ import os
 VARIAVEIS = ["S3_ENDPOINT", "AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
 
 for nome in VARIAVEIS:
-    dbutils.widgets.text(nome, "")                 # a caixinha (o job preenche com o parâmetro de mesmo nome)
-    os.environ[nome] = dbutils.widgets.get(nome)   # o valor vira variável de ambiente
+    if os.environ.get(nome):                       # já veio do job (Environment variables)? usa esse
+        continue
+    dbutils.widgets.text(nome, "")                 # senão, a caixinha (o job preenche pelos Parameters)
+    os.environ[nome] = dbutils.widgets.get(nome)   # e o valor vira variável de ambiente
 
 faltando = [nome for nome in VARIAVEIS if not os.environ[nome]]
 assert not faltando, f"preencha: {faltando}"      # para aqui se faltar alguma chave
@@ -818,7 +822,7 @@ O job da API ganha a segunda tarefa e passa a rodar uma vez por dia.
 1. Abra o job `vertice_ingestao` em **Jobs & Pipelines**.
 2. **+ Add task** `data_lake`: tipo **Notebook**, o seu `02_ingestao_boto3`, computação **Serverless**.
    Depende de: `api`.
-3. No painel do job, **Job parameters › Edit parameters**, e adicione os 4 da tabela de conexão:
+3. Na tarefa `data_lake`, em **Parameters › Add**, adicione os 4 da tabela de conexão (mesmo nome, como Key):
    `S3_ENDPOINT`, `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`. O job entrega cada
    um ao notebook, que põe no `os.environ`.
 4. No agendamento, troque o cron para `0 0 6 * * ?` (todo dia às 06:00, America/Sao_Paulo).

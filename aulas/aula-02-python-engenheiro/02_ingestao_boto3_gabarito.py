@@ -28,7 +28,9 @@
 # MAGIC chega ao notebook como um *widget* com o mesmo nome, e a célula abaixo passa os widgets para o ambiente.
 # MAGIC
 # MAGIC - **Rodando na mão:** aparecem 4 caixinhas no topo do notebook. Cole os valores da tabela de conexão.
-# MAGIC - **Rodando pelo job:** os valores vêm dos **Job parameters** (etapa 4). Ninguém digita nada.
+# MAGIC - **Rodando pelo job:** os valores vêm dos **Parameters** da tarefa (etapa 4). Ninguém digita nada.
+# MAGIC - **Ou pelo campo Environment variables (Beta)** da tarefa: aí os valores já chegam no `os.environ`, e a
+# MAGIC   célula usa direto, sem caixinha.
 # MAGIC
 # MAGIC Os nomes `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` são o padrão da AWS: o `boto3` encontra as chaves
 # MAGIC sozinho no ambiente, sem você passar no código.
@@ -40,8 +42,10 @@ import os
 VARIAVEIS = ["S3_ENDPOINT", "AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
 
 for nome in VARIAVEIS:
-    dbutils.widgets.text(nome, "")                 # a caixinha (o job preenche com o parâmetro de mesmo nome)
-    os.environ[nome] = dbutils.widgets.get(nome)   # o valor vira variável de ambiente
+    if os.environ.get(nome):                       # já veio do job (Environment variables)? usa esse
+        continue
+    dbutils.widgets.text(nome, "")                 # senão, a caixinha (o job preenche pelos Parameters)
+    os.environ[nome] = dbutils.widgets.get(nome)   # e o valor vira variável de ambiente
 
 faltando = [nome for nome in VARIAVEIS if not os.environ[nome]]
 assert not faltando, f"preencha: {faltando}"      # para aqui se faltar alguma chave
