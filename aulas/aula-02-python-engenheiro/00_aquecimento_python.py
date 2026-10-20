@@ -24,26 +24,27 @@
 # MAGIC %md
 # MAGIC ## 1. Variáveis e tipos
 # MAGIC
-# MAGIC Em Python você guarda um valor em um nome, sem declarar o tipo. O `type()` mostra o que o Python entendeu.
+# MAGIC Uma variável é um nome para um valor. O Python descobre o tipo sozinho; o `type()` mostra qual.
 # MAGIC
 # MAGIC | Tipo | O que guarda | Exemplo |
 # MAGIC |---|---|---|
-# MAGIC | `str` | Texto | `"vendas"` |
-# MAGIC | `int` | Número inteiro | `3020` |
-# MAGIC | `float` | Número com decimais | `974077.28` |
-# MAGIC | `bool` | Verdadeiro ou falso | `True` |
+# MAGIC | `str` | texto | `"PRJ-011"` |
+# MAGIC | `int` | número inteiro | `60` |
+# MAGIC | `float` | número com decimais | `305.2` |
+# MAGIC | `bool` | verdadeiro ou falso | `True` |
 # MAGIC
-# MAGIC **Objetivo:** criar uma variável de cada tipo e imprimir o valor e o tipo de cada uma.
+# MAGIC **Objetivo:** criar `carteira_mi` (float, 305.2) e `em_andamento` (bool, True) e imprimir o valor e o tipo
+# MAGIC de cada uma.
 
 # COMMAND ----------
 
-nome_tabela = "vendas"
-total_vendas = 3020
-# escreva seu código aqui: crie receita_total (float) e pipeline_ativo (bool)
+projeto = "PRJ-011"
+total_projetos = 60
+# escreva seu código aqui: crie carteira_mi (float) e em_andamento (bool)
 
 
-print(nome_tabela, type(nome_tabela))
-print(total_vendas, type(total_vendas))
+print(projeto, type(projeto))
+print(total_projetos, type(total_projetos))
 
 # COMMAND ----------
 
@@ -52,7 +53,7 @@ print(total_vendas, type(total_vendas))
 # MAGIC
 # MAGIC A letra `f` antes das aspas permite colocar variáveis dentro do texto, entre chaves.
 # MAGIC
-# MAGIC **Objetivo:** imprimir a frase `A tabela vendas tem 3020 linhas.` usando as variáveis acima.
+# MAGIC **Objetivo:** imprimir a frase `A Vértice tem 60 projetos e R$ 305.2 mi de carteira.` usando as variáveis.
 
 # COMMAND ----------
 
@@ -64,14 +65,15 @@ print(total_vendas, type(total_vendas))
 # MAGIC %md
 # MAGIC ## 2. Listas
 # MAGIC
-# MAGIC Uma lista guarda vários valores em ordem, entre colchetes. O primeiro item é o de posição `0`.
+# MAGIC Uma lista guarda vários valores em ordem, entre colchetes. O índice começa em 0; `[-1]` é o último.
 # MAGIC
-# MAGIC **Objetivo:** criar a lista com as 4 tabelas do projeto, imprimir quantas são e mostrar a primeira e a última.
+# MAGIC **Objetivo:** com a lista dos 4 projetos de pior SPI, imprimir quantos são, o primeiro e o último.
 
 # COMMAND ----------
 
-# escreva seu código aqui: tabelas = [...]
-# dicas: len(lista) conta os itens; lista[0] é o primeiro; lista[-1] é o último
+piores = ["PRJ-016", "PRJ-030", "PRJ-039", "PRJ-011"]
+
+# escreva seu código aqui: len(), piores[0] e piores[-1]
 
 
 # COMMAND ----------
@@ -79,17 +81,21 @@ print(total_vendas, type(total_vendas))
 # MAGIC %md
 # MAGIC ## 3. Dicionários
 # MAGIC
-# MAGIC Um dicionário guarda pares **chave: valor**, entre chaves. É assim que os dados de uma API chegam.
+# MAGIC Um dicionário guarda pares **chave: valor**. É assim que uma API, um banco ou um JSON devolvem cada
+# MAGIC registro: um projeto é um dicionário.
 # MAGIC
-# MAGIC ```python
-# MAGIC produto = {"nome": "Edredom Casal", "categoria": "Casa", "preco": 189.90}
-# MAGIC produto["nome"]   # devolve "Edredom Casal"
-# MAGIC ```
-# MAGIC
-# MAGIC **Objetivo:** criar o dicionário `venda` com as chaves `id_venda`, `canal`, `quantidade` e `preco_unitario`,
-# MAGIC e imprimir a receita da venda (quantidade × preço).
+# MAGIC **Objetivo:** calcular o SPI do projeto (quanto está pronto ÷ quanto devia estar) e imprimir
+# MAGIC `SPI do PRJ-011: 0.77`.
 
 # COMMAND ----------
+
+projeto = {
+    "projeto_id": "PRJ-011",
+    "nome": "Checkout e meios de pagamento",
+    "ferramenta": "msproject",
+    "pct_concluido": 54,
+    "pct_esperado": 70,
+}
 
 # escreva seu código aqui
 
@@ -99,13 +105,14 @@ print(total_vendas, type(total_vendas))
 # MAGIC %md
 # MAGIC ### Dicionário dentro de dicionário
 # MAGIC
-# MAGIC APIs costumam devolver estruturas aninhadas. Para chegar no valor de dentro, encadeie os colchetes.
+# MAGIC Leia de fora para dentro: `projeto["cliente"]` devolve outro dicionário.
 # MAGIC
-# MAGIC **Objetivo:** a partir do dicionário abaixo, imprimir apenas o nome da região (`Norte`).
+# MAGIC **Objetivo:** imprimir o segmento do cliente (`varejo`).
 
 # COMMAND ----------
 
-estado = {"sigla": "AM", "nome": "Amazonas", "regiao": {"id": 1, "sigla": "N", "nome": "Norte"}}
+projeto = {"projeto_id": "PRJ-011",
+           "cliente": {"nome": "Supermercado Bom Preço", "segmento": "varejo"}}
 
 # escreva seu código aqui
 
@@ -115,15 +122,11 @@ estado = {"sigla": "AM", "nome": "Amazonas", "regiao": {"id": 1, "sigla": "N", "
 # MAGIC %md
 # MAGIC ## 4. `for`: repetindo o mesmo passo
 # MAGIC
-# MAGIC O `for` percorre uma lista e executa o mesmo bloco para cada item. Repare na **indentação**: o que está
-# MAGIC dentro do laço fica deslocado quatro espaços à direita.
-# MAGIC
-# MAGIC **Objetivo:** percorrer a lista de tabelas e imprimir, para cada uma, a frase
-# MAGIC `Baixando pmo/projetos.csv do data lake...`
+# MAGIC **Objetivo:** para cada projeto da lista, imprimir `Baixando Cronograma PRJ-002.xlsx do data lake...`.
 
 # COMMAND ----------
 
-tabelas = ["vendas", "produtos", "clientes", "preco_competidores"]
+cronogramas = ["PRJ-002", "PRJ-010", "PRJ-012"]
 
 # escreva seu código aqui
 
@@ -131,16 +134,17 @@ tabelas = ["vendas", "produtos", "clientes", "preco_competidores"]
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### `if`: decidindo no meio do caminho
+# MAGIC ### `if`: escolhendo o caminho
 # MAGIC
-# MAGIC **Objetivo:** percorrer a lista `quantidades` e imprimir `venda grande` quando o valor for maior que 2,
-# MAGIC e `venda pequena` caso contrário.
+# MAGIC A regra da Vértice: SPI abaixo de 0,8 é **crítico**; abaixo de 0,9, **atenção**; o resto, **ok**.
+# MAGIC
+# MAGIC **Objetivo:** percorrer o dicionário com `.items()` e imprimir a situação de cada projeto.
 
 # COMMAND ----------
 
-quantidades = [1, 3, 2, 5, 1]
+spis = {"PRJ-016": 0.63, "PRJ-030": 0.69, "PRJ-039": 0.75, "PRJ-011": 0.77, "PRJ-024": 0.91}
 
-# escreva seu código aqui
+# escreva seu código aqui: for prj, spi in spis.items(): ... if / elif / else
 
 
 # COMMAND ----------
@@ -148,18 +152,11 @@ quantidades = [1, 3, 2, 5, 1]
 # MAGIC %md
 # MAGIC ## 5. Funções
 # MAGIC
-# MAGIC Uma função é um bloco com nome, que recebe dados (parâmetros) e devolve um resultado (`return`). É o que
-# MAGIC evita copiar e colar o mesmo código quatro vezes.
+# MAGIC `def` cria a função, os parâmetros vão entre parênteses e o `return` devolve o resultado. Escreveu uma vez,
+# MAGIC usa para os 60 projetos.
 # MAGIC
-# MAGIC ```python
-# MAGIC def dobro(numero):
-# MAGIC     return numero * 2
-# MAGIC
-# MAGIC dobro(10)   # devolve 20
-# MAGIC ```
-# MAGIC
-# MAGIC **Objetivo:** escrever a função `calcular_receita(quantidade, preco_unitario)` que devolve a receita
-# MAGIC arredondada em 2 casas, e testá-la com 2 unidades de R$ 64,79 (deve devolver `129.58`).
+# MAGIC **Objetivo:** escrever `calcular_spi(pct_concluido, pct_esperado)`, que devolve o SPI com 2 casas, e
+# MAGIC `situacao(spi)`, que devolve `"crítico"`, `"atenção"` ou `"ok"`. Teste com `calcular_spi(54, 70)`.
 
 # COMMAND ----------
 
@@ -263,7 +260,7 @@ status = [" Verde", "VERDE", "verde ", "Amarelo", "vermelho"]
 # MAGIC Uma **API** é uma porta que um sistema abre para outros pedirem dados. Você faz uma requisição HTTP `GET`
 # MAGIC em uma URL e recebe a resposta, quase sempre em **JSON**, que em Python vira lista e dicionário.
 # MAGIC
-# MAGIC Vamos usar a API pública do IBGE, que devolve os 27 estados brasileiros com a sua região:
+# MAGIC A Vértice atende clientes no Brasil inteiro. A API pública do IBGE devolve os 27 estados com a região:
 # MAGIC
 # MAGIC ```
 # MAGIC GET https://servicodados.ibge.gov.br/api/v1/localidades/estados

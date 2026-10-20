@@ -25,7 +25,7 @@ flowchart LR
   API["API pública<br/>feriados de 2026"]
   B -- "02 · boto3<br/>extrair e pousar" --> RAW["volume<br/>bronze/raw/"]
   RAW -- "read_files<br/>carregar" --> BR["bronze<br/>9 tabelas"]
-  API -- "01 · requests<br/>a cada 10 min" --> RAWF["raw/feriados/<br/>um JSON por execução"] -- "read_files" --> BF["bronze.feriados"]
+  API -- "01 · requests<br/>a cada 1 min" --> RAWF["raw/feriados/<br/>um JSON por execução"] -- "read_files" --> BF["bronze.feriados"]
   subgraph JOB["job vertice_ingestao · todo dia às 6h"]
     RAW
     BR
@@ -38,7 +38,7 @@ flowchart LR
 |---|---|---|
 | Aquecimento de Python | 20 min | variáveis, listas, dicionários, `for`, funções, `requests`, `pandas` e `boto3` |
 | Teoria | 15 min | data lake, protocolo S3, extrair-pousar-carregar, a regra da bronze |
-| API → bronze + job | 20 min | os feriados: a ingestão mais simples, num job que roda a cada 10 minutos |
+| API → bronze + job | 20 min | os feriados: a ingestão mais simples, num job que roda a cada 1 minuto |
 | Data lake → raw → bronze | 30 min | o `boto3` traz os arquivos para o raw e o `read_files` recria as 9 tabelas |
 | Job completo | 5 min | o data lake entra no mesmo job, que passa a rodar todo dia às 6h |
 
@@ -117,15 +117,17 @@ cada vez e rode com **Shift+Enter**. Prefere com lacunas para resolver? Importe 
 
 #### 1. Variáveis e tipos
 
+Uma variável é um nome para um valor. O Python descobre o tipo sozinho; o `type()` mostra qual.
+
 *Célula 1*
 
 ```python
-nome_tabela = "vendas"          # str  · texto sempre entre aspas
-total_vendas = 3020             # int  · número inteiro, sem aspas
-receita_total = 974077.28       # float· número com casas decimais (ponto, não vírgula)
-pipeline_ativo = True           # bool · True ou False, com inicial maiúscula
+projeto = "PRJ-011"             # str  · texto sempre entre aspas
+total_projetos = 60             # int  · número inteiro, sem aspas
+carteira_mi = 305.2             # float· número com casas decimais (ponto, não vírgula)
+em_andamento = True             # bool · True ou False, com inicial maiúscula
 
-for valor in (nome_tabela, total_vendas, receita_total, pipeline_ativo):
+for valor in (projeto, total_projetos, carteira_mi, em_andamento):
     print(valor, type(valor))
 ```
 
@@ -136,90 +138,117 @@ O `f` antes das aspas liga a interpolação; o que está entre chaves é avaliad
 *Célula 2*
 
 ```python
-print(f"A tabela {nome_tabela} tem {total_vendas} linhas.")
+print(f"A Vértice tem {total_projetos} projetos e R$ {carteira_mi} mi de carteira.")
 
-# formatando número: milhar com ponto e 2 casas decimais
-print(f"Receita: R$ {receita_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+# formatando dinheiro no padrão brasileiro: milhar com ponto, centavos com vírgula
+valor_contrato = 12500000.0
+print(f"Contrato: R$ {valor_contrato:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 ```
 
 #### 2. Listas
 
+Uma lista guarda vários valores em ordem, entre colchetes. O índice começa em 0.
+
 *Célula 3*
 
 ```python
-tabelas = ["vendas", "produtos", "clientes", "preco_competidores"]
+# os 4 projetos com o pior SPI da carteira (noite 1)
+piores = ["PRJ-016", "PRJ-030", "PRJ-039", "PRJ-011"]
 
-print(f"São {len(tabelas)} tabelas")
-print("Primeira:", tabelas[0])
-print("Última:  ", tabelas[-1])     # índice negativo conta de trás para frente
+print(f"São {len(piores)} projetos")
+print("O pior:  ", piores[0])
+print("O último:", piores[-1])     # índice negativo conta de trás para frente
+
+ferramentas = ["excel", "clickup", "msproject"]
+print("ferramentas:", ferramentas)
 ```
 
 #### 3. Dicionários
 
+Um dicionário guarda pares **chave: valor**. É assim que uma API, um banco ou um JSON devolvem cada
+registro: um projeto é um dicionário.
+
 *Célula 4*
 
 ```python
-venda = {
-    "id_venda": "sal_adff6978b0c6",
-    "canal": "loja_fisica",
-    "quantidade": 2,
-    "preco_unitario": 64.79,
+projeto = {
+    "projeto_id": "PRJ-011",
+    "nome": "Checkout e meios de pagamento",
+    "ferramenta": "msproject",
+    "pct_concluido": 54,      # quanto está pronto
+    "pct_esperado": 70,       # quanto devia estar pronto hoje
 }
 
-receita = venda["quantidade"] * venda["preco_unitario"]
-print(f"Receita da venda {venda['id_venda']}: R$ {receita:.2f}")
+spi = projeto["pct_concluido"] / projeto["pct_esperado"]
+print(f"SPI do {projeto['projeto_id']}: {spi:.2f}")      # 0.77: abaixo de 1 é atraso
 ```
 
 ##### Dicionário dentro de dicionário
 
-Leia de fora para dentro: `estado["regiao"]` devolve outro dicionário, e nele pedimos `["nome"]`.
+Leia de fora para dentro: `projeto["cliente"]` devolve outro dicionário, e nele pedimos `["segmento"]`.
 
 *Célula 5*
 
 ```python
-estado = {"sigla": "AM", "nome": "Amazonas", "regiao": {"id": 1, "sigla": "N", "nome": "Norte"}}
+projeto = {"projeto_id": "PRJ-011",
+           "cliente": {"nome": "Supermercado Bom Preço", "segmento": "varejo"}}
 
-print(estado["regiao"]["nome"])
+print(projeto["cliente"]["segmento"])
 ```
 
 #### 4. `for` e `if`
 
+O `for` repete o mesmo passo para cada item; o `if` escolhe o caminho.
+
 *Célula 6*
 
 ```python
-tabelas = ["vendas", "produtos", "clientes", "preco_competidores"]
+cronogramas = ["PRJ-002", "PRJ-010", "PRJ-012"]
 
-for tabela in tabelas:
-    print(f"Baixando {tabela}.parquet do data lake...")
+for prj in cronogramas:
+    print(f"Baixando Cronograma {prj}.xlsx do data lake...")
 ```
 
 *Célula 7*
 
 ```python
-quantidades = [1, 3, 2, 5, 1]
+# a regra da Vértice: SPI abaixo de 0,8 é crítico; abaixo de 0,9, atenção
+spis = {"PRJ-016": 0.63, "PRJ-030": 0.69, "PRJ-039": 0.75, "PRJ-011": 0.77, "PRJ-024": 0.91}
 
-for quantidade in quantidades:
-    if quantidade > 2:
-        print(f"{quantidade} unidades: venda grande")
+for prj, spi in spis.items():
+    if spi < 0.8:
+        print(f"{prj}  SPI {spi}: crítico")
+    elif spi < 0.9:
+        print(f"{prj}  SPI {spi}: atenção")
     else:
-        print(f"{quantidade} unidades: venda pequena")
+        print(f"{prj}  SPI {spi}: ok")
 ```
 
 #### 5. Funções
 
 `def` cria a função, os parâmetros vão entre parênteses e o `return` devolve o resultado. O texto entre
-três aspas é a documentação da função.
+três aspas é a documentação da função. Escreveu uma vez, usa para os 60 projetos.
 
 *Célula 8*
 
 ```python
-def calcular_receita(quantidade, preco_unitario):
-    """Receita de uma venda, arredondada em 2 casas."""
-    return round(quantidade * preco_unitario, 2)
+def calcular_spi(pct_concluido, pct_esperado):
+    """Índice de prazo: quanto está pronto dividido por quanto devia estar. Abaixo de 1 é atraso."""
+    return round(pct_concluido / pct_esperado, 2)
 
 
-print(calcular_receita(2, 64.79))      # 129.58
-print(calcular_receita(1, 1286.09))    # 1286.09
+def situacao(spi):
+    """A regra de corte da Vértice."""
+    if spi < 0.8:
+        return "crítico"
+    if spi < 0.9:
+        return "atenção"
+    return "ok"
+
+
+spi = calcular_spi(54, 70)
+print(spi, situacao(spi))                # 0.77 crítico
+print(calcular_spi(75, 100), situacao(calcular_spi(75, 100)))   # 0.75 crítico
 ```
 
 #### 6. Métodos: cada tipo traz as suas funções
@@ -302,8 +331,9 @@ print("requests", requests.__version__)
 
 #### 8. Consumindo uma API
 
-`status_code` 200 significa "deu certo". O `raise_for_status()` interrompe a execução se vier erro, o que
-evita seguir o pipeline com dado vazio.
+A Vértice atende clientes no Brasil inteiro. A API pública do IBGE devolve os 27 estados com a região de
+cada um. `status_code` 200 significa "deu certo"; o `raise_for_status()` interrompe a execução se vier
+erro, o que evita seguir o pipeline com dado vazio.
 
 *Célula 13*
 
@@ -456,7 +486,8 @@ pronto: alguém precisa ir buscar. Quando a fonte não tem conector, entra o Pyt
 da Black Friday (01/11)?
 
 No Databricks: **New › Notebook**, nome `01_ingestao_api`, computação **serverless** (ela tem internet).
-Cole uma célula de cada vez. Gabarito: [`01_ingestao_api.py`](01_ingestao_api.py).
+Cole uma célula de cada vez. Com lacunas para fazer junto: [`01_ingestao_api.py`](01_ingestao_api.py) · código pronto:
+[`01_ingestao_api_gabarito.py`](01_ingestao_api_gabarito.py).
 
 #### Passo 1 · Extrair: pedir os feriados à API
 
@@ -538,25 +569,26 @@ WHERE arquivo = (SELECT MAX(arquivo) FROM lakehouse_vertice.bronze.feriados)
 ORDER BY data
 ```
 
-#### Passo 5 · Um job que roda isso sozinho, a cada 10 minutos
+#### Passo 5 · Um job que roda isso sozinho, a cada 1 minuto
 
 1. **Jobs & Pipelines › Create › Job**, nome `vertice_ingestao`.
 2. Tarefa `api`: tipo **Notebook**, o seu `01_ingestao_api`, computação **Serverless**.
-3. **Schedules & Triggers › Add trigger › Scheduled**, modo **Advanced**, cron `0 0/10 * * * ?`
-   (a cada 10 minutos), fuso America/Sao_Paulo.
+3. **Schedules & Triggers › Add trigger › Scheduled**, modo **Advanced**, cron `0 * * * * ?`
+   (a cada 1 minuto), fuso America/Sao_Paulo.
 4. **Run now** para não esperar a primeira rodada.
 
-Volte depois de 10, 20 minutos e rode de novo as células 4 e 5: o raw ganhou um arquivo por execução e a
+Espere 2 ou 3 minutos e rode de novo as células 4 e 5: o raw ganhou um arquivo por execução e a
 bronze, 14 linhas por captura. Ninguém clicou em nada. **É isso que um engenheiro de dados entrega.**
 
-> No fim da aula, **pause o job** (botão **Pause** no agendamento): a cada 10 minutos ele consome a cota
+> Assim que conferir, **pause o job** (botão **Pause** no agendamento): a cada 1 minuto ele consome a cota
 > do Free Edition. Na etapa 4 ele passa a rodar uma vez por dia.
 
 ---
 
 ### 3. Data lake → raw → bronze (30 min)
 
-Um notebook novo, `02_ingestao_boto3`, serverless. Gabarito: [`02_ingestao_boto3.py`](02_ingestao_boto3.py). O mesmo extrair-pousar-carregar da API, agora
+Um notebook novo, `02_ingestao_boto3`, serverless. Com lacunas para fazer junto:
+[`02_ingestao_boto3.py`](02_ingestao_boto3.py) · código pronto: [`02_ingestao_boto3_gabarito.py`](02_ingestao_boto3_gabarito.py). O mesmo extrair-pousar-carregar da API, agora
 para o data lake inteiro. Preencha a célula de configuração com a tabela de conexão.
 
 Ontem você baixou os arquivos e subiu no volume **na mão**. Numa empresa, os sistemas e as
@@ -831,8 +863,10 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `README.md` | esta noite: a teoria e todo o código, célula por célula |
 | `00_aquecimento_python.py` | o aquecimento, com lacunas para resolver |
 | `00_aquecimento_python_gabarito.py` | o aquecimento resolvido |
-| `01_ingestao_api.py` | gabarito: API → raw → `bronze.feriados` |
-| `02_ingestao_boto3.py` | gabarito: data lake (S3, `boto3`) → raw → as 9 tabelas da bronze |
+| `01_ingestao_api.py` | a ingestão da API, com lacunas para fazer junto |
+| `01_ingestao_api_gabarito.py` | a ingestão da API, com o código pronto |
+| `02_ingestao_boto3.py` | a ingestão do data lake (S3, `boto3`), com lacunas |
+| `02_ingestao_boto3_gabarito.py` | a ingestão do data lake, com o código pronto |
 
 ## ➡️ Amanhã
 

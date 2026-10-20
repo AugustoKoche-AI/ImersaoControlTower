@@ -6,18 +6,22 @@
 
 # MAGIC %md
 # MAGIC No Databricks: **New › Notebook**, nome `00_aquecimento_python`, computação **serverless**. Cole uma célula de
-# MAGIC cada vez e rode com **Shift+Enter**. Tente entender cada linha antes de rodar: os comentários explicam.
+# MAGIC cada vez e rode com **Shift+Enter**. Prefere com lacunas para resolver? Importe o
+# MAGIC [`00_aquecimento_python.py`](00_aquecimento_python.py) (exercícios) e confira no
+# MAGIC [`00_aquecimento_python_gabarito.py`](00_aquecimento_python_gabarito.py). Tente entender cada linha antes de rodar: os comentários explicam.
 # MAGIC
 # MAGIC ## 1. Variáveis e tipos
+# MAGIC
+# MAGIC Uma variável é um nome para um valor. O Python descobre o tipo sozinho; o `type()` mostra qual.
 
 # COMMAND ----------
 
-nome_tabela = "vendas"          # str  · texto sempre entre aspas
-total_vendas = 3020             # int  · número inteiro, sem aspas
-receita_total = 974077.28       # float· número com casas decimais (ponto, não vírgula)
-pipeline_ativo = True           # bool · True ou False, com inicial maiúscula
+projeto = "PRJ-011"             # str  · texto sempre entre aspas
+total_projetos = 60             # int  · número inteiro, sem aspas
+carteira_mi = 305.2             # float· número com casas decimais (ponto, não vírgula)
+em_andamento = True             # bool · True ou False, com inicial maiúscula
 
-for valor in (nome_tabela, total_vendas, receita_total, pipeline_ativo):
+for valor in (projeto, total_projetos, carteira_mi, em_andamento):
     print(valor, type(valor))
 
 # COMMAND ----------
@@ -29,75 +33,92 @@ for valor in (nome_tabela, total_vendas, receita_total, pipeline_ativo):
 
 # COMMAND ----------
 
-print(f"A tabela {nome_tabela} tem {total_vendas} linhas.")
+print(f"A Vértice tem {total_projetos} projetos e R$ {carteira_mi} mi de carteira.")
 
-# formatando número: milhar com ponto e 2 casas decimais
-print(f"Receita: R$ {receita_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+# formatando dinheiro no padrão brasileiro: milhar com ponto, centavos com vírgula
+valor_contrato = 12500000.0
+print(f"Contrato: R$ {valor_contrato:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 2. Listas
+# MAGIC
+# MAGIC Uma lista guarda vários valores em ordem, entre colchetes. O índice começa em 0.
 
 # COMMAND ----------
 
-tabelas = ["vendas", "produtos", "clientes", "preco_competidores"]
+# os 4 projetos com o pior SPI da carteira (noite 1)
+piores = ["PRJ-016", "PRJ-030", "PRJ-039", "PRJ-011"]
 
-print(f"São {len(tabelas)} tabelas")
-print("Primeira:", tabelas[0])
-print("Última:  ", tabelas[-1])     # índice negativo conta de trás para frente
+print(f"São {len(piores)} projetos")
+print("O pior:  ", piores[0])
+print("O último:", piores[-1])     # índice negativo conta de trás para frente
+
+ferramentas = ["excel", "clickup", "msproject"]
+print("ferramentas:", ferramentas)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 3. Dicionários
+# MAGIC
+# MAGIC Um dicionário guarda pares **chave: valor**. É assim que uma API, um banco ou um JSON devolvem cada
+# MAGIC registro: um projeto é um dicionário.
 
 # COMMAND ----------
 
-venda = {
-    "id_venda": "sal_adff6978b0c6",
-    "canal": "loja_fisica",
-    "quantidade": 2,
-    "preco_unitario": 64.79,
+projeto = {
+    "projeto_id": "PRJ-011",
+    "nome": "Checkout e meios de pagamento",
+    "ferramenta": "msproject",
+    "pct_concluido": 54,      # quanto está pronto
+    "pct_esperado": 70,       # quanto devia estar pronto hoje
 }
 
-receita = venda["quantidade"] * venda["preco_unitario"]
-print(f"Receita da venda {venda['id_venda']}: R$ {receita:.2f}")
+spi = projeto["pct_concluido"] / projeto["pct_esperado"]
+print(f"SPI do {projeto['projeto_id']}: {spi:.2f}")      # 0.77: abaixo de 1 é atraso
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Dicionário dentro de dicionário
 # MAGIC
-# MAGIC Leia de fora para dentro: `estado["regiao"]` devolve outro dicionário, e nele pedimos `["nome"]`.
+# MAGIC Leia de fora para dentro: `projeto["cliente"]` devolve outro dicionário, e nele pedimos `["segmento"]`.
 
 # COMMAND ----------
 
-estado = {"sigla": "AM", "nome": "Amazonas", "regiao": {"id": 1, "sigla": "N", "nome": "Norte"}}
+projeto = {"projeto_id": "PRJ-011",
+           "cliente": {"nome": "Supermercado Bom Preço", "segmento": "varejo"}}
 
-print(estado["regiao"]["nome"])
+print(projeto["cliente"]["segmento"])
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 4. `for` e `if`
+# MAGIC
+# MAGIC O `for` repete o mesmo passo para cada item; o `if` escolhe o caminho.
 
 # COMMAND ----------
 
-tabelas = ["vendas", "produtos", "clientes", "preco_competidores"]
+cronogramas = ["PRJ-002", "PRJ-010", "PRJ-012"]
 
-for tabela in tabelas:
-    print(f"Baixando {tabela}.parquet do data lake...")
+for prj in cronogramas:
+    print(f"Baixando Cronograma {prj}.xlsx do data lake...")
 
 # COMMAND ----------
 
-quantidades = [1, 3, 2, 5, 1]
+# a regra da Vértice: SPI abaixo de 0,8 é crítico; abaixo de 0,9, atenção
+spis = {"PRJ-016": 0.63, "PRJ-030": 0.69, "PRJ-039": 0.75, "PRJ-011": 0.77, "PRJ-024": 0.91}
 
-for quantidade in quantidades:
-    if quantidade > 2:
-        print(f"{quantidade} unidades: venda grande")
+for prj, spi in spis.items():
+    if spi < 0.8:
+        print(f"{prj}  SPI {spi}: crítico")
+    elif spi < 0.9:
+        print(f"{prj}  SPI {spi}: atenção")
     else:
-        print(f"{quantidade} unidades: venda pequena")
+        print(f"{prj}  SPI {spi}: ok")
 
 # COMMAND ----------
 
@@ -105,17 +126,27 @@ for quantidade in quantidades:
 # MAGIC ## 5. Funções
 # MAGIC
 # MAGIC `def` cria a função, os parâmetros vão entre parênteses e o `return` devolve o resultado. O texto entre
-# MAGIC três aspas é a documentação da função.
+# MAGIC três aspas é a documentação da função. Escreveu uma vez, usa para os 60 projetos.
 
 # COMMAND ----------
 
-def calcular_receita(quantidade, preco_unitario):
-    """Receita de uma venda, arredondada em 2 casas."""
-    return round(quantidade * preco_unitario, 2)
+def calcular_spi(pct_concluido, pct_esperado):
+    """Índice de prazo: quanto está pronto dividido por quanto devia estar. Abaixo de 1 é atraso."""
+    return round(pct_concluido / pct_esperado, 2)
 
 
-print(calcular_receita(2, 64.79))      # 129.58
-print(calcular_receita(1, 1286.09))    # 1286.09
+def situacao(spi):
+    """A regra de corte da Vértice."""
+    if spi < 0.8:
+        return "crítico"
+    if spi < 0.9:
+        return "atenção"
+    return "ok"
+
+
+spi = calcular_spi(54, 70)
+print(spi, situacao(spi))                # 0.77 crítico
+print(calcular_spi(75, 100), situacao(calcular_spi(75, 100)))   # 0.75 crítico
 
 # COMMAND ----------
 
@@ -201,8 +232,9 @@ print("requests", requests.__version__)
 # MAGIC %md
 # MAGIC ## 8. Consumindo uma API
 # MAGIC
-# MAGIC `status_code` 200 significa "deu certo". O `raise_for_status()` interrompe a execução se vier erro, o que
-# MAGIC evita seguir o pipeline com dado vazio.
+# MAGIC A Vértice atende clientes no Brasil inteiro. A API pública do IBGE devolve os 27 estados com a região de
+# MAGIC cada um. `status_code` 200 significa "deu certo"; o `raise_for_status()` interrompe a execução se vier
+# MAGIC erro, o que evita seguir o pipeline com dado vazio.
 
 # COMMAND ----------
 

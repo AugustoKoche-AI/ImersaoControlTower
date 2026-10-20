@@ -14,7 +14,8 @@
 # MAGIC da Black Friday (01/11)?
 # MAGIC
 # MAGIC No Databricks: **New › Notebook**, nome `01_ingestao_api`, computação **serverless** (ela tem internet).
-# MAGIC Cole uma célula de cada vez.
+# MAGIC Cole uma célula de cada vez. Com lacunas para fazer junto: [`01_ingestao_api.py`](01_ingestao_api.py) · código pronto:
+# MAGIC [`01_ingestao_api_gabarito.py`](01_ingestao_api_gabarito.py).
 # MAGIC
 # MAGIC ## Passo 1 · Extrair: pedir os feriados à API
 
@@ -23,12 +24,14 @@
 import requests                # conversa com a API (HTTP)
 
 url = "https://brasilapi.com.br/api/feriados/v1/2026"
-resposta = requests.get(url, timeout=30)
-resposta.raise_for_status()    # se a API cair, para aqui com o erro, em vez de seguir com nada
 
-feriados = resposta.json()     # o JSON vira uma lista do Python: um dicionário por feriado
-print(len(feriados), "feriados")
-feriados[:3]
+# Objetivo: pedir os feriados à API e transformar a resposta em lista do Python.
+# 1. resposta = requests.get(url, timeout=30)
+# 2. resposta.raise_for_status()      -> se a API cair, para aqui
+# 3. feriados = resposta.json()
+# 4. imprima quantos feriados vieram (len) e mostre os 3 primeiros (feriados[:3])
+
+# escreva seu código aqui
 
 # COMMAND ----------
 
@@ -47,10 +50,13 @@ pasta = "/Volumes/lakehouse_vertice/bronze/raw/feriados"
 os.makedirs(pasta, exist_ok=True)                        # a pasta nova precisa existir
 
 agora = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")     # ex.: 2026-10-20_19-40-00 (horário UTC)
-with open(f"{pasta}/feriados_{agora}.json", "w") as arquivo:
-    json.dump(feriados, arquivo, ensure_ascii=False)
 
-sorted(os.listdir(pasta))                                # um arquivo por execução
+# Objetivo: gravar a lista `feriados` no arquivo f"{pasta}/feriados_{agora}.json".
+# Dica: with open(caminho, "w") as arquivo:
+#           json.dump(feriados, arquivo, ensure_ascii=False)
+# Depois, liste a pasta com sorted(os.listdir(pasta)).
+
+# escreva seu código aqui
 
 # COMMAND ----------
 

@@ -5,7 +5,8 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Um notebook novo, `02_ingestao_data_lake`, serverless. O mesmo extrair-pousar-carregar da API, agora
+# MAGIC Um notebook novo, `02_ingestao_boto3`, serverless. Com lacunas para fazer junto:
+# MAGIC [`02_ingestao_boto3.py`](02_ingestao_boto3.py) · código pronto: [`02_ingestao_boto3_gabarito.py`](02_ingestao_boto3_gabarito.py). O mesmo extrair-pousar-carregar da API, agora
 # MAGIC para o data lake inteiro. Preencha a célula de configuração com a tabela de conexão.
 # MAGIC
 # MAGIC Ontem você baixou os arquivos e subiu no volume **na mão**. Numa empresa, os sistemas e as
@@ -44,16 +45,12 @@ RAW = "/Volumes/lakehouse_vertice/bronze/raw"
 
 import boto3
 
-s3 = boto3.client(
-    "s3",
-    endpoint_url=S3_ENDPOINT,
-    region_name=S3_REGION,
-    aws_access_key_id=ACCESS_KEY,
-    aws_secret_access_key=SECRET_KEY,
-)
+# Objetivo: criar o cliente S3 apontando para o data lake e listar os buckets.
+# Dica: s3 = boto3.client("s3", endpoint_url=S3_ENDPOINT, region_name=S3_REGION,
+#                         aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
+#       for bucket in s3.list_buckets()["Buckets"]: print(bucket["Name"])
 
-for bucket in s3.list_buckets()["Buckets"]:
-    print(bucket["Name"])
+# escreva seu código aqui
 
 # COMMAND ----------
 
@@ -106,17 +103,21 @@ for pasta in sorted({k.split("/")[0] for k in arquivos}):
 
 import os
 
+# Objetivo: escrever baixar(key), que baixa um arquivo do bucket e grava no raw, no mesmo caminho.
+# 1. destino = f"{RAW}/{key}"
+# 2. os.makedirs(os.path.dirname(destino), exist_ok=True)
+# 3. conteudo = s3.get_object(Bucket=S3_BUCKET, Key=key)["Body"].read()     -> extrair
+# 4. with open(destino, "wb") as f: f.write(conteudo)                        -> pousar
+# 5. return len(conteudo)
+
 def baixar(key):
-    destino = f"{RAW}/{key}"                                   # o mesmo caminho do bucket
-    os.makedirs(os.path.dirname(destino), exist_ok=True)
-    conteudo = s3.get_object(Bucket=S3_BUCKET, Key=key)["Body"].read()   # 1 · extrair
-    with open(destino, "wb") as f:                                        # 2 · pousar
-        f.write(conteudo)
-    return len(conteudo)
+    # escreva seu código aqui
+    pass
+
 
 total = 0
 for key in arquivos:
-    total += baixar(key)
+    total += baixar(key) or 0
 print(f"{len(arquivos)} arquivos, {total/1e6:.1f} MB no raw")
 
 # COMMAND ----------
