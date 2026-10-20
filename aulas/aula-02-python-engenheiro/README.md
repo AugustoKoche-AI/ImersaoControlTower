@@ -399,12 +399,15 @@ S3_BUCKET = "vertice"
 ACCESS_KEY = "XXXX"
 SECRET_KEY = "XXXX"
 
+from botocore.config import Config
+
 s3 = boto3.client(
     "s3",
     endpoint_url=S3_ENDPOINT,
     region_name=S3_REGION,
     aws_access_key_id=ACCESS_KEY,
     aws_secret_access_key=SECRET_KEY,
+    config=Config(s3={"addressing_style": "path"}),   # o Supabase só entende o bucket no caminho da URL
 )
 
 # Listar buckets
@@ -650,8 +653,13 @@ Repare: nenhuma chave no código. O `boto3` lê `AWS_ACCESS_KEY_ID`, `AWS_SECRET
 
 ```python
 import boto3
+from botocore.config import Config
 
-s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"])
+s3 = boto3.client(
+    "s3",
+    endpoint_url=os.environ["S3_ENDPOINT"],
+    config=Config(s3={"addressing_style": "path"}),   # o Supabase só entende o bucket no caminho da URL
+)
 
 for bucket in s3.list_buckets()["Buckets"]:
     print(bucket["Name"])
@@ -858,6 +866,7 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `InvalidAccessKeyId`, `SignatureDoesNotMatch` | chave ou segredo errados | copie de novo da tabela de conexão, sem espaço |
 | `AssertionError: preencha: [...]` | faltou um parâmetro | preencha a caixinha no topo, ou o Job parameter de mesmo nome |
 | `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `vertice`, em minúsculas |
+| `ClientError: An error occurred () when calling the ListObjectsV2` | o boto3 pôs o bucket no endereço, e o Supabase não entende | `config=Config(s3={"addressing_style": "path"})` no `boto3.client` |
 | `PATH_NOT_FOUND` no `read_files` | o arquivo não foi baixado | rode a célula que baixa os arquivos para o raw |
 | a contagem não bate com a de ontem | faltou arquivo no bucket | o passo 2 mostra quantos arquivos tem em cada pasta |
 

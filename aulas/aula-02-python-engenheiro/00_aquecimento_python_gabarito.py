@@ -301,12 +301,15 @@ S3_BUCKET = "vertice"
 ACCESS_KEY = "XXXX"
 SECRET_KEY = "XXXX"
 
+from botocore.config import Config
+
 s3 = boto3.client(
     "s3",
     endpoint_url=S3_ENDPOINT,
     region_name=S3_REGION,
     aws_access_key_id=ACCESS_KEY,
     aws_secret_access_key=SECRET_KEY,
+    config=Config(s3={"addressing_style": "path"}),   # o Supabase só entende o bucket no caminho da URL
 )
 
 # Listar buckets

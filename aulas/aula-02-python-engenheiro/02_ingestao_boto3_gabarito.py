@@ -65,8 +65,13 @@ print("ambiente pronto:", os.environ["S3_ENDPOINT"])
 # COMMAND ----------
 
 import boto3
+from botocore.config import Config
 
-s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"])
+s3 = boto3.client(
+    "s3",
+    endpoint_url=os.environ["S3_ENDPOINT"],
+    config=Config(s3={"addressing_style": "path"}),   # o Supabase só entende o bucket no caminho da URL
+)
 
 for bucket in s3.list_buckets()["Buckets"]:
     print(bucket["Name"])

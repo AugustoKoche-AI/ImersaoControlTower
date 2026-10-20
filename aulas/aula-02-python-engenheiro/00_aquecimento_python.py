@@ -352,6 +352,9 @@ ACCESS_KEY = "XXXX"
 SECRET_KEY = "XXXX"
 
 # escreva seu código aqui: s3 = boto3.client(...) e depois liste os buckets
+# atenção: o Supabase exige o bucket no caminho da URL. Passe também:
+#   from botocore.config import Config
+#   config=Config(s3={"addressing_style": "path"})
 
 
 # COMMAND ----------

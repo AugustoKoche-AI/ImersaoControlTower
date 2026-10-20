@@ -68,7 +68,9 @@ import boto3
 
 # Objetivo: criar o cliente S3 apontando para o data lake e listar os buckets.
 # As chaves já estão no ambiente (célula 1): o boto3 encontra sozinho.
-# Dica: s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"])
+# Dica: from botocore.config import Config
+#       s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"],
+#                         config=Config(s3={"addressing_style": "path"}))   # o Supabase exige
 #       for bucket in s3.list_buckets()["Buckets"]: print(bucket["Name"])
 
 # escreva seu código aqui
