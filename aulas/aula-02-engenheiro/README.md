@@ -283,6 +283,302 @@ Pronto. Agora é prompt a prompt.
 
 ---
 
+<!-- prompts:inicio · gerado de prd/prompt-00..05-*.md (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e gere de novo. -->
+## 📋 Os prompts da noite, prontos para copiar
+
+Cole um de cada vez no Claude Code, na raiz do seu repositório (`projeto-farol`). Espere terminar,
+confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`.
+
+### Prompt 0 · Aquecimento: uma API em Python (~1 min)
+
+```
+Busque os feriados nacionais de 2026 na API
+https://brasilapi.com.br/api/feriados/v1/2026
+com um script Python (requests). Salve a resposta
+em feriados_2026.json, suba o arquivo para
+/Volumes/lakehouse_vertice/bronze/raw/feriados/
+e crie a tabela lakehouse_vertice.bronze.feriados
+com read_files. No fim, mostre os feriados de
+novembro com o dia da semana.
+Use o profile vertice.
+```
+
+### Prompt 1 · O bundle: o projeto vira código (~40 s)
+
+```
+Leia o CLAUDE.md da raiz do repositório antes de começar.
+
+Crie o projeto da noite 2 na raiz deste repositório como um
+Databricks Asset Bundle chamado vertice. Esta é a primeira de seis entregas: as
+outras cinco estendem este mesmo bundle, então deixe a estrutura pronta para
+crescer (resources/, src/conferencia, src/silver, src/gold, src/ia,
+src/metricas, src/testes, scripts/). Não copie de outro projeto: construa.
+
+CONTEXTO DO WORKSPACE
+- profile: vertice   (sempre passe --profile, nunca deixe implícito)
+- descubra o SQL Warehouse com `databricks warehouses list --profile vertice`
+- Databricks Free Edition: tudo serverless, nunca configure cluster
+- o catálogo lakehouse_vertice e os schemas bronze/silver/gold JÁ EXISTEM
+  (noite 1). O bundle NÃO cria nem gerencia catálogo nem schema.
+
+1. databricks.yml
+   - bundle name: vertice; include: resources/*.yml
+   - variables: catalog (default lakehouse_vertice) e warehouse_id (o id que
+     você descobriu)
+   - targets dev (default) e prod
+   - ARMADILHA: NÃO use `mode: development` no dev. Ele prefixa os nomes com
+     [dev seu_usuario] e quebra o SQL. Pause o agendamento com
+     `presets: { trigger_pause_status: PAUSED }`. Deixe um comentário no YAML
+     explicando isso.
+   - prod: mode production, root_path em /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+2. resources/vertice.job.yml
+   - job vertice_farol, agendado toda segunda às 6h (America/Sao_Paulo),
+     depois do status semanal de sexta
+   - uma tarefa por enquanto: conferencia_bronze, sql_task no warehouse
+     ${var.warehouse_id} com o arquivo ../src/conferencia/00-conferencia-bronze.sql
+   - comentário no topo listando as tarefas que os próximos prompts vão
+     acrescentar (medalhao, testes_de_qualidade, status_com_ia,
+     metricas_governadas)
+
+3. src/conferencia/00-conferencia-bronze.sql
+   Confere as 9 tabelas da bronze contra a contagem esperada (seed 42):
+   projetos 60 · status_semanal 3911 · excel_tarefas 1663 · clickup_tarefas 2119 ·
+   msproject_tarefas 1260 · colaboradores 523 · apontamentos 30883 ·
+   custos 23640 · entregas_fornecedor 640
+   Uma linha por tabela com esperado e obtido; se alguma divergir, chame
+   raise_error() com uma mensagem que diga qual tabela e o que fazer
+   (rodar de novo o 00-carregar-dados e o 01-ingestao-bronze da noite 1).
+
+Rode e me mostre a saída de cada um:
+  databricks bundle validate --profile vertice
+  databricks bundle deploy --profile vertice
+  databricks bundle run vertice_farol --profile vertice
+```
+
+### Prompt 2 · Silver: as três ferramentas viram uma (~2 min)
+
+```
+Continue o bundle na raiz deste repositório. A bronze está
+conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
+declarar o contrato.
+
+Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
+resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
+${var.catalog}, schema silver, serverless: true, photon: true, e libraries com
+um glob em ../src/silver/** (o prompt 3 vai acrescentar ../src/gold/**).
+
+Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
+existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
+Leia a bronze pelo nome completo lakehouse_vertice.bronze.<tabela>; dentro do
+pipeline, referencie as tabelas silver só pelo nome. COMMENT em toda tabela.
+Siga a tabela de sujeiras da seção 3 do CLAUDE.md.
+
+Um arquivo por assunto em src/silver/:
+
+01-projetos.sql — o cadastro do PMO (é o de-para da integração)
+- data_inicio em yyyy-MM-dd e dd/MM/yyyy: coalesce de dois try_to_date.
+- ferramenta escrita de 8 jeitos → 'excel', 'clickup' ou 'msproject'
+  (guarde ferramenta_como_veio). codigo_ferramenta vazio → NULL.
+- EXPECT data_inicio IS NOT NULL e ferramenta IN (...), FAIL UPDATE.
+
+02-tarefas.sql — AS TRÊS FERRAMENTAS VIRAM UMA
+Três CREATE TEMPORARY VIEW com as MESMAS colunas (projeto_id, ferramenta,
+id_na_ferramenta, fase, tarefa, responsavel, inicio_baseline, fim_baseline,
+inicio_real, fim_real, pct_como_veio, horas, status_na_ferramenta):
+- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se o
+  código faltar, o PRJ-xxx do nome do arquivo. Datas: com '/' é dd/MM/yyyy,
+  senão é número de série do Excel: date_add(DATE'1899-12-30', CAST(x AS INT)).
+  %: com '%' tire o '%' e troque vírgula por ponto; sem '%' é fração (× 100).
+  Horas: tire o 'h'. TIRE a linha onde tarefa = 'TOTAL'.
+- tarefas_clickup: projeto pelo de-para (codigo_ferramenta = list_id) e, se o
+  código faltar, pelo nome da lista. Datas em milissegundos:
+  to_date(timestamp_millis(CAST(x AS BIGINT))). % e baseline estão em
+  custom_fields: filter(custom_fields, f -> f.name = 'Progresso (%)')[0].value
+  (e 'Início baseline', 'Fim baseline', 'Fase'). Horas = time_estimate / 3600000.
+  Status de 12 jeitos → concluida / a_fazer / em_andamento.
+- tarefas_msproject: projeto pelo de-para (codigo_ferramenta = arquivo). Só
+  Summary = 0 (as tarefas-resumo somam as de baixo). A fase é a última
+  tarefa-resumo de OutlineLevel 1 antes da tarefa:
+  last_value(CASE WHEN OutlineLevel = 1 THEN Name END, true) OVER (PARTITION
+  BY arquivo ORDER BY UID). Baseline.Start/Finish, ActualStart/ActualFinish,
+  PercentComplete, horas de 'PT40H0M0S'.
+MATERIALIZED VIEW tarefas = UNION ALL das três, com tarefa_id
+(projeto-ferramenta-id), pct_concluido = least(pct_como_veio, 100) e a flag
+pct_veio_acima_de_100. EXPECT projeto_id IS NOT NULL (achou_o_projeto),
+pct entre 0 e 100 e horas > 0, todos FAIL UPDATE.
+
+03-status-e-custos.sql
+- status_semanal: data_status DATE, farol em minúsculas (EXPECT farol IN
+  ('verde','amarelo','vermelho') FAIL UPDATE), pct_concluido INT, flag
+  status_vazio ('', 'N/A', 'ver ata da reunião') — NÃO descarte.
+- custos: valor com 671 vírgulas decimais: replace(',', '.') ANTES do CAST,
+  nunca try_cast. estorno (negativo) FICA, com a coluna estorno. semana =
+  sexta da semana: date_add(date_trunc('WEEK', data), 4).
+
+04-pessoas.sql
+- colaboradores: COL0102, COL0257 e COL0433 aparecem duas vezes (nome e papel
+  em CAIXA ALTA). Mantenha o cadastro com papel em minúsculas (row_number).
+- apontamentos com semana = semana_inicio + 4 (sexta).
+
+05-fornecedores.sql — entregas_fornecedor: a CodeForge vem de 4 jeitos
+('CodeForge Consultoria Ltda', 'Codeforge Consultoria', 'CODEFORGE CONSULTORIA
+LTDA', 'Code Forge Consultoria'): normalize (replace(lower(x), ' ', '') LIKE
+'%codeforge%') e guarde fornecedor_como_veio. data_entrega vazia = em aberto
+(não é sujeira). prazo_prometido_dias, prazo_real_dias,
+dias_de_atraso_na_entrega, em_aberto e em_atraso (em aberto e data_prometida
+antes de DATE'2026-10-16').
+
+São 7 tabelas na silver, nem uma a mais: projetos, tarefas, status_semanal,
+custos, colaboradores, apontamentos e entregas_fornecedor.
+
+Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
+para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile vertice
+  databricks bundle run vertice_medalhao --profile vertice
+```
+
+### Prompt 3 · Gold + testes: a modelagem (~3 min)
+
+```
+Continue o bundle na raiz deste repositório. A silver está pronta.
+Agora a gold, no MESMO pipeline vertice_medalhao: acrescente o glob
+../src/gold/** em libraries. Os arquivos da gold escrevem com o nome completo
+lakehouse_vertice.gold.<tabela>; leem a silver pelo nome curto. COMMENT em todas.
+O "hoje" é DATE'2026-10-16'. Nunca current_date().
+
+src/gold/01-fato-projeto-semana.sql → lakehouse_vertice.gold.fato_projeto_semana
+Uma linha por projeto e semana (sexta-feira), da semana do início até
+2026-10-16 (sequence(..., INTERVAL 1 WEEK) + explode). Colunas:
+- pv: orçamento × Σ horas × fração do baseline decorrida até a semana ÷ Σ horas
+  (greatest(0, least(1, datediff(semana, inicio)/datediff(fim, inicio))))
+- ev: orçamento × pct_concluido do status_semanal daquela sexta ÷ 100. Projeto
+  concluído não publica mais: use o último % (last_value(pct, true) OVER).
+- ac: custo real acumulado (silver.custos por semana, soma acumulada)
+- spi = ev/pv, cpi = ev/ac (try_divide, 4 casas), eac = orcamento / cpi
+- farol_do_gerente (o último farol publicado)
+- horas_disponiveis, horas_apontadas e horas_ociosas da semana (apontamentos)
+- EXPECT pv >= 0 e ev <= orcamento, FAIL UPDATE.
+
+src/gold/02-situacao-e-pessoas.sql
+- projeto_situacao_atual: a fotografia de 2026-10-16 de cada projeto (60
+  linhas). Traz o cadastro (projeto = projeto_id · nome, cliente, segmento,
+  tipo_projeto, ferramenta, gerente_projeto, valor_contrato, orcamento,
+  data_inicio, data_fim_baseline, duracao_baseline_dias, status) e os KPIs
+  calculados sobre silver.tarefas (o % de hoje das ferramentas): pv, ev, ac, spi, cpi, eac, estouro_previsto = greatest(eac - orcamento, 0),
+  margem_projetada, atraso_projetado_dias, termino_projetado, situacao
+  ('concluído' se status <> em_andamento; 'crítico' se SPI ou CPI < 0,8;
+  'atenção' se < 0,9; senão 'ok'), farol_do_gerente (status de hoje),
+  farol_calculado (regra do manual: verde >= 0,95; amarelo >= 0,90) e
+  melancia (em andamento, farol do gerente verde e SPI < 0,9).
+- utilizacao_pessoa_semana: pessoa × projeto × semana com nome, papel,
+  senioridade, horas disponíveis, apontadas, ociosas, utilizacao,
+  custo_ocioso (horas ociosas × custo_hora) e o spi_do_projeto naquela semana.
+Não crie dim_projeto nem tabela gold de fornecedor: o cadastro já está na
+projeto_situacao_atual, e fornecedor é lido direto da silver.entregas_fornecedor.
+
+src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
+ 1 os 60 projetos têm cronograma na silver.tarefas
+ 2 cada projeto veio de UMA ferramenta, a do cadastro do PMO
+ 3 as horas do Excel na silver = a soma das linhas de TOTAL das planilhas
+ 4 uma linha por pessoa na silver
+ 5 a CodeForge virou um fornecedor só
+ 6 a limpeza não mudou o custo total (bronze com replace = silver)
+ 7 os 60 projetos têm fotografia de hoje
+ 8 todo projeto em andamento tem SPI e CPI
+ 9 o EV de hoje do status semanal bate com o das ferramentas (diferença < 1%)
+10 AC de hoje no fato = soma dos lançamentos até hoje
+
+Acrescente ao job a tarefa testes_de_qualidade, depois de medalhao.
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile vertice
+  databricks bundle run vertice_farol --profile vertice
+```
+
+### Prompt 4 · O texto do status vira coluna, com IA (~2 min)
+
+```
+Continue o bundle na raiz deste repositório. Agora o texto livre
+do status semanal vira coluna. Use as funções de IA na versão 2.0
+(map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+
+src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+   a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
+      COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
+      bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
+      'palavra_chave'), texto_status, _classificado_em.
+      NÃO é CREATE OR REPLACE: a tabela acumula, e a IA não pode ser refeita
+      a cada execução.
+   b. MERGE INTO ... WHEN NOT MATCHED THEN INSERT, só com os status da
+      silver.status_semanal que ainda não estão na tabela (LEFT ANTI JOIN por
+      projeto_id e data_status). Para cada status:
+      - metodo = 'regra' se status_vazio ou se o texto (minúsculas) diz
+        'bloqueios: nenhum', 'sem bloqueios' ou 'nada relevante';
+        'ia' se data_status >= DATE'2026-07-18' (últimos 90 dias);
+        senão 'palavra_chave'.
+      - causa_bloqueio: 'nao_reportado' se vazio; 'sem_bloqueio' na regra;
+        na IA, ai_classify com a lista ["change_freeze","falta_sre",
+        "dependencia_fornecedor","rotatividade","mudanca_escopo",
+        "bug_retrabalho","aprovacao_cliente","sem_bloqueio"]; na
+        palavra-chave, RLIKE: freeze|congelamento|janela de deploy →
+        change_freeze; sre|infraestrutura|ambiente de homologação → falta_sre;
+        forge|consultoria|fornecedor → dependencia_fornecedor; saída de|
+        rotatividade|onboarding → rotatividade; escopo|change request|regra de
+        negócio → mudanca_escopo; bugs|regressão|refazendo → bug_retrabalho;
+        aprovação do cliente|homologação do cliente → aprovacao_cliente.
+      - só na IA: ai_extract com JSON schema tipado: bloqueio (string),
+        quem_destrava (string), dias_impacto (number, "1 semana = 7").
+      - dias_impacto fora da IA: regex em 'impacto estimado de N dias' e
+        'impacto estimado: 1 semana' (= 7).
+   c. No fim, um SELECT de leitura: quantos status por metodo e causa.
+
+Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
+com testes_de_qualidade).
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile vertice
+  databricks bundle run vertice_farol --profile vertice
+```
+
+### Prompt 5 · O KPI definido uma vez só (~10 s)
+
+```
+Continue o bundle na raiz deste repositório. Agora os KPIs
+governados, numa metric view do Unity Catalog. Uma só.
+
+Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW
+lakehouse_vertice.gold.mv_projetos WITH METRICS LANGUAGE YAML AS $$ ... $$
+(version 1.1), comment em toda dimensão e medida que não for óbvia, e
+synonyms em português.
+- source: lakehouse_vertice.gold.projeto_situacao_atual, com
+  filter status = 'em_andamento'.
+- Dimensões: projeto_id, projeto, cliente, segmento, ferramenta, situacao,
+  farol_do_gerente, farol_calculado, gerente_projeto.
+- Medidas: projetos, carteira (SUM valor_contrato), spi (SUM(ev)/SUM(pv)),
+  cpi (SUM(ev)/SUM(ac)), eac, estouro_previsto, margem_projetada
+  ((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato)),
+  atraso_projetado_medio_dias, projetos_em_risco, projetos_criticos,
+  projetos_melancia (COUNT FILTER WHERE melancia).
+
+ARMADILHAS MEDIDAS: o YAML precisa da indentação intacta (teste com
+python3 scripts/run_sql.py <arquivo> --profile vertice), e NUNCA use ';'
+dentro do YAML, nem num comment: a sql_task do job corta o arquivo em todo ';'.
+
+Acrescente ao job a tarefa metricas_governadas, depois de
+testes_de_qualidade E status_com_ia.
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile vertice
+  databricks bundle run vertice_farol --profile vertice
+```
+
+<!-- prompts:fim -->
+
+---
+
 ## 🧾 Os prompts, um por um
 
 Cada prompt termina com um **deploy**. Enquanto o Claude Code trabalha, o professor explica o
