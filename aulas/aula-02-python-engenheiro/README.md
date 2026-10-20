@@ -67,7 +67,7 @@ apontando para o Supabase, **o mesmo código funciona na Amazon**.
 | Bucket | a pasta raiz, o "balde" | `vertice` |
 | Key | o caminho do arquivo dentro do bucket | `pmo/projetos.csv` |
 | Endpoint | o endereço do serviço | `https://<ref>.storage.supabase.co/storage/v1/s3` |
-| Access key / secret | o usuário e a senha da máquina | no README, na tabela abaixo |
+| Access key / secret | o usuário e a senha da máquina | no ambiente: `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` |
 
 **3. Extrair, pousar, carregar.** Buscar na origem, guardar uma cópia do jeito que veio (o **raw**, no
 volume) e só então transformar em tabela (a **bronze**). É **ELT**: carrega primeiro, transforma depois.
@@ -78,22 +78,22 @@ status escrito de 12 jeitos continuam lá: são evidência do que a origem mando
 **texto**. Limpar é a silver, amanhã. E é **idempotente**: rodar duas vezes dá o mesmo resultado que uma
 (`CREATE OR REPLACE`), então o job pode repetir sem medo.
 
-**5. Credencial não vai no notebook.** Hoje a chave aparece no código para ficar simples de ver. Numa
-empresa ela fica num *secret scope* do Databricks e o notebook lê com `dbutils.secrets.get(...)`.
+**5. Credencial não vai no código.** O notebook lê as chaves do ambiente (`os.environ`), e quem preenche é o
+job, pelos parâmetros. Um passo além, em produção: guardar a chave num *secret scope* do Databricks.
 
 ---
 
 ## 🔌 Os dados de conexão
 
-| Variável | Valor |
+| Variável (parâmetro do job) | Valor |
 |---|---|
 | `S3_ENDPOINT` | `https://A-DEFINIR.storage.supabase.co/storage/v1/s3` |
-| `S3_REGION` | `A-DEFINIR` |
-| `S3_BUCKET` | `vertice` |
-| `ACCESS_KEY` | `A-DEFINIR` |
-| `SECRET_KEY` | `A-DEFINIR` |
+| `AWS_DEFAULT_REGION` | `A-DEFINIR` |
+| `AWS_ACCESS_KEY_ID` | `A-DEFINIR` |
+| `AWS_SECRET_ACCESS_KEY` | `A-DEFINIR` |
 
-Cole na célula de configuração dos notebooks (onde está `COLE-AQUI`).
+O bucket é `vertice`. Esses valores entram como **Job parameters** (etapa 4) ou nas caixinhas do topo do
+notebook, quando você roda na mão.
 
 ---
 
@@ -580,6 +580,9 @@ ORDER BY data
 Espere 2 ou 3 minutos e rode de novo as células 4 e 5: o raw ganhou um arquivo por execução e a
 bronze, 14 linhas por captura. Ninguém clicou em nada. **É isso que um engenheiro de dados entrega.**
 
+> Cada execução leva uns **4 minutos** no Free Edition (a computação serverless do job sobe do zero a cada
+> rodada). Com o agendamento a cada 1 minuto, as execuções entram na **fila** e rodam uma atrás da outra.
+>
 > Assim que conferir, **pause o job** (botão **Pause** no agendamento): a cada 1 minuto ele consome a cota
 > do Free Edition. Na etapa 4 ele passa a rodar uma vez por dia.
 
@@ -603,37 +606,48 @@ Os três passos de toda ingestão:
 
 Rode com a computação **serverless**, uma célula de cada vez.
 
-#### Configuração
+#### Configuração: as chaves chegam pelo ambiente
 
-Copie do README da noite 2. Na aula a chave fica aqui para ser simples de ver; numa empresa ela vai
-para um *secret scope* e o notebook lê com `dbutils.secrets.get(...)`.
+A chave **não fica escrita no código**. O notebook lê tudo de `os.environ`, as variáveis de ambiente,
+como em qualquer servidor ou na própria AWS. Quem preenche os valores é o **job**: cada parâmetro do job
+chega ao notebook como um *widget* com o mesmo nome, e a célula abaixo passa os widgets para o ambiente.
+
+- **Rodando na mão:** aparecem 4 caixinhas no topo do notebook. Cole os valores da tabela de conexão.
+- **Rodando pelo job:** os valores vêm dos **Job parameters** (etapa 4). Ninguém digita nada.
+
+Os nomes `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` são o padrão da AWS: o `boto3` encontra as chaves
+sozinho no ambiente, sem você passar no código.
 
 *Célula 1*
 
 ```python
-S3_ENDPOINT = "https://COLE-AQUI.storage.supabase.co/storage/v1/s3"
-S3_REGION   = "COLE-AQUI"
-S3_BUCKET   = "vertice"
-ACCESS_KEY  = "COLE-AQUI"
-SECRET_KEY  = "COLE-AQUI"
+import os
 
+VARIAVEIS = ["S3_ENDPOINT", "AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
+
+for nome in VARIAVEIS:
+    dbutils.widgets.text(nome, "")                 # a caixinha (o job preenche com o parâmetro de mesmo nome)
+    os.environ[nome] = dbutils.widgets.get(nome)   # o valor vira variável de ambiente
+
+faltando = [nome for nome in VARIAVEIS if not os.environ[nome]]
+assert not faltando, f"preencha: {faltando}"      # para aqui se faltar alguma chave
+
+S3_BUCKET = "vertice"
 RAW = "/Volumes/lakehouse_vertice/bronze/raw"
+print("ambiente pronto:", os.environ["S3_ENDPOINT"])
 ```
 
 #### Passo 1 · Conectar no data lake
+
+Repare: nenhuma chave no código. O `boto3` lê `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e
+`AWS_DEFAULT_REGION` do ambiente; só o endereço do Supabase vai explícito.
 
 *Célula 2*
 
 ```python
 import boto3
 
-s3 = boto3.client(
-    "s3",
-    endpoint_url=S3_ENDPOINT,
-    region_name=S3_REGION,
-    aws_access_key_id=ACCESS_KEY,
-    aws_secret_access_key=SECRET_KEY,
-)
+s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"])
 
 for bucket in s3.list_buckets()["Buckets"]:
     print(bucket["Name"])
@@ -804,8 +818,11 @@ O job da API ganha a segunda tarefa e passa a rodar uma vez por dia.
 1. Abra o job `vertice_ingestao` em **Jobs & Pipelines**.
 2. **+ Add task** `data_lake`: tipo **Notebook**, o seu `02_ingestao_boto3`, computação **Serverless**.
    Depende de: `api`.
-3. No agendamento, troque o cron para `0 0 6 * * ?` (todo dia às 06:00, America/Sao_Paulo).
-4. **Run now** e acompanhe as duas caixas ficarem verdes.
+3. No painel do job, **Job parameters › Edit parameters**, e adicione os 4 da tabela de conexão:
+   `S3_ENDPOINT`, `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY`. O job entrega cada
+   um ao notebook, que põe no `os.environ`.
+4. No agendamento, troque o cron para `0 0 6 * * ?` (todo dia às 06:00, America/Sao_Paulo).
+5. **Run now** e acompanhe as duas caixas ficarem verdes.
 
 ---
 
@@ -835,6 +852,7 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `ConnectionError`, `Max retries exceeded` | sem internet | computação serverless e conta verificada |
 | `EndpointConnectionError` | endpoint errado | confira o `S3_ENDPOINT`, com `/storage/v1/s3` no fim |
 | `InvalidAccessKeyId`, `SignatureDoesNotMatch` | chave ou segredo errados | copie de novo da tabela de conexão, sem espaço |
+| `AssertionError: preencha: [...]` | faltou um parâmetro | preencha a caixinha no topo, ou o Job parameter de mesmo nome |
 | `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `vertice`, em minúsculas |
 | `PATH_NOT_FOUND` no `read_files` | o arquivo não foi baixado | rode a célula que baixa os arquivos para o raw |
 | a contagem não bate com a de ontem | faltou arquivo no bucket | o passo 2 mostra quantos arquivos tem em cada pasta |

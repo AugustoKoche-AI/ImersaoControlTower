@@ -21,33 +21,50 @@
 # MAGIC
 # MAGIC Rode com a computação **serverless**, uma célula de cada vez.
 # MAGIC
-# MAGIC ## Configuração
+# MAGIC ## Configuração: as chaves chegam pelo ambiente
 # MAGIC
-# MAGIC Copie do README da noite 2. Na aula a chave fica aqui para ser simples de ver; numa empresa ela vai
-# MAGIC para um *secret scope* e o notebook lê com `dbutils.secrets.get(...)`.
+# MAGIC A chave **não fica escrita no código**. O notebook lê tudo de `os.environ`, as variáveis de ambiente,
+# MAGIC como em qualquer servidor ou na própria AWS. Quem preenche os valores é o **job**: cada parâmetro do job
+# MAGIC chega ao notebook como um *widget* com o mesmo nome, e a célula abaixo passa os widgets para o ambiente.
+# MAGIC
+# MAGIC - **Rodando na mão:** aparecem 4 caixinhas no topo do notebook. Cole os valores da tabela de conexão.
+# MAGIC - **Rodando pelo job:** os valores vêm dos **Job parameters** (etapa 4). Ninguém digita nada.
+# MAGIC
+# MAGIC Os nomes `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` são o padrão da AWS: o `boto3` encontra as chaves
+# MAGIC sozinho no ambiente, sem você passar no código.
 
 # COMMAND ----------
 
-S3_ENDPOINT = "https://COLE-AQUI.storage.supabase.co/storage/v1/s3"
-S3_REGION   = "COLE-AQUI"
-S3_BUCKET   = "vertice"
-ACCESS_KEY  = "COLE-AQUI"
-SECRET_KEY  = "COLE-AQUI"
+import os
 
+VARIAVEIS = ["S3_ENDPOINT", "AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
+
+for nome in VARIAVEIS:
+    dbutils.widgets.text(nome, "")                 # a caixinha (o job preenche com o parâmetro de mesmo nome)
+    os.environ[nome] = dbutils.widgets.get(nome)   # o valor vira variável de ambiente
+
+faltando = [nome for nome in VARIAVEIS if not os.environ[nome]]
+assert not faltando, f"preencha: {faltando}"      # para aqui se faltar alguma chave
+
+S3_BUCKET = "vertice"
 RAW = "/Volumes/lakehouse_vertice/bronze/raw"
+print("ambiente pronto:", os.environ["S3_ENDPOINT"])
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Passo 1 · Conectar no data lake
+# MAGIC
+# MAGIC Repare: nenhuma chave no código. O `boto3` lê `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e
+# MAGIC `AWS_DEFAULT_REGION` do ambiente; só o endereço do Supabase vai explícito.
 
 # COMMAND ----------
 
 import boto3
 
 # Objetivo: criar o cliente S3 apontando para o data lake e listar os buckets.
-# Dica: s3 = boto3.client("s3", endpoint_url=S3_ENDPOINT, region_name=S3_REGION,
-#                         aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
+# As chaves já estão no ambiente (célula 1): o boto3 encontra sozinho.
+# Dica: s3 = boto3.client("s3", endpoint_url=os.environ["S3_ENDPOINT"])
 #       for bucket in s3.list_buckets()["Buckets"]: print(bucket["Name"])
 
 # escreva seu código aqui
