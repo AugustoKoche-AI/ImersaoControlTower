@@ -120,9 +120,11 @@ bronze.entregas_forn. ───► silver.entregas_fornecedor ──────
 A noite 1 foi toda pelo navegador. A noite 2 precisa de **terminal** (a tela onde se digitam
 comandos). Siga na ordem; cada passo termina com um comando que **confere** se deu certo.
 
-> 🎥 **Vídeos de referência**
-> - Instalar o Antigravity e o GitHub, passo a passo: <https://www.youtube.com/watch?v=8mcBuO6wo4U&t=3s>
-> - Databricks + IA, em detalhes: <https://www.youtube.com/watch?v=0l-DZkniRSg&t=1122s>
+### 🎥 Vídeos de referência
+
+| Instalar o Antigravity e o GitHub, passo a passo | Databricks + IA, em detalhes |
+|---|---|
+| [![Instalar o Antigravity e o GitHub](https://img.youtube.com/vi/8mcBuO6wo4U/maxresdefault.jpg)](https://www.youtube.com/watch?v=8mcBuO6wo4U&t=3s) | [![Databricks + IA](https://img.youtube.com/vi/0l-DZkniRSg/maxresdefault.jpg)](https://www.youtube.com/watch?v=0l-DZkniRSg&t=1122s) |
 
 **Passo 1 · O editor: Antigravity**
 
