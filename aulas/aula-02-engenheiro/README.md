@@ -7,17 +7,8 @@ MS Project juntos numa tabela só, os KPIs de prazo e custo calculados com teste
 atraso tirada do texto do status por IA e a fórmula de cada KPI num lugar só. Tudo como código: um
 aquecimento em Python no Databricks (uma API nova na bronze) e **cinco prompts no Claude Code**, num job que roda toda segunda às 6h.
 
-> **Mudou em 20/10:** o dashboard e o Genie (o antigo prompt 6) passaram para a [noite 3](../aula-03-cientista),
-> depois do modelo. Hoje a noite fecha na modelagem: silver, gold e testes.
-
 **Por que isso responde ao dono:** ontem o Genie errou as quatro perguntas dele ("nenhum atraso
 custa nada"), porque olhava dado sujo e espalhado. Hoje a gente constrói o dado limpo e testado que faz ele acertar amanhã.
-
-> **O caso:** Vértice Tecnologia, 60 projetos de clientes, controlados em Excel (20), ClickUp (25) e
-> MS Project (15). Você é o único profissional de dados: hoje, o engenheiro.
-> **Pergunta da noite:** *"Como as três ferramentas viram uma — e isso roda sozinho, certo?"*
-> **Conexão:** a gold de hoje é o que a [noite 3](../aula-03-cientista) usa para prever qual
-> projeto vai estourar em 30 dias.
 
 ---
 
@@ -70,45 +61,60 @@ linha, com o projeto (`PRJ-019`) e a ferramenta de origem ao lado.
 
 ## 🏗️ O desenho do que você vai construir
 
-```
- bronze (noite 1)  ──►  pipeline vertice_medalhao  ──►  IA no texto  ──►  metric view  ──►  dashboard + Genie
- 9 tabelas:             silver (7): limpa e junta        status semanal     mv_projetos        "Projeto Farol · Portfólio"
- CSV, Excel,            as 3 ferramentas                                                      "Farol · Diretoria"
- JSON, XML              gold (3): os KPIs
-
- └──────────────────────── tudo dentro do job vertice_farol, toda segunda às 6h ────────────────────────┘
+```mermaid
+flowchart LR
+  API["aquecimento<br/>API de feriados<br/>Python no notebook"] --> B
+  B[("bronze · noite 1<br/>9 tabelas<br/>CSV, Excel, JSON, XML")] --> P
+  subgraph JOB["job vertice_farol · toda segunda às 6h"]
+    P["pipeline vertice_medalhao<br/>silver ×7: limpa e junta as 3 ferramentas<br/>gold ×3: os KPIs"] --> T["testes de qualidade"]
+    P --> IA["IA no texto<br/>status semanal"]
+    T --> M["metric view<br/>mv_projetos"]
+    IA --> M
+  end
+  M -.-> D["amanhã, noite 3<br/>dashboard + Genie"]
 ```
 
 <details>
 <summary>O job tarefa por tarefa e o pipeline por dentro (para quem quer o detalhe)</summary>
 
-```
-                       job vertice_farol  (toda segunda às 6h, serverless)
- ┌────────────────────────────────────────────────────────────────────────────────────┐
- │                                                                                    │
- │  conferencia_bronze ──► medalhao ──┬──► testes_de_qualidade ──┐                    │
- │  (sql_task)             (pipeline) │    (sql_task, 10 testes) │                    │
- │  9 contagens            silver ×7  └──► status_com_ia ────────┴──► metricas_       │
- │  ou raise_error         gold ×3         (regra + ai_classify       governadas      │
- │                         EXPECT           + ai_extract, MERGE)      (mv_projetos)   │
- └────────────────────────────────────────────────────────────────────────────────────┘
-        ▲                                                                  │
-   bronze (noite 1)                 dashboard_portfolio ◄── gold + mv_projetos ──► genie_farol
-   9 tabelas: CSV, Excel, JSON, XML  (bundle, 3 páginas)                          (bundle, 20 perguntas)
+```mermaid
+flowchart LR
+  B[("bronze · 9 tabelas")] --> C
+  subgraph JOB["job vertice_farol · toda segunda às 6h · serverless"]
+    C["conferencia_bronze<br/>sql_task · 9 contagens<br/>ou raise_error"] --> MED["medalhao<br/>pipeline · silver ×7 · gold ×3<br/>EXPECT"]
+    MED --> T["testes_de_qualidade<br/>sql_task · 10 testes"]
+    MED --> IA["status_com_ia<br/>regra + ai_classify + ai_extract<br/>MERGE incremental"]
+    T --> MV["metricas_governadas<br/>mv_projetos"]
+    IA --> MV
+  end
+  MV -.-> N3["noite 3<br/>dashboard + Genie"]
 ```
 
-```
-bronze.projetos ─────────► silver.projetos (o de-para) ──┐
-bronze.excel_tarefas ────► tarefas_excel ─────┐          │
-bronze.clickup_tarefas ──► tarefas_clickup ───┼─► silver.tarefas ─┬─► gold.projeto_situacao_atual (hoje)
-bronze.msproject_tarefas ► tarefas_msproject ─┘   (UNION ALL)     │
-bronze.status_semanal ───► silver.status_semanal ─────────────────┼─► gold.fato_projeto_semana (histórico)
-bronze.custos ───────────► silver.custos ─────────────────────────┤
-bronze.apontamentos ─────► silver.apontamentos ──┐                │
-bronze.colaboradores ────► silver.colaboradores ─┴────────────────┴─► gold.utilizacao_pessoa_semana
-bronze.entregas_forn. ───► silver.entregas_fornecedor ──────────────► (lida direto pelo dashboard e pelo Genie)
-                           silver.status_semanal ──(job: status_com_ia)───► gold.status_estruturado
-                           gold.projeto_situacao_atual ──(job: metricas_governadas)──► gold.mv_projetos
+```mermaid
+flowchart LR
+  bp["bronze.projetos"] --> sp["silver.projetos<br/>o de-para"]
+  be["bronze.excel_tarefas"] --> te["tarefas_excel"]
+  bc["bronze.clickup_tarefas"] --> tc["tarefas_clickup"]
+  bm["bronze.msproject_tarefas"] --> tm["tarefas_msproject"]
+  te --> st["silver.tarefas<br/>UNION ALL"]
+  tc --> st
+  tm --> st
+  sp --> st
+  bs["bronze.status_semanal"] --> ss["silver.status_semanal"]
+  bcu["bronze.custos"] --> sc["silver.custos"]
+  ba["bronze.apontamentos"] --> sa["silver.apontamentos"]
+  bco["bronze.colaboradores"] --> sco["silver.colaboradores"]
+  bf["bronze.entregas_fornecedor"] --> sf["silver.entregas_fornecedor<br/>lida direto pelo Genie"]
+  st --> gsa["gold.projeto_situacao_atual<br/>a fotografia"]
+  ss --> gsa
+  sc --> gsa
+  st --> gfs["gold.fato_projeto_semana<br/>o filme"]
+  ss --> gfs
+  sc --> gfs
+  sa --> gup["gold.utilizacao_pessoa_semana<br/>as pessoas"]
+  sco --> gup
+  ss -- "job: status_com_ia" --> gse["gold.status_estruturado"]
+  gsa -- "job: metricas_governadas" --> gmv["gold.mv_projetos"]
 ```
 
 </details>
