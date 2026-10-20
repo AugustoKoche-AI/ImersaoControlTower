@@ -316,33 +316,16 @@ print("estados recebidos:", len(estados))
 print("primeiro:", estados[0])
 ```
 
-Montando a lista só com o que interessa. As duas formas abaixo fazem a mesma coisa: a primeira com `for`,
-a segunda com *list comprehension*, que é o jeito curto de escrever o mesmo laço.
+#### 9. pandas
 
 *Célula 14*
 
 ```python
-# forma 1: for tradicional
-linhas = []
-for estado in estados:
-    linhas.append({
-        "sigla": estado["sigla"],
-        "nome": estado["nome"],
-        "regiao": estado["regiao"]["nome"],
-    })
-
-# forma 2: list comprehension (mesmo resultado, uma linha)
-linhas = [{"sigla": e["sigla"], "nome": e["nome"], "regiao": e["regiao"]["nome"]} for e in estados]
-
-df_estados = pd.DataFrame(linhas)
+# a lista de dicionários vira tabela; o json_normalize abre o dicionário "regiao" em colunas
+df_estados = pd.json_normalize(estados)[["sigla", "nome", "regiao.nome"]]
+df_estados = df_estados.rename(columns={"regiao.nome": "regiao"})
 display(df_estados.head())
-```
 
-#### 9. pandas
-
-*Célula 15*
-
-```python
 print("formato (linhas, colunas):", df_estados.shape)
 print("colunas:", list(df_estados.columns))
 
@@ -369,7 +352,7 @@ O **boto3** é a biblioteca da AWS para falar com o **S3**, o serviço de arquiv
 > Na aula a chave fica no notebook, para ser simples de ver. Em produção ela sai daqui e vai para o
 > secret scope do Databricks, o que entra amanhã.
 
-*Célula 16*
+*Célula 15*
 
 ```python
 import boto3
@@ -400,7 +383,7 @@ for bucket in response["Buckets"]:
 Agora os arquivos de dentro do bucket. A resposta é um dicionário: os arquivos ficam em `Contents`, e
 cada um tem `Key` (o nome) e `Size` (o tamanho em bytes).
 
-*Célula 17*
+*Célula 16*
 
 ```python
 response = s3.list_objects_v2(Bucket=S3_BUCKET)
@@ -418,7 +401,7 @@ print("\narquivos:", arquivos)
 O `get_object` devolve um dicionário; o conteúdo está em `Body`, e o `.read()` transforma em bytes. O
 pandas espera um arquivo, e o que temos são bytes na memória: o `io.BytesIO` finge ser um arquivo.
 
-*Célula 18*
+*Célula 17*
 
 ```python
 import io
