@@ -115,7 +115,7 @@ git init -b main
 
 # o contexto do projeto: o negócio, as 18 sujeiras do dado e as armadilhas do Free Edition.
 # Um CLAUDE.md na raiz é lido sozinho pelo Claude Code, antes de cada prompt.
-curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/prd/CLAUDE.md
+curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-03-modelagem-claude-code/claude-code/prd/CLAUDE.md
 
 # o script que roda SQL pela API (a metric view do prompt 5 precisa dele)
 mkdir -p scripts && curl -fsSL -o scripts/run_sql.py https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/scripts/run_sql.py
@@ -235,7 +235,7 @@ git add . && git commit -m "prompt 1: bundle e conferência da bronze" && git pu
 
 Os prompts dizem "na raiz deste repositório": é a sua pasta `projeto-farol`. Se um prompt não
 entregar, o **gabarito** está em
-<https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-02-engenheiro/vertice>: compare o arquivo.
+<https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-03-modelagem-claude-code/claude-code/vertice>: compare o arquivo.
 
 Pronto. Agora é prompt a prompt.
 
@@ -527,7 +527,7 @@ Rode e me mostre a saída:
 
 Cada prompt termina com um **deploy**. Enquanto o Claude Code trabalha, o professor explica o
 conceito: o tempo de espera vira aula. O texto exato de cada prompt está no arquivo (copie e cole);
-a sequência inteira está em [`PROMPTS.md`](../../PROMPTS.md). Antes de cada um, o Claude Code lê
+a sequência inteira está em [`PROMPTS.md`](../../../PROMPTS.md). Antes de cada um, o Claude Code lê
 [`prd/CLAUDE.md`](prd/CLAUDE.md): o negócio, as 18 sujeiras do dado, a arquitetura e as armadilhas
 do Free Edition já medidas.
 
@@ -555,7 +555,7 @@ o dashboard com o dado da semana passada do que com meio dado.
 **O que conferir:** abra o job no workspace. Uma caixa só, verde, com 9 linhas `ok`. Esse desenho
 vai crescer a noite inteira.
 
-![Pasta .bundle/vertice/dev/files/src no workspace](../../docs/img/recurso-workspace-bundle.jpg)
+![Pasta .bundle/vertice/dev/files/src no workspace](../../../docs/img/recurso-workspace-bundle.jpg)
 *O deploy copia o seu bundle para `Workspace › Users › você › .bundle › vertice › dev › files`. Repare no caminho no topo: é o mesmo `src/` da sua pasta. (No print, a pasta `ml` já é da noite 3.)*
 
 > **Teste se a conferência tem dente:** troque um número esperado (por exemplo `projetos 61`), faça
@@ -593,10 +593,10 @@ FROM lakehouse_vertice.silver.tarefas GROUP BY 1;
 SELECT ROUND(SUM(valor) / 1e6, 2) FROM lakehouse_vertice.silver.custos;   -- 193,35: o custo não mudou
 ```
 
-![Pipeline vertice_medalhao concluído, com o grafo e a lista de tabelas](../../docs/img/noite2-pipeline.jpg)
+![Pipeline vertice_medalhao concluído, com o grafo e a lista de tabelas](../../../docs/img/noite2-pipeline.jpg)
 *O grafo que o Lakeflow desenhou sozinho: `tarefas_excel`, `tarefas_clickup` e `tarefas_msproject` desaguando em `tarefas`. Embaixo, cada tabela com a duração e as linhas gravadas. (O print é do ensaio, antes da simplificação: ainda aparecem tabelas que saíram, como `dim_projeto`.) Clique numa tabela e abra **Data quality** para ver os `EXPECT`.*
 
-![Jobs & Pipelines filtrado por "vertice"](../../docs/img/recurso-jobs-pipelines.jpg)
+![Jobs & Pipelines filtrado por "vertice"](../../../docs/img/recurso-jobs-pipelines.jpg)
 *Em **Jobs & Pipelines**, busque `vertice`: o job `vertice_farol` (agendamento **Paused**, de propósito no ambiente de desenvolvimento) e o pipeline `vertice_medalhao`. As bolinhas vermelhas são execuções que falharam no ensaio: faz parte.*
 
 > *"Juntei vinte planilhas, vinte e cinco listas do ClickUp e quinze cronogramas do Project numa
@@ -631,10 +631,10 @@ O estouro previsto dos projetos em andamento dá **R$ 6,47 mi**, o mesmo do rasc
 duas SREs paradas aparecem no timesheet: COL0017 e COL0018, a ~5% no PRJ-007, que ainda está no
 desenho. É meia pergunta 3 do dono respondida (a outra metade vem no prompt 4).
 
-![Schema gold no Catalog Explorer](../../docs/img/agora-gold.jpg)
+![Schema gold no Catalog Explorer](../../../docs/img/agora-gold.jpg)
 *A gold no Catalog Explorer, com a descrição do schema. As tabelas desta noite são `fato_projeto_semana`, `projeto_situacao_atual`, `utilizacao_pessoa_semana`, `status_estruturado` e a metric view `mv_projetos`. (O print é do ensaio, antes da simplificação: ainda mostra tabelas que saíram, como `dim_projeto` e `cobertura_capacidade`, e as das noites 3 e 4.)*
 
-![Linhagem da projeto_situacao_atual](../../docs/img/recurso-lineage-grafo.jpg)
+![Linhagem da projeto_situacao_atual](../../../docs/img/recurso-lineage-grafo.jpg)
 *Aba **Lineage** › **See lineage graph**: a `projeto_situacao_atual` nasce de quatro tabelas silver (`projetos`, `tarefas`, `status_semanal`, `custos`) e alimenta a `mv_projetos`. (No print, do ensaio, ainda aparece a antiga `dim_projeto` no lugar de `projetos`.) Ninguém desenhou isso: o Unity Catalog anota sozinho.*
 
 > **"Melancia"** é o projeto verde por fora e vermelho por dentro: o gerente marca farol verde, mas o
@@ -670,7 +670,7 @@ GROUP BY 1 ORDER BY 2 DESC;
 Junto com o prompt 3, é a pergunta 3 do dono inteira: **duas SREs paradas no PRJ-007 enquanto o
 PRJ-011 pede SRE no status há 12 semanas.**
 
-![Gráfico de causas de bloqueio por projeto no dashboard](../../docs/img/noite2-bloqueios-ia.jpg)
+![Gráfico de causas de bloqueio por projeto no dashboard](../../../docs/img/noite2-bloqueios-ia.jpg)
 *É assim que essa tabela aparece no dashboard (noite 3, página **Pessoas**). Repare na barra laranja do PRJ-011 no topo: `falta_sre`, 12 semanas. Cada cor é uma causa que a IA tirou do texto.*
 
 ### Prompt 5 · O KPI definido uma vez só
@@ -694,16 +694,16 @@ FROM lakehouse_vertice.gold.mv_projetos;
 -- 0,92 · 0,97 · R$ 6,47 mi · 7 · 4
 ```
 
-![Metric view mv_projetos no Catalog Explorer](../../docs/img/recurso-metric-view.jpg)
+![Metric view mv_projetos no Catalog Explorer](../../../docs/img/recurso-metric-view.jpg)
 *A `mv_projetos` no catálogo: 11 medidas, cada uma com o seu comentário em português ("Abaixo de 1 é atraso"). É esse texto que o Genie lê para entender o KPI.*
 
-![DAG do job vertice_farol com todas as tarefas verdes](../../docs/img/noite2-job.jpg)
+![DAG do job vertice_farol com todas as tarefas verdes](../../../docs/img/noite2-job.jpg)
 *O job depois do prompt 5: `conferencia_bronze` → `medalhao` → duas tarefas **em paralelo** (`status_com_ia`, `testes_de_qualidade`) → `metricas_governadas`. Hoje o seu termina aí, com cinco caixas; as três de `ml_` entram amanhã, na noite 3 (8 tarefas no total). O print é do ensaio: ainda mostra a antiga `postmortem_com_ia`.*
 
 ### Prompt 6 · mudou para a noite 3
 
 O dashboard "Projeto Farol · Portfólio" e o Genie "Farol · Diretoria" agora fecham a
-[noite 3](../aula-03-cientista): [`prompt-04-dashboard-e-genie.md`](../aula-03-cientista/prd/prompt-04-dashboard-e-genie.md).
+[noite 3](..): [`prompt-04-dashboard-e-genie.md`](../prd/prompt-04-dashboard-e-genie.md).
 
 ---
 
@@ -713,7 +713,7 @@ O dado é gerado sempre igual (seed 42). Se um número seu divergir, o erro est�
 dado. [`prd/99-verificacao.sql`](prd/99-verificacao.sql) confere tudo de uma vez (20 linhas):
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/99-verificacao.sql --profile <perfil>
 ```
 
 | Métrica | Valor |
@@ -738,7 +738,7 @@ rascunho, sobre as mesmas tarefas. O que muda é que agora o número tem **contr
 sozinho**. E a noite 2 traz o que a noite 1 não tinha como fazer: o **histórico** (o fato semanal),
 a **causa** (a IA lendo o texto) e as **pessoas** (o timesheet).
 
-![Lineage da projeto_situacao_atual em lista](../../docs/img/recurso-lineage-lista.jpg)
+![Lineage da projeto_situacao_atual em lista](../../../docs/img/recurso-lineage-lista.jpg)
 *A prova de que é um número só: na aba **Lineage**, a mesma `projeto_situacao_atual` alimenta o Genie "Farol · Diretoria", o dashboard "Projeto Farol · Portfólio" e a `mv_projetos` (Downstream), e vem da silver (Upstream).*
 
 ---
@@ -761,9 +761,9 @@ Cada prompt tem a sua própria tabela "Se der errado", mais detalhada, no fim do
 **Para zerar e recomeçar**
 
 ```bash
-bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>              # SIMULA: mostra o que sairia
-BUNDLE_DIR=aulas/aula-02-engenheiro/meu-vertice \
-  bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar   # apaga silver, gold e os recursos do bundle
+bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil>              # SIMULA: mostra o que sairia
+BUNDLE_DIR=aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice \
+  bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil> --apagar   # apaga silver, gold e os recursos do bundle
 ```
 
 A bronze e o volume nunca são apagados (são da noite 1).
@@ -771,7 +771,7 @@ A bronze e o volume nunca são apagados (são da noite 1).
 **Para rodar o gabarito inteiro de uma vez**
 
 ```bash
-cd aulas/aula-02-engenheiro/vertice
+cd aulas/aula-03-modelagem-claude-code/claude-code/vertice
 databricks bundle deploy --profile <perfil>
 databricks bundle run vertice_farol --profile <perfil>    # 8 tarefas: silver, gold, IA, testes, métrica e (noite 3) o modelo
 databricks bundle deploy --profile <perfil>               # 2º deploy: o Genie precisa das tabelas
@@ -799,4 +799,4 @@ python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 A gold sabe dizer **quais projetos estão** em risco hoje. A pergunta 4 do dono é outra: **o que vai
 dar errado no próximo mês?** A `fato_projeto_semana` tem a curva de cada projeto, semana a semana, e
 o `status_estruturado` tem as causas: é exatamente o que um modelo precisa para aprender o padrão
-antes de ele virar estouro. [Noite 3](../aula-03-cientista).
+antes de ele virar estouro. [Noite 3](..).

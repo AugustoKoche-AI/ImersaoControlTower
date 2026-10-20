@@ -33,13 +33,13 @@ três, apague um que você não usa mais (`databricks apps delete <nome>`).
 ## O prompt
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
+Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md. Use as skills databricks-apps e
 databricks-app-design.
 
 1. Confira `databricks apps list --profile <perfil>` (limite de 3 apps no Free Edition).
-   Mova aulas/aula-04-engenheiro-ia/meu-agente/ para dentro do app (minha-torre/agente/)
+   Mova aulas/aula-04-produtos-de-dados-ia/meu-agente/ para dentro do app (minha-torre/agente/)
    e crie o app:
-   cd aulas/aula-04-engenheiro-ia && databricks apps init --name minha-torre \
+   cd aulas/aula-04-produtos-de-dados-ia && databricks apps init --name minha-torre \
      --features analytics,genie \
      --set analytics.sql-warehouse.id=<warehouse> \
      --set genie.genie-space.id=<id do Genie "Farol · Diretoria + Contratos"> \

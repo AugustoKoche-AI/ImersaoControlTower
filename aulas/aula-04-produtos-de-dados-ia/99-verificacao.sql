@@ -4,7 +4,7 @@
 -- (A gravação no Lakebase se confere com torre-app/scripts/ver_decisoes.py.)
 --
 -- Rode com:
---   python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile SEU-PERFIL
+--   python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile SEU-PERFIL
 
 WITH multa AS (   -- a mesma conta do 01-contratos.sql (passo 4a) e do Genie
   SELECT e.fornecedor, e.valor * least(CASE WHEN e.data_entrega IS NOT NULL THEN e.dias_de_atraso_na_entrega

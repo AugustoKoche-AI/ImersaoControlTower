@@ -30,7 +30,7 @@ Pergunte: *"e agora, quem aprova? onde isso fica registrado?"*
 ## O prompt
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
+Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md. Use as skills databricks-apps e
 databricks-lakebase. O app minha-torre já está no ar (prompt 2).
 
 1. Lakebase:

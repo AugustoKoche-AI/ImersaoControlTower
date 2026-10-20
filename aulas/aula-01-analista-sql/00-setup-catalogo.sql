@@ -2,7 +2,7 @@
 -- Cria a casa onde o dado vai morar: um catálogo, três schemas e um volume.
 --
 -- Rode no SQL Editor (selecione tudo e Ctrl+Enter) ou pelo terminal:
---   python3 scripts/run_sql.py aulas/aula-01-analista/00-setup-catalogo.sql --profile SEU-PERFIL
+--   python3 scripts/run_sql.py aulas/aula-01-analista-sql/00-setup-catalogo.sql --profile SEU-PERFIL
 
 -- O catálogo é o topo da hierarquia no Unity Catalog: catálogo > schema > tabela.
 CREATE CATALOG IF NOT EXISTS lakehouse_vertice

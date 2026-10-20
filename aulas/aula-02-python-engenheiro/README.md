@@ -11,7 +11,7 @@ dado não está no seu computador: os sistemas e as ferramentas exportam tudo pa
 novo toda semana. Ir buscar, sem ninguém olhar, é o trabalho do engenheiro de dados.
 
 > 📺 **Pergunta da noite:** *"E se o dado não estiver no meu computador?"*
-> **Amanhã:** com a bronze vindo sozinha, o Claude Code transforma tudo em silver e gold ([prompts](README-claude-code.md)).
+> **Amanhã:** com a bronze vindo sozinha, o Claude Code transforma tudo em silver e gold ([noite 3](../aula-03-modelagem-claude-code)).
 
 ---
 
@@ -23,9 +23,9 @@ flowchart LR
     B[("bucket vertice<br/>pmo · rh · timesheet · financeiro · compras<br/>excel · clickup · msproject")]
   end
   API["API pública<br/>feriados de 2026"]
-  B -- "01 · boto3<br/>extrair e pousar" --> RAW["volume<br/>bronze/raw/"]
+  B -- "02 · boto3<br/>extrair e pousar" --> RAW["volume<br/>bronze/raw/"]
   RAW -- "read_files<br/>carregar" --> BR["bronze<br/>9 tabelas"]
-  API -- "02 · requests" --> RAWF["raw/feriados/"] -- "read_files" --> BF["bronze.feriados"]
+  API -- "01 · requests<br/>a cada 10 min" --> RAWF["raw/feriados/<br/>um JSON por execução"] -- "read_files" --> BF["bronze.feriados"]
   subgraph JOB["job vertice_ingestao · todo dia às 6h"]
     RAW
     BR
@@ -38,9 +38,9 @@ flowchart LR
 |---|---|---|
 | Aquecimento de Python | 20 min | variáveis, listas, dicionários, `for`, funções, `requests`, `pandas` e `boto3` |
 | Teoria | 15 min | data lake, protocolo S3, extrair-pousar-carregar, a regra da bronze |
+| API → bronze + job | 20 min | os feriados: a ingestão mais simples, num job que roda a cada 10 minutos |
 | Data lake → raw → bronze | 30 min | o `boto3` traz os arquivos para o raw e o `read_files` recria as 9 tabelas |
-| API → bronze | 10 min | os feriados, uma fonte de fora |
-| Job de ingestão | 10 min | tudo isso sozinho, todo dia às 6h |
+| Job completo | 5 min | o data lake entra no mesmo job, que passa a rodar todo dia às 6h |
 
 A noite **termina na bronze**. Limpar, juntar as três ferramentas e calcular os KPIs é amanhã, com o
 Claude Code.
@@ -105,11 +105,15 @@ Cole na célula de configuração dos notebooks (onde está `COLE-AQUI`).
 - **Conta verificada.** A Free Edition só acessa a internet com a conta verificada. Se aparecer
   `ConnectionError` ou `Max retries exceeded`, verifique a conta quando o Databricks pedir.
 - **Três notebooks**, um por etapa: o código de cada um está logo abaixo, célula por célula, com botão de copiar.
+  O notebook pronto de cada etapa (o gabarito) está nesta pasta: **Workspace › Import › URL** com o link "raw"
+  do arquivo no GitHub, se você travar.
 
 ### 1. Aquecimento de Python (20 min)
 
 No Databricks: **New › Notebook**, nome `00_aquecimento_python`, computação **serverless**. Cole uma célula de
-cada vez e rode com **Shift+Enter**. Tente entender cada linha antes de rodar: os comentários explicam.
+cada vez e rode com **Shift+Enter**. Prefere com lacunas para resolver? Importe o
+[`00_aquecimento_python.py`](00_aquecimento_python.py) (exercícios) e confira no
+[`00_aquecimento_python_gabarito.py`](00_aquecimento_python_gabarito.py). Tente entender cada linha antes de rodar: os comentários explicam.
 
 #### 1. Variáveis e tipos
 
@@ -437,13 +441,123 @@ Se você resolveu os 11 exercícios, tem tudo o que precisa para a aula:
 - sabe transformar bytes em tabela com o pandas;
 - conhece as bibliotecas que o pipeline usa.
 
-Siga para o **`01_ingestao_raw`**, onde todos os arquivos do data lake vão para o raw e viram a bronze.
+Siga para o **`01_ingestao_api`**: a primeira ingestão da noite, a dos feriados.
 
 ---
 
-### 2. Data lake → raw → bronze (30 min)
+### 2. API → bronze (20 min)
 
-Um notebook novo, `01_ingestao_raw`, serverless. Preencha a célula de configuração com a tabela de conexão.
+A primeira ingestão da noite, e a mais simples: uma API pública, sem chave. Na empresa, o dado não chega
+pronto: alguém precisa ir buscar. Quando a fonte não tem conector, entra o Python, sempre em três passos:
+**extrair** (pedir à API), **pousar** (guardar o arquivo no raw, do jeito que veio) e **carregar** (o
+`read_files` transforma o arquivo em tabela).
+
+**Pergunta de negócio:** quantos dias úteis a Vértice perde em novembro, bem quando começa o change freeze
+da Black Friday (01/11)?
+
+No Databricks: **New › Notebook**, nome `01_ingestao_api`, computação **serverless** (ela tem internet).
+Cole uma célula de cada vez. Gabarito: [`01_ingestao_api.py`](01_ingestao_api.py).
+
+#### Passo 1 · Extrair: pedir os feriados à API
+
+*Célula 1*
+
+```python
+import requests                # conversa com a API (HTTP)
+
+url = "https://brasilapi.com.br/api/feriados/v1/2026"
+resposta = requests.get(url, timeout=30)
+resposta.raise_for_status()    # se a API cair, para aqui com o erro, em vez de seguir com nada
+
+feriados = resposta.json()     # o JSON vira uma lista do Python: um dicionário por feriado
+print(len(feriados), "feriados")
+feriados[:3]
+```
+
+#### Passo 2 · Pousar: o JSON numa pasta nova do raw
+
+Cada execução grava um arquivo **novo**, com a data e a hora no nome. O raw guarda o histórico de
+tudo o que chegou: dá para saber o que a API respondia em cada momento.
+
+*Célula 2*
+
+```python
+import json, os
+from datetime import datetime
+
+pasta = "/Volumes/lakehouse_vertice/bronze/raw/feriados"
+os.makedirs(pasta, exist_ok=True)                        # a pasta nova precisa existir
+
+agora = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")     # ex.: 2026-10-20_19-40-00 (horário UTC)
+with open(f"{pasta}/feriados_{agora}.json", "w") as arquivo:
+    json.dump(feriados, arquivo, ensure_ascii=False)
+
+sorted(os.listdir(pasta))                                # um arquivo por execução
+```
+
+#### Passo 3 · Carregar: o raw vira a bronze
+
+O mesmo `read_files` da noite 1, lendo **todos** os arquivos da pasta. Duas colunas a mais contam de onde
+e de quando veio cada linha.
+
+*Célula 3*
+
+```sql
+%sql
+CREATE OR REPLACE TABLE lakehouse_vertice.bronze.feriados
+COMMENT 'Feriados nacionais de 2026, da BrasilAPI. Uma captura por execução do job.'
+AS SELECT date AS data, name AS feriado, type AS tipo, weekday AS dia_da_semana,
+          _metadata.file_name              AS arquivo,
+          _metadata.file_modification_time AS coletado_em
+FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/feriados/', format => 'json', multiLine => true)
+```
+
+#### Passo 4 · Conferir
+
+*Célula 4*
+
+```sql
+%sql
+-- uma linha por captura: 14 feriados em cada uma
+SELECT arquivo, coletado_em, COUNT(*) AS feriados
+FROM lakehouse_vertice.bronze.feriados
+GROUP BY arquivo, coletado_em
+ORDER BY coletado_em DESC
+```
+
+*Célula 5*
+
+```sql
+%sql
+-- a resposta para o negócio, na captura mais recente:
+-- 02/11 (segunda), 15/11 (domingo) e 20/11 (sexta): 2 dias úteis a menos em novembro
+SELECT data, feriado, dia_da_semana
+FROM lakehouse_vertice.bronze.feriados
+WHERE arquivo = (SELECT MAX(arquivo) FROM lakehouse_vertice.bronze.feriados)
+  AND data BETWEEN '2026-11-01' AND '2026-11-30'
+ORDER BY data
+```
+
+#### Passo 5 · Um job que roda isso sozinho, a cada 10 minutos
+
+1. **Jobs & Pipelines › Create › Job**, nome `vertice_ingestao`.
+2. Tarefa `api`: tipo **Notebook**, o seu `01_ingestao_api`, computação **Serverless**.
+3. **Schedules & Triggers › Add trigger › Scheduled**, modo **Advanced**, cron `0 0/10 * * * ?`
+   (a cada 10 minutos), fuso America/Sao_Paulo.
+4. **Run now** para não esperar a primeira rodada.
+
+Volte depois de 10, 20 minutos e rode de novo as células 4 e 5: o raw ganhou um arquivo por execução e a
+bronze, 14 linhas por captura. Ninguém clicou em nada. **É isso que um engenheiro de dados entrega.**
+
+> No fim da aula, **pause o job** (botão **Pause** no agendamento): a cada 10 minutos ele consome a cota
+> do Free Edition. Na etapa 4 ele passa a rodar uma vez por dia.
+
+---
+
+### 3. Data lake → raw → bronze (30 min)
+
+Um notebook novo, `02_ingestao_boto3`, serverless. Gabarito: [`02_ingestao_boto3.py`](02_ingestao_boto3.py). O mesmo extrair-pousar-carregar da API, agora
+para o data lake inteiro. Preencha a célula de configuração com a tabela de conexão.
 
 Ontem você baixou os arquivos e subiu no volume **na mão**. Numa empresa, os sistemas e as
 ferramentas exportam tudo para um **data lake**: um storage na nuvem que fala o protocolo **S3** da AWS.
@@ -651,85 +765,15 @@ ORDER BY linhas DESC
 
 ---
 
-### 3. API → bronze (10 min)
+### 4. O job completo: tudo sozinho, todo dia às 6h
 
-Um notebook novo, `02_api_feriados`, serverless.
+O job da API ganha a segunda tarefa e passa a rodar uma vez por dia.
 
-Na empresa, o dado não chega pronto: alguém precisa ir buscar. Quando a fonte não tem conector,
-entra o Python. O caminho é o mesmo da noite 1, em três passos:
-
-1. **extrair** · o Python pede os feriados de 2026 a uma API pública (a BrasilAPI, sem chave)
-2. **pousar** · o JSON vai para o volume, do jeito que veio: `/Volumes/lakehouse_vertice/bronze/raw/feriados/`
-3. **carregar** · o `read_files` transforma o arquivo em tabela: `lakehouse_vertice.bronze.feriados`
-
-**Pergunta de negócio:** quantos dias úteis a Vértice perde em novembro, bem quando começa o
-change freeze da Black Friday (01/11)?
-
-Rode com a computação **serverless** (ela tem internet), uma célula de cada vez.
-
-*Célula 1*
-
-```python
-# 1 · EXTRAIR: o Python pede o dado à API
-import requests                # conversa com a API (HTTP)
-
-url = "https://brasilapi.com.br/api/feriados/v1/2026"
-resposta = requests.get(url, timeout=30)
-resposta.raise_for_status()    # se a API cair, para aqui com o erro, em vez de seguir com nada
-
-feriados = resposta.json()     # o JSON vira uma lista do Python: um dicionário por feriado
-print(len(feriados), "feriados")
-feriados[:3]
-```
-
-*Célula 2*
-
-```python
-# 2 · POUSAR: o arquivo vai para o volume, do jeito que veio
-import json, os               # json e os já vêm no Python
-
-pasta = "/Volumes/lakehouse_vertice/bronze/raw/feriados"
-os.makedirs(pasta, exist_ok=True)              # a pasta nova precisa existir
-
-with open(f"{pasta}/feriados_2026.json", "w") as arquivo:
-    json.dump(feriados, arquivo, ensure_ascii=False)
-
-os.listdir(pasta)                              # deve aparecer: ['feriados_2026.json']
-```
-
-*Célula 3*
-
-```sql
-%sql
--- 3 · CARREGAR: o mesmo read_files da noite 1, agora numa pasta nova do volume
-CREATE OR REPLACE TABLE lakehouse_vertice.bronze.feriados
-COMMENT 'Feriados nacionais de 2026, da BrasilAPI. Ingestão por API: Python busca, o arquivo pousa no volume, o read_files carrega.'
-AS SELECT date AS data, name AS feriado, type AS tipo, weekday AS dia_da_semana,
-          _metadata.file_name AS arquivo
-FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/feriados/', format => 'json', multiLine => true)
-```
-
-*Célula 4*
-
-```sql
-%sql
--- Deve aparecer: 02/11 (segunda), 15/11 (domingo) e 20/11 (sexta).
--- 2 dias úteis a menos em novembro, logo no começo do freeze da Black Friday.
-SELECT data, feriado, dia_da_semana
-FROM lakehouse_vertice.bronze.feriados
-WHERE data BETWEEN '2026-11-01' AND '2026-11-30'
-ORDER BY data
-```
-
----
-
-### 4. O job: tudo sozinho, todo dia às 6h
-
-1. **Jobs & Pipelines › Create › Job**, nome `vertice_ingestao`.
-2. Tarefa `data_lake`: tipo **Notebook**, o seu `01_ingestao_raw`, computação **Serverless**.
-3. **+ Add task** `api`: o seu `02_api_feriados`. Depende de: `data_lake`.
-4. **Schedules & Triggers › Add trigger › Scheduled**: todo dia às 06:00 (America/Sao_Paulo).
-5. **Run now** e acompanhe as caixas ficarem verdes.
+1. Abra o job `vertice_ingestao` em **Jobs & Pipelines**.
+2. **+ Add task** `data_lake`: tipo **Notebook**, o seu `02_ingestao_boto3`, computação **Serverless**.
+   Depende de: `api`.
+3. No agendamento, troque o cron para `0 0 6 * * ?` (todo dia às 06:00, America/Sao_Paulo).
+4. **Run now** e acompanhe as duas caixas ficarem verdes.
 
 ---
 
@@ -748,7 +792,7 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `bronze.entregas_fornecedor` | 640 | `compras/entregas_fornecedor.csv` |
 | `bronze.colaboradores` | 523 | `rh/colaboradores.csv` |
 | `bronze.projetos` | 60 | `pmo/projetos.csv` |
-| `bronze.feriados` | 14 | API (2 em dia útil em novembro) |
+| `bronze.feriados` | 14 por captura | API (2 em dia útil em novembro); uma captura por execução do job |
 
 ---
 
@@ -760,7 +804,7 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `EndpointConnectionError` | endpoint errado | confira o `S3_ENDPOINT`, com `/storage/v1/s3` no fim |
 | `InvalidAccessKeyId`, `SignatureDoesNotMatch` | chave ou segredo errados | copie de novo da tabela de conexão, sem espaço |
 | `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `vertice`, em minúsculas |
-| `PATH_NOT_FOUND` no `read_files` | o passo 4 não rodou | rode a célula que baixa os arquivos |
+| `PATH_NOT_FOUND` no `read_files` | o arquivo não foi baixado | rode a célula que baixa os arquivos para o raw |
 | a contagem não bate com a de ontem | faltou arquivo no bucket | o passo 2 mostra quantos arquivos tem em cada pasta |
 
 ---
@@ -785,11 +829,13 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | Arquivo | O que é |
 |---|---|
 | `README.md` | esta noite: a teoria e todo o código, célula por célula |
-| `README-claude-code.md` | **amanhã**: o passo a passo do Claude Code e os prompts 1 a 5 |
-| `prd/` · `vertice/` | os prompts e o gabarito do bundle (noite 3) |
+| `00_aquecimento_python.py` | o aquecimento, com lacunas para resolver |
+| `00_aquecimento_python_gabarito.py` | o aquecimento resolvido |
+| `01_ingestao_api.py` | gabarito: API → raw → `bronze.feriados` |
+| `02_ingestao_boto3.py` | gabarito: data lake (S3, `boto3`) → raw → as 9 tabelas da bronze |
 
 ## ➡️ Amanhã
 
 A bronze agora chega sozinha. Amanhã o Claude Code transforma essa bronze num projeto de verdade: as
 três ferramentas viram uma tabela (silver), os KPIs com teste (gold), a IA lendo o status e o dono
-perguntando em português. O passo a passo está em [`README-claude-code.md`](README-claude-code.md).
+perguntando em português. O passo a passo está na [noite 3](../aula-03-modelagem-claude-code).

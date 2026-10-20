@@ -4,7 +4,7 @@
 -- "CONFIRA", o problema está no código, não no dado.
 --
 -- Rode com:
---   python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile SEU-PERFIL
+--   python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/99-verificacao.sql --profile SEU-PERFIL
 
 WITH v AS (
   -- silver: a integração e a limpeza fizeram o que prometeram

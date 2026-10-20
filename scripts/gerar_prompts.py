@@ -16,7 +16,7 @@ import re
 import sys
 
 RAIZ = pathlib.Path(__file__).resolve().parents[1]
-A2, A3, A4 = "aulas/aula-02-python-engenheiro/prd", "aulas/aula-03-modelagem-claude-code/prd", "aulas/aula-04-produtos-de-dados-ia/prd"
+A2, A3, A4 = "aulas/aula-03-modelagem-claude-code/claude-code/prd", "aulas/aula-03-modelagem-claude-code/prd", "aulas/aula-04-produtos-de-dados-ia/prd"
 
 # (noite, título, subtítulo, caminho, deploy) — o número do prompt é a posição na lista
 PROMPTS = [

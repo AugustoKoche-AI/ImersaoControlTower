@@ -92,7 +92,7 @@ Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
   databricks bundle summary --profile <perfil>
   python3 scripts/genie.py perguntar "Farol · Diretoria" "Tenho gente parada enquanto outro projeto pede gente?" --profile <perfil>
-  python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile <perfil>
+  python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-03-modelagem-claude-code/claude-code/prd/genie-benchmark.json --profile <perfil>
 Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 (não a pergunta), gere o JSON, faça deploy e rode de novo.
 ```

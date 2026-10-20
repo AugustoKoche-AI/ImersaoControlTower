@@ -2,8 +2,8 @@
 """Gera o Genie Agent da noite 4, "Farol · Diretoria + Contratos", como JSON.
 
 Uso:
-    python3 aulas/aula-04-engenheiro-ia/torre-app/agente/gerar_genie.py --profile SEU-PERFIL
-    python3 scripts/genie.py publicar aulas/aula-04-engenheiro-ia/torre-app/agente/diretoria-contratos-genie.json \
+    python3 aulas/aula-04-produtos-de-dados-ia/torre-app/agente/gerar_genie.py --profile SEU-PERFIL
+    python3 scripts/genie.py publicar aulas/aula-04-produtos-de-dados-ia/torre-app/agente/diretoria-contratos-genie.json \
         --titulo "Farol · Diretoria + Contratos" --profile SEU-PERFIL
 
 É o Genie da noite 2 com uma camada a mais: os CONTRATOS de fornecedor. O dono

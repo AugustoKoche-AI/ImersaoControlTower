@@ -8,12 +8,12 @@
 # NÃO toca na bronze, silver, gold das noites 2 e 3, nem no Genie "Farol · Diretoria" (noite 2).
 #
 # Uso:
-#   bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase]           # simula
-#   bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase] --apagar  # apaga
+#   bash aulas/aula-04-produtos-de-dados-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase]           # simula
+#   bash aulas/aula-04-produtos-de-dados-ia/prd/99-limpar-aula-04.sh <perfil> [pasta-do-app] [projeto-lakebase] --apagar  # apaga
 set -euo pipefail
 PERFIL="${1:?informe o profile}"
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
-APP_DIR="${2:-$RAIZ/aulas/aula-04-engenheiro-ia/torre-app}"
+APP_DIR="${2:-$RAIZ/aulas/aula-04-produtos-de-dados-ia/torre-app}"
 LAKEBASE="${3:-farol-torre}"
 APAGAR=false; [[ "${*: -1}" == "--apagar" ]] && APAGAR=true
 GENIE="Farol · Diretoria + Contratos"

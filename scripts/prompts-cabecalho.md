@@ -36,9 +36,9 @@ npm install -g @anthropic-ai/claude-code
 python3 scripts/run_sql.py aulas/aula-01-analista-sql/99-verificacao.sql --profile <perfil>
 ```
 
-**A pasta `aulas/aula-02-python-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
+**A pasta `aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice/` nasce vazia** — é o prompt 1 que
 a preenche. A pasta `vertice/` ao lado é o gabarito. Se você já rodou antes, zere
-com `BUNDLE_DIR=aulas/aula-02-python-engenheiro/meu-vertice bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil> --apagar`.
+com `BUNDLE_DIR=aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil> --apagar`.
 
 Nos prompts abaixo, **troque `<perfil>` pelo seu profile**.
 

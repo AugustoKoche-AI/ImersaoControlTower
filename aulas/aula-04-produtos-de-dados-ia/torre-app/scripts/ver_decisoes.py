@@ -4,7 +4,7 @@
 Prova que o clique no app virou linha no banco, com usuário e horário.
 
 Uso:
-    uv run --no-project --with "psycopg[binary]" python aulas/aula-04-engenheiro-ia/torre-app/scripts/ver_decisoes.py --profile SEU-PERFIL
+    uv run --no-project --with "psycopg[binary]" python aulas/aula-04-produtos-de-dados-ia/torre-app/scripts/ver_decisoes.py --profile SEU-PERFIL
 
 A senha é um token OAuth de curta duração gerado pelo CLI
 (`databricks postgres generate-database-credential`). Funciona para o dono

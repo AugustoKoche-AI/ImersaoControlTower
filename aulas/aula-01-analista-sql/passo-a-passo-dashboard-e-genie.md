@@ -80,7 +80,7 @@ painel sem poder editar.
 
 > **Atalho do instrutor:** o mesmo dashboard está como código em
 > [`dashboard-bronze.lvdash.json`](dashboard-bronze.lvdash.json). Para recriar igual:
-> `python3 aulas/aula-01-analista/gerar_dashboard.py --deploy --profile SEU-PERFIL`.
+> `python3 aulas/aula-01-analista-sql/gerar_dashboard.py --deploy --profile SEU-PERFIL`.
 
 ---
 

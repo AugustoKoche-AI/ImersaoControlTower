@@ -1,5 +1,5 @@
 -- Noite 3 · Verificação: esperado × obtido
--- Rode com:  python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile SEU-PERFIL
+-- Rode com:  python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/99-verificacao.sql --profile SEU-PERFIL
 -- Seed fixa (42) e random_state=42: os números se repetem. "CONFIRA" = algo diferente do ensaio de 18/10.
 
 WITH m AS (SELECT * FROM lakehouse_vertice.ml.modelo_metricas),

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gera o dashboard de Portfólio da noite 2 (sobre a GOLD e as metric views).
 
-Uso:  python3 aulas/aula-02-engenheiro/vertice/scripts/gerar_dashboard.py
+Uso:  python3 aulas/aula-03-modelagem-claude-code/claude-code/vertice/scripts/gerar_dashboard.py
 
 Escreve resources/dashboard-portfolio.lvdash.json, que o bundle publica no
 deploy (resources/dashboard.dashboard.yml). Compare o SQL dos datasets com o

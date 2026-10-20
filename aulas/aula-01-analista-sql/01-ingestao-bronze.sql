@@ -33,7 +33,7 @@
 --   /Volumes/lakehouse_vertice/bronze/raw/<sistema>/...
 --
 -- Rode com:
---   python3 scripts/run_sql.py aulas/aula-01-analista/01-ingestao-bronze.sql --profile SEU-PERFIL
+--   python3 scripts/run_sql.py aulas/aula-01-analista-sql/01-ingestao-bronze.sql --profile SEU-PERFIL
 
 -- ---------- pmo ----------
 -- projetos: o cadastro do PMO: cliente, valor, prazo e EM QUAL FERRAMENTA o projeto vive

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gera o Genie Agent do Projeto Farol (noite 2) como JSON versionado.
 
-Uso:  python3 aulas/aula-02-engenheiro/vertice/scripts/gerar_genie.py
+Uso:  python3 aulas/aula-03-modelagem-claude-code/claude-code/vertice/scripts/gerar_genie.py
 
 Escreve resources/farol.geniespace.json, que o bundle publica no deploy
 (resources/genie.genie_space.yml). O modelo de IA é o mesmo da noite 1: o que

@@ -26,7 +26,7 @@ Ninguém sabe responder. Cada gerente controla o projeto num lugar diferente:
 
 **Hoje você ataca as perguntas 1 e 2.** As outras duas ficam para as noites 2 e 3.
 
-> **Conexão com amanhã:** o que você junta à mão hoje é o que a [noite 2](../aula-02-engenheiro) transforma
+> **Conexão com amanhã:** o que você junta à mão hoje é o que a [noite 2](../aula-02-python-engenheiro) transforma
 > num pipeline. E o Genie que erra hoje é o mesmo que a noite 2 conserta.
 
 ---
@@ -307,7 +307,7 @@ O que esperar de cada um:
 Pelo terminal (opcional):
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql --profile SEU-PERFIL --continuar
+python3 scripts/run_sql.py aulas/aula-01-analista-sql/exemplo-01-a-05-sql-na-bronze.sql --profile SEU-PERFIL --continuar
 ```
 
 ### Os KPIs, em uma linha cada
@@ -341,7 +341,7 @@ projeto vai custar no fim se nada mudar. Um SPI de 0,80 quer dizer "andou 80% do
 Para abrir no Databricks: **Workspace → Import → URL** e cole o link *raw* do notebook no GitHub, ou copie e cole a query no SQL Editor. Para o instrutor importar todos de uma vez:
 
 ```bash
-python3 scripts/gerar_notebooks.py aulas/aula-01-analista --importar --profile SEU-PERFIL
+python3 scripts/gerar_notebooks.py aulas/aula-01-analista-sql --importar --profile SEU-PERFIL
 ```
 
 ---
@@ -370,14 +370,14 @@ O dashboard é **código**: [`gerar_dashboard.py`](gerar_dashboard.py) escreve o
 [`dashboard-bronze.lvdash.json`](dashboard-bronze.lvdash.json) e publica. Versionado, revisável, recriável.
 
 ```bash
-python3 aulas/aula-01-analista/gerar_dashboard.py --deploy --profile SEU-PERFIL
+python3 aulas/aula-01-analista-sql/gerar_dashboard.py --deploy --profile SEU-PERFIL
 ```
 
 O Genie da noite 1 fica direto na bronze, **sem instrução nenhuma**, de propósito:
 [`genie-bronze.json`](genie-bronze.json).
 
 ```bash
-python3 scripts/genie.py publicar aulas/aula-01-analista/genie-bronze.json \
+python3 scripts/genie.py publicar aulas/aula-01-analista-sql/genie-bronze.json \
   --titulo "Farol · Noite 1 (bronze, sem curadoria)" --profile SEU-PERFIL
 python3 scripts/genie.py perguntar "Farol · Noite 1 (bronze, sem curadoria)" \
   "Quais projetos estão atrasados, e de quais clientes?" --profile SEU-PERFIL
@@ -431,7 +431,7 @@ milissegundos do ClickUp. Funciona uma vez. Na terceira query, alguém esquece a
 
 Amanhã é a noite da **integração**: as três ferramentas viram um modelo só, num pipeline escrito com Claude Code,
 testado e agendado. Os KPIs são definidos uma vez só, e a IA lê os status semanais para achar
-a causa do atraso. → [aula-02](../aula-02-engenheiro)
+a causa do atraso. → [aula-02](../aula-02-python-engenheiro)
 
 **Lição de casa:** instale a [CLI do Databricks](https://docs.databricks.com/dev-tools/cli/install.html)
 e o [Claude Code](https://claude.com/claude-code), e rode `databricks auth login`.

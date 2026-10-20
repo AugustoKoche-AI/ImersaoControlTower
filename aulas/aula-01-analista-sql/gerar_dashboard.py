@@ -2,8 +2,8 @@
 """Gera o dashboard AI/BI da noite 1 (sobre a BRONZE) como JSON versionado.
 
 Uso:
-    python3 aulas/aula-01-analista/gerar_dashboard.py            # só escreve o JSON
-    python3 aulas/aula-01-analista/gerar_dashboard.py --deploy --profile SEU-PERFIL
+    python3 aulas/aula-01-analista-sql/gerar_dashboard.py            # só escreve o JSON
+    python3 aulas/aula-01-analista-sql/gerar_dashboard.py --deploy --profile SEU-PERFIL
 
 O JSON é o dashboard: nada aqui foi montado clicando. As queries usam o nome
 da tabela sem catálogo; catálogo e schema entram no deploy.

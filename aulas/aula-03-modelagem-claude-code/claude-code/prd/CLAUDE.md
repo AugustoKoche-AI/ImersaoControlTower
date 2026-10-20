@@ -42,7 +42,7 @@ mudaria todo dia e não bateria com o de ninguém. Escreva `DATE'2026-10-16'`.
 ## 2. Onde está o dado
 
 Catálogo **`lakehouse_vertice`**, criado na noite 1 (pelo notebook `00-carregar-dados` ou por
-`aulas/aula-01-analista/00-setup-catalogo.sql`). Schemas `bronze`, `silver`, `gold`
+`aulas/aula-01-analista-sql/00-setup-catalogo.sql`). Schemas `bronze`, `silver`, `gold`
 e o volume `bronze.raw` já existem. **A bronze já está carregada** (9 tabelas, com a
 sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
 
@@ -106,7 +106,7 @@ gerente, contrato, prazo), `utilizacao_pessoa_semana`, mais `status_estruturado`
 
 - **Um bundle só**, chamado `vertice`, na **raiz deste repositório** (o `databricks.yml`
   fica ao lado deste CLAUDE.md). O gabarito, testado, está em
-  <https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-02-engenheiro/vertice>:
+  <https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-03-modelagem-claude-code/claude-code/vertice>:
   não copie dele, a graça da noite é construir.
 - **Silver e gold num pipeline declarativo** (Lakeflow Spark Declarative Pipelines,
   SQL, serverless). Silver = schema padrão do pipeline; gold = nome completo

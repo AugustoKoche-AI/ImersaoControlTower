@@ -21,8 +21,8 @@ Uma pasta por noite, autocontida (README, roteiro, verificação), no mesmo esqu
 | Pasta | Noite |
 |---|---|
 | `aulas/aula-01-analista-sql/` | 1 · navegador: setup, bronze (CSV, Excel, JSON, XML), 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
-| `aulas/aula-02-python-engenheiro/` | 2 · notebooks: aquecimento de Python, data lake (Supabase Storage via S3/boto3) → raw → bronze, API de feriados, job de ingestão. Guarda também os prompts e o gabarito `vertice/` usados na noite 3 (`README-claude-code.md`) |
-| `aulas/aula-03-modelagem-claude-code/` | 3 · prompts no Claude Code: bundle, silver (as 3 ferramentas viram uma), gold, testes, metric view. O ML (features, modelo, score) fica como bônus |
+| `aulas/aula-02-python-engenheiro/` | 2 · notebooks: aquecimento de Python, data lake (Supabase Storage via S3/boto3) → raw → bronze, API de feriados, job de ingestão. Na pasta: README (com todo o código), aquecimento + gabarito e os notebooks 01_ingestao_api e 02_ingestao_boto3 |
+| `aulas/aula-03-modelagem-claude-code/` | 3 · prompts no Claude Code: bundle, silver (as 3 ferramentas viram uma), gold, testes, metric view. Em `claude-code/`: o passo a passo, os prompts (`prd/`) e o gabarito do bundle (`vertice/`). O ML (features, modelo, score) fica como bônus |
 | `aulas/aula-04-produtos-de-dados-ia/` | 4 · prompts: IA no texto do status, agente de contratos (ai_parse_document + ai_extract → gold.contratos), dashboard + Genie curado, app da Torre (AppKit) + Lakebase, pitch |
 | `material/` | PRD, gerador do dataset, validador dos padrões, writer de PDF |
 | `scripts/` | `run_sql.py`, `genie.py`, `gerar_notebooks.py`, `gerar_slides.py`, `gerar_prompts.py` |

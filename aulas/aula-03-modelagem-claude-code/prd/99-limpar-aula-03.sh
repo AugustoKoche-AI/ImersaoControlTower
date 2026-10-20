@@ -5,10 +5,10 @@
 # Some apenas o que os três prompts de hoje criaram, para você rodar os três de
 # novo, do zero, quantas vezes quiser.
 #
-# Uso:  bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh <profile> [--apagar] [--gabarito]
+# Uso:  bash aulas/aula-03-modelagem-claude-code/prd/99-limpar-aula-03.sh <profile> [--apagar] [--gabarito]
 #       Sem --apagar ele só MOSTRA o que faria.
 #       --gabarito: limpa o workspace mas NÃO mexe em arquivo nenhum (o bundle de
-#       referência aulas/aula-02-engenheiro/vertice guarda o src/ml de propósito).
+#       referência aulas/aula-03-modelagem-claude-code/claude-code/vertice guarda o src/ml de propósito).
 #
 # O que apaga:
 #   1. as tabelas da noite 3: ml.features_projeto_semana, ml.modelo_metricas e
@@ -25,7 +25,7 @@ CONFIRMA="${2:-}"
 GABARITO="${3:-}"
 CATALOGO="${CATALOGO:-lakehouse_vertice}"
 RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
-BUNDLE="$RAIZ/aulas/aula-02-engenheiro/meu-vertice"
+BUNDLE="$RAIZ/aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice"
 # a versão atual: laboratório no schema ml, só o resultado na gold
 TABELAS=(ml.features_projeto_semana ml.modelo_metricas gold.score_estouro_30d
          gold.features_projeto_semana gold.modelo_metricas)   # as duas últimas: versão antiga (tudo na gold)

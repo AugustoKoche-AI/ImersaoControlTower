@@ -227,17 +227,17 @@ Três minutos, uma pergunta ao vivo, um número em reais. O roteiro, a tabela de
 Se atrasou ou quer só ver funcionando:
 
 ```bash
-bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh <perfil>
+bash aulas/aula-04-produtos-de-dados-ia/torre-app/scripts/subir-tudo.sh <perfil>
 ```
 
 ### Confira
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile <perfil>        # 11 × ok
+python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile <perfil>        # 11 × ok
 python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" \
-  aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile <perfil>                         # ≥ 8/10
+  aulas/aula-04-produtos-de-dados-ia/prd/genie-benchmark.json --profile <perfil>                         # ≥ 8/10
 uv run --no-project --with "psycopg[binary]" python \
-  aulas/aula-04-engenheiro-ia/torre-app/scripts/ver_decisoes.py --profile <perfil>                # a sua decisão
+  aulas/aula-04-produtos-de-dados-ia/torre-app/scripts/ver_decisoes.py --profile <perfil>                # a sua decisão
 ```
 
 O primeiro confere os números do agente. O segundo faz as 10 perguntas ao Genie. O terceiro lê a sua
@@ -305,7 +305,7 @@ decisão **direto do Postgres**, com o seu e-mail, o horário, R$ 30.123,20 e 19
 Limpar só a noite 4 para ensaiar de novo (simula; `--apagar` apaga; nunca toca nas noites 1 a 3):
 
 ```bash
-bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil>
+bash aulas/aula-04-produtos-de-dados-ia/prd/99-limpar-aula-04.sh <perfil>
 ```
 
 ---

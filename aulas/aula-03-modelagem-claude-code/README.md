@@ -16,7 +16,7 @@ para pedir aditivo de horas, trocar gente de projeto ou renegociar o escopo ante
 > "Projeto Farol · Portfólio" e o Genie "Farol · Diretoria", que até 20/10 fechavam a noite 2).
 > **Onde fica cada coisa:** o laboratório do cientista (features, métricas, modelo) mora no schema
 > `lakehouse_vertice.ml`; na `gold` entra só o resultado, `gold.score_estouro_30d`.
-> **Conexão:** a tabela de hoje (`gold.score_estouro_30d`) é o que o app da [noite 4](../aula-04-engenheiro-ia) mostra ao dono.
+> **Conexão:** a tabela de hoje (`gold.score_estouro_30d`) é o que o app da [noite 4](../aula-04-produtos-de-dados-ia) mostra ao dono.
 > **Medo de ML?** Você não vai escrever código: vai escrever o pedido, conferir números e entender
 > cada decisão. Cada termo novo é explicado na primeira vez que aparece.
 
@@ -122,7 +122,7 @@ Numa sexta-feira t, para um projeto que AINDA está "ok" (SPI e CPI >= 0,9):
 
 **Pré-requisito:** a noite 2 rodou (`gold.fato_projeto_semana`, `gold.status_estruturado`
 e `gold.projeto_situacao_atual` existem). Perdeu a noite 2? Use o gabarito como checkpoint:
-`cd aulas/aula-02-engenheiro/vertice && databricks bundle deploy --profile SEU-PERFIL &&
+`cd aulas/aula-03-modelagem-claude-code/claude-code/vertice && databricks bundle deploy --profile SEU-PERFIL &&
 databricks bundle run vertice_farol --profile SEU-PERFIL` (~5 min, já inclui as tarefas da noite 3).
 
 Abra o Claude Code na raiz do repositório (`claude`). Cada prompt mora num arquivo com o texto
@@ -239,7 +239,7 @@ cortou em 100. O modelo aprendeu com o status, e o motivo avisa que as duas font
 ### Passo 4 · Verificação
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile SEU-PERFIL
+python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/99-verificacao.sql --profile SEU-PERFIL
 # 17 linhas "ok"
 ```
 
@@ -305,8 +305,8 @@ do job completo em 18/10 gravaram as mesmas métricas).
 ### Ensaiar de novo, do zero
 
 ```bash
-bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh SEU-PERFIL            # simula
-bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh SEU-PERFIL --apagar   # apaga tabelas, modelo,
+bash aulas/aula-03-modelagem-claude-code/prd/99-limpar-aula-03.sh SEU-PERFIL            # simula
+bash aulas/aula-03-modelagem-claude-code/prd/99-limpar-aula-03.sh SEU-PERFIL --apagar   # apaga tabelas, modelo,
                                                                            # experimento e o src/ml do meu-vertice
 # instrutor, com o gabarito: acrescente --gabarito para limpar só o workspace
 ```
@@ -323,7 +323,7 @@ bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh SEU-PERFIL --apagar   # ap
 | `notebooks/01-o-que-o-modelo-vale.sql` | conferência: métricas, lista de segunda e a curva do PRJ-024 |
 | `notebooks/02-o-vazamento-de-dado.py` | o mesmo modelo em 3 divisões: honesta, aleatória e com vazamento |
 | `APRENDIZADOS.md` | o que falhou no Free Edition e como resolvemos |
-| Gabarito | [`../aula-02-engenheiro/vertice/src/ml/`](../aula-02-engenheiro/vertice/src/ml) + as tarefas `ml_*` em `resources/vertice.job.yml` |
+| Gabarito | [`../aula-03-modelagem-claude-code/claude-code/vertice/src/ml/`](../aula-03-modelagem-claude-code/claude-code/vertice/src/ml) + as tarefas `ml_*` em `resources/vertice.job.yml` |
 
 ---
 
@@ -333,4 +333,4 @@ A lista existe, com motivo. Mas ela mora numa tabela, e o dono não abre o
 SQL Editor. Amanhã ela ganha uma **URL**: o app da Torre, onde o dono vê a
 lista, simula realocar um dos SREs parados no PRJ-007 para o PRJ-011 e
 **aprova**, com a decisão gravada no Lakebase. E um agente que lê os contratos
-de fornecedor e o manual da Vértice e diz o que fazer antes do freeze. → [aula-04](../aula-04-engenheiro-ia)
+de fornecedor e o manual da Vértice e diz o que fazer antes do freeze. → [aula-04](../aula-04-produtos-de-dados-ia)

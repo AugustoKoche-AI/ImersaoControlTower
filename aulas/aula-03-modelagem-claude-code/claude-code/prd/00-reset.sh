@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Noite 2 · Reset: apaga tudo que a noite 2 constrói, para provar que os seis prompts bastam.
 #
-#   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>            # SIMULA: só lista o que sairia
-#   bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar   # apaga de verdade
+#   bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil>            # SIMULA: só lista o que sairia
+#   bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil> --apagar   # apaga de verdade
 #
 # O que sai:   job vertice_farol, pipeline vertice_medalhao, dashboard e Genie da noite 2,
 #              e TUDO o que estiver nos schemas silver e gold (varrido pelo information_schema):
@@ -22,14 +22,14 @@
 # O que FICA:  o catálogo lakehouse_vertice, a BRONZE e o volume com os arquivos
 #              (são da noite 1). Este script nunca toca na bronze.
 #
-# Por padrão o destroy usa o bundle de referência (aulas/aula-02-engenheiro/vertice).
+# Por padrão o destroy usa o bundle de referência (aulas/aula-03-modelagem-claude-code/claude-code/vertice).
 # Se você construiu o seu em outra pasta, passe-a: BUNDLE_DIR=caminho bash 00-reset.sh <perfil> --apagar
 set -euo pipefail
 
 PERFIL="${1:?uso: 00-reset.sh <perfil> [--apagar]}"
 APAGAR="${2:-}"
-RAIZ="$(cd "$(dirname "$0")/../../.." && pwd)"
-BUNDLE_DIR="${BUNDLE_DIR:-$RAIZ/aulas/aula-02-engenheiro/vertice}"
+RAIZ="$(cd "$(dirname "$0")/../../../.." && pwd)"
+BUNDLE_DIR="${BUNDLE_DIR:-$RAIZ/aulas/aula-03-modelagem-claude-code/claude-code/vertice}"
 CAT=lakehouse_vertice
 
 sql() { python3 "$RAIZ/scripts/run_sql.py" /dev/stdin --profile "$PERFIL" --quiet --continuar; }

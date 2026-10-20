@@ -32,7 +32,7 @@ torre-app/
 
 ```bash
 databricks apps list --profile <perfil>        # o Free Edition aceita no máximo 3 apps
-bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh <perfil>
+bash aulas/aula-04-produtos-de-dados-ia/torre-app/scripts/subir-tudo.sh <perfil>
 ```
 
 1. cria o projeto Lakebase `farol-torre` (7 s);
@@ -43,7 +43,7 @@ bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh <perfil>
 ## Dia a dia
 
 ```bash
-cd aulas/aula-04-engenheiro-ia/torre-app
+cd aulas/aula-04-produtos-de-dados-ia/torre-app
 set -a; . ./.env; set +a; npm run typegen -- --wait   # tipos das queries (warehouse ligado)
 npm run typecheck && npm run lint && npm test
 databricks apps validate --profile <perfil>

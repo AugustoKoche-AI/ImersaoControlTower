@@ -6,7 +6,7 @@
 -- Precisa do rascunho do exemplo 05 (bronze.rascunho_tarefas): rode o exemplo 05 antes.
 --
 -- Rode com:
---   python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile SEU-PERFIL
+--   python3 scripts/run_sql.py aulas/aula-01-analista-sql/99-verificacao.sql --profile SEU-PERFIL
 
 WITH contagens AS (
     SELECT 'linhas em projetos'            AS item, 60    AS esperado, (SELECT COUNT(*) FROM lakehouse_vertice.bronze.projetos)             AS obtido UNION ALL

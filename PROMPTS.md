@@ -36,9 +36,9 @@ npm install -g @anthropic-ai/claude-code
 python3 scripts/run_sql.py aulas/aula-01-analista-sql/99-verificacao.sql --profile <perfil>
 ```
 
-**A pasta `aulas/aula-02-python-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
+**A pasta `aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice/` nasce vazia** — é o prompt 1 que
 a preenche. A pasta `vertice/` ao lado é o gabarito. Se você já rodou antes, zere
-com `BUNDLE_DIR=aulas/aula-02-python-engenheiro/meu-vertice bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil> --apagar`.
+com `BUNDLE_DIR=aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil> --apagar`.
 
 Nos prompts abaixo, **troque `<perfil>` pelo seu profile**.
 
@@ -61,7 +61,7 @@ errado"**. Se for a primeira vez, siga por eles.
 
 ### Prompt 1 · O bundle
 
-*o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-01-bundle.md)
+*o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-01-bundle.md)
 
 ```
 Leia o CLAUDE.md da raiz do repositório antes de começar.
@@ -116,7 +116,7 @@ Rode e me mostre a saída de cada um:
 
 ### Prompt 2 · Silver
 
-*as três ferramentas viram uma* · noite 2 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-02-silver.md)
+*as três ferramentas viram uma* · noite 2 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-02-silver.md)
 
 ```
 Continue o bundle na raiz deste repositório. A bronze está
@@ -202,7 +202,7 @@ Rode e me mostre a saída:
 
 ### Prompt 3 · Gold
 
-*o produto de dados e as perguntas do dono* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-03-gold.md)
+*o produto de dados e as perguntas do dono* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-03-gold.md)
 
 ```
 Continue o bundle na raiz deste repositório. A silver está pronta.
@@ -262,7 +262,7 @@ Rode e me mostre a saída:
 
 ### Prompt 4 · Texto com IA
 
-*o status semanal vira coluna* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-04-texto-com-ia.md)
+*o status semanal vira coluna* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-04-texto-com-ia.md)
 
 ```
 Continue o bundle na raiz deste repositório. Agora o texto livre
@@ -309,7 +309,7 @@ Rode e me mostre a saída:
 
 ### Prompt 5 · Métricas governadas
 
-*o KPI definido uma vez só* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-05-metricas.md)
+*o KPI definido uma vez só* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-05-metricas.md)
 
 ```
 Continue o bundle na raiz deste repositório. Agora os KPIs
@@ -346,7 +346,7 @@ Rode e me mostre a saída:
 ## Fim da noite 2 · confira antes de seguir
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-02-python-engenheiro/prd/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/99-verificacao.sql --profile <perfil>
 # 20 linhas, todas "ok"
 ```
 
@@ -574,7 +574,7 @@ Rode e me mostre a saída:
   databricks bundle deploy --profile <perfil>
   databricks bundle summary --profile <perfil>
   python3 scripts/genie.py perguntar "Farol · Diretoria" "Tenho gente parada enquanto outro projeto pede gente?" --profile <perfil>
-  python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile <perfil>
+  python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-03-modelagem-claude-code/claude-code/prd/genie-benchmark.json --profile <perfil>
 Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 (não a pergunta), gere o JSON, faça deploy e rode de novo.
 ```
@@ -606,10 +606,10 @@ O job `vertice_farol` agora tem **9 tarefas** e roda verde em ~4 a 5 min. A noit
 *o PDF que ninguém lê vira resposta* · noite 4 · Genie publicado · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-01-agente-de-contratos.md)
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar. Use a skill
+Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md antes de começar. Use a skill
 databricks-ai-functions.
 
-Crie a pasta aulas/aula-04-engenheiro-ia/meu-agente/ com o agente que lê os 8
+Crie a pasta aulas/aula-04-produtos-de-dados-ia/meu-agente/ com o agente que lê os 8
 contratos de fornecedor da Vértice. Perfil: <perfil> (sempre --profile).
 Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
 
@@ -652,7 +652,7 @@ Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
    python3 scripts/genie.py publicar meu-agente/diretoria-contratos-genie.json \
      --titulo "Farol · Diretoria + Contratos" --profile <perfil>
    python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" \
-     aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile <perfil>
+     aulas/aula-04-produtos-de-dados-ia/prd/genie-benchmark.json --profile <perfil>
    Se errar, ajuste as instruções (não as perguntas) e publique de novo.
 ```
 
@@ -661,13 +661,13 @@ Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
 *a Torre na tela do dono* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-02-app.md)
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
+Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md. Use as skills databricks-apps e
 databricks-app-design.
 
 1. Confira `databricks apps list --profile <perfil>` (limite de 3 apps no Free Edition).
-   Mova aulas/aula-04-engenheiro-ia/meu-agente/ para dentro do app (minha-torre/agente/)
+   Mova aulas/aula-04-produtos-de-dados-ia/meu-agente/ para dentro do app (minha-torre/agente/)
    e crie o app:
-   cd aulas/aula-04-engenheiro-ia && databricks apps init --name minha-torre \
+   cd aulas/aula-04-produtos-de-dados-ia && databricks apps init --name minha-torre \
      --features analytics,genie \
      --set analytics.sql-warehouse.id=<warehouse> \
      --set genie.genie-space.id=<id do Genie "Farol · Diretoria + Contratos"> \
@@ -714,7 +714,7 @@ databricks-app-design.
 *a decisão fica registrada* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-03-aprovacao-lakebase.md)
 
 ```
-Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
+Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md. Use as skills databricks-apps e
 databricks-lakebase. O app minha-torre já está no ar (prompt 2).
 
 1. Lakebase:
@@ -754,8 +754,8 @@ Cada noite tem o próprio script de limpeza. Sem `--apagar`, eles apenas
 **mostram** o que fariam. Nenhum deles toca na bronze da noite 1.
 
 ```bash
-bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil>             # simula
-bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil> --apagar    # apaga silver, gold e os recursos do bundle
+bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil>             # simula
+bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil> --apagar    # apaga silver, gold e os recursos do bundle
 bash aulas/aula-03-modelagem-claude-code/prd/99-limpar-aula-03.sh <perfil>     # simula; --apagar tira features, modelo e score
 bash aulas/aula-04-produtos-de-dados-ia/prd/99-limpar-aula-04.sh <perfil> # simula; --apagar tira contratos, app e Lakebase
 ```

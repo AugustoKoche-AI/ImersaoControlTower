@@ -18,7 +18,7 @@ Bônus, que a noite 1 já responde: **posso confiar no farol que os gerentes me 
 ## 1. O dashboard (7 min)
 
 Abra **Dashboards → Projeto Farol · Noite 1 (bronze)** (ou rode
-`python3 aulas/aula-01-analista/gerar_dashboard.py --deploy --profile SEU-PERFIL`).
+`python3 aulas/aula-01-analista-sql/gerar_dashboard.py --deploy --profile SEU-PERFIL`).
 
 O que mostrar, nesta ordem:
 
