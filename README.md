@@ -178,7 +178,7 @@ Cada pasta é **autocontida** (README, roteiro, verificação e checkpoint). Per
 2. No Databricks: **Workspace → Create → Git folder** → `https://github.com/lvgalvao/ImersaoControlTower`.
 3. Abra `aulas/aula-01-analista/00-carregar-dados` → **Run all**. O catálogo nasce e os dados são gerados direto no volume.
 4. Abra `aulas/aula-01-analista/01-ingestao-bronze.sql` no **SQL Editor** → rode tudo.
-5. Rode o exemplo 05 e depois `aulas/aula-01-analista/99-verificacao.sql`. As 22 linhas devem dar `ok`.
+5. Rode o exemplo 05 e depois `aulas/aula-01-analista/99-verificacao.sql`. As 18 linhas devem dar `ok`.
 
 Daí em diante, siga o [README da noite 1](aulas/aula-01-analista/README.md).
 

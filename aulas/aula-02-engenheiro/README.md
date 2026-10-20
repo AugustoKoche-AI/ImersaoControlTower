@@ -4,11 +4,14 @@
 
 **Ao fim desta noite você terá** a Torre de Controle da Vértice rodando sozinha: Excel, ClickUp e
 MS Project juntos numa tabela só, os KPIs de prazo e custo calculados com teste, a causa de cada
-atraso tirada do texto do status por IA, um dashboard de 3 páginas e um Genie que responde em
-português. Tudo como código, com **seis prompts no Claude Code** e um job que roda toda segunda às 6h.
+atraso tirada do texto do status por IA e a fórmula de cada KPI num lugar só. Tudo como código: um
+aquecimento em Python (uma API nova na bronze) e **cinco prompts no Claude Code**, num job que roda toda segunda às 6h.
+
+> **Mudou em 20/10:** o dashboard e o Genie (o antigo prompt 6) passaram para a [noite 3](../aula-03-cientista),
+> depois do modelo. Hoje a noite fecha na modelagem: silver, gold e testes.
 
 **Por que isso responde ao dono:** ontem o Genie errou as quatro perguntas dele ("nenhum atraso
-custa nada"), porque olhava dado sujo e espalhado. Hoje ele acerta as quatro, e as 20 do teste.
+custa nada"), porque olhava dado sujo e espalhado. Hoje a gente constrói o dado limpo e testado que faz ele acertar amanhã.
 
 > **O caso:** Vértice Tecnologia, 60 projetos de clientes, controlados em Excel (20), ClickUp (25) e
 > MS Project (15). Você é o único profissional de dados: hoje, o engenheiro.
@@ -25,7 +28,7 @@ custa nada"), porque olhava dado sujo e espalhado. Hoje ele acerta as quatro, e 
 | 1. Quais projetos estão atrasados, e de quais clientes? | prompt 3 (gold) | 7 críticos, 10 em atenção, 4 "melancias" |
 | 2. Quanto esse atraso vai custar? | prompt 3 (gold) + prompt 5 (métricas) | R$ 6,47 mi de estouro previsto |
 | 3. Tenho gente parada enquanto outro projeto pede gente? | prompt 3 (timesheet) + prompt 4 (IA no status) | 2 SREs a ~5% no PRJ-007; o PRJ-011 pede SRE há 12 semanas |
-| 4. O que vai dar errado no próximo mês? | silver (fornecedores) + Genie (prompt 6) | 5 entregas da CodeForge atrasadas e o change freeze da Black Friday (01/11 a 10/01) nos projetos de e-commerce |
+| 4. O que vai dar errado no próximo mês? | silver (fornecedores); no Genie, amanhã | 5 entregas da CodeForge atrasadas e o change freeze da Black Friday (01/11 a 10/01) nos projetos de e-commerce |
 
 A pergunta 4 ganha um modelo de previsão amanhã (`gold.score_estouro_30d`, noite 3). Hoje ela já tem os sinais.
 
@@ -112,65 +115,108 @@ bronze.entregas_forn. ───► silver.entregas_fornecedor ──────
 
 ---
 
-## 🚀 Antes do prompt 1: preparar o computador
+## 🚀 Antes do prompt 0: o passo a passo, do zero
 
-A noite 1 foi toda pelo navegador. A noite 2 precisa de **terminal** (a tela preta onde se digitam
-comandos). São seis passos; o passo 3 é onde quase todo mundo tropeça.
+A noite 1 foi toda pelo navegador. A noite 2 precisa de **terminal** (a tela onde se digitam
+comandos). Siga na ordem; cada passo termina com um comando que **confere** se deu certo.
 
-**1. Python e Git**
+> 🎥 **Vídeos de referência**
+> - Instalar o Antigravity e o GitHub, passo a passo: <https://www.youtube.com/watch?v=8mcBuO6wo4U&t=3s>
+> - Databricks + IA, em detalhes: <https://www.youtube.com/watch?v=0l-DZkniRSg&t=1122s>
+
+**Passo 1 · O editor: Antigravity**
+
+Baixe e instale em <https://antigravity.google>. É o editor onde você abre a pasta do projeto e usa o
+terminal (menu **Terminal › New Terminal**). Qualquer editor com terminal serve (VS Code, Cursor).
+
+**Passo 2 · Git e GitHub CLI**
 
 ```bash
-python3 --version     # 3.10 a 3.12. Evite 3.13 para as bibliotecas do Databricks
-git --version
+# macOS
+brew install git gh
+# Windows (PowerShell)
+winget install Git.Git GitHub.cli
+
+git --version          # git version 2.x
+gh auth login          # GitHub.com › HTTPS › Login with a web browser
+gh auth status         # ✓ Logged in to github.com
 ```
 
-**2. A CLI do Databricks** (o programa que conversa com o seu workspace; v0.250 ou mais nova)
+Sem conta no GitHub? Crie em <https://github.com/signup> antes do `gh auth login`.
+
+**Passo 3 · A pasta do projeto, com o repositório**
+
+```bash
+mkdir -p ~/projetos && cd ~/projetos
+gh repo fork lvgalvao/ImersaoControlTower --clone   # uma cópia na SUA conta: vira o seu portfólio
+cd ImersaoControlTower
+ls aulas                                            # aula-01-analista  aula-02-engenheiro ...
+```
+
+No Antigravity: **File › Open Folder** e escolha `~/projetos/ImersaoControlTower`. Daqui em diante,
+todo comando roda no terminal do Antigravity, **na raiz desta pasta**.
+
+**Passo 4 · Python**
+
+```bash
+python3 --version      # 3.10 a 3.12. Evite o 3.13 com as bibliotecas do Databricks
+pip3 install requests  # a biblioteca do prompt 0
+```
+
+**Passo 5 · A CLI do Databricks** (o programa que conversa com o seu workspace)
 
 ```bash
 # macOS
 brew tap databricks/tap && brew install databricks
-# Windows
+# Windows (PowerShell)
 winget install Databricks.DatabricksCLI
 # Linux
 curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
 
-databricks -v
+databricks -v          # Databricks CLI v0.250 ou mais nova
 ```
 
-**3. O login (e o erro que todo mundo vê)**
+**Passo 6 · O login no workspace (o passo em que todo mundo tropeça)**
 
 ```bash
-databricks auth login --profile vertice
-# abre o navegador; escolha o seu workspace Free Edition e autorize
+databricks auth login --host https://SEU-WORKSPACE.cloud.databricks.com --profile vertice
+# abre o navegador: entre na sua conta do Free Edition e autorize
 databricks auth profiles
 # vertice   https://dbc-xxxx.cloud.databricks.com   YES
 ```
 
-Se aparecer `refresh token is invalid` ou `Valid: NO`, rode o `auth login` de novo. O *profile* é o
-apelido do seu login. Daqui em diante, **todo comando leva `--profile vertice`** (ou o nome que você
-escolheu). Nos prompts, troque `<perfil>` por ele.
+O endereço do workspace é o da barra do navegador quando você está no Databricks (até o `.com`).
+O *profile* (`vertice`) é o apelido do login: **todo comando daqui em diante leva `--profile vertice`**.
+Viu `refresh token is invalid` ou `Valid: NO`? Rode o `auth login` de novo.
 
-**4. O repositório e a bronze da noite 1**
+**Passo 7 · Confira a bronze da noite 1**
 
 ```bash
-git clone https://github.com/lvgalvao/ImersaoControlTower.git
-cd ImersaoControlTower
 python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile vertice
-# 22 linhas "ok". Se não, faça a noite 1 primeiro (00-carregar-dados + 01-ingestao-bronze + exemplo 05)
+# 18 linhas "ok"
 ```
 
-**5. O Claude Code e as skills do Databricks**
+Deu erro em `rascunho_tarefas`? Rode o exemplo 05 (bloco 3) do
+`aulas/aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql` no SQL Editor. Faltam tabelas? Faça a noite 1
+primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
+
+**Passo 8 · O Claude Code**
 
 ```bash
-npm install -g @anthropic-ai/claude-code
-claude                            # abra na RAIZ do repositório
+# macOS / Linux
+curl -fsSL https://claude.ai/install.sh | bash
+# Windows (PowerShell)
+irm https://claude.ai/install.ps1 | iex
+
+claude --version
+claude                 # na RAIZ do repositório. Na primeira vez, faz o login
 ```
 
 As **skills oficiais do Databricks** (o "manual" que o Claude Code lê sobre bundles, pipelines,
-metric views, Genie e funções de IA) já vêm no repositório, em `.claude/skills/`. Para atualizar:
-`databricks aitools update`.
+metric views e funções de IA) já vêm no repositório, em `.claude/skills/`. Para atualizar:
+`databricks aitools install --agents claude-code --scope project --skills-only --experimental`.
 
-**6. Travas de segurança antes de dar acesso ao workspace**
+**Passo 9 · As travas, antes de dar acesso ao workspace**
 
 Em `.claude/settings.json`, proíba o que não tem volta:
 
@@ -183,11 +229,35 @@ Em `.claude/settings.json`, proíba o que não tem volta:
 }
 ```
 
+**Passo 10 · O bundle: o que é e quem cria**
+
+O bundle é o projeto inteiro (job, pipeline, SQL) descrito em arquivos, com um `databricks.yml` na
+raiz. A CLI tem um gerador de esqueleto:
+
+```bash
+databricks bundle init                 # pergunta o template: default-python, default-sql, default-minimal...
+```
+
+**Hoje você não roda o `bundle init` à mão.** Os templates criam o target com `mode: development`, que
+prefixa todos os nomes com `[dev seu_nome]` e quebra os caminhos da noite. Quem cria o bundle é o
+**prompt 1**, na pasta `aulas/aula-02-engenheiro/meu-vertice/`, já do jeito certo. Depois, a cada
+prompt, o ciclo é sempre o mesmo:
+
+```bash
+cd aulas/aula-02-engenheiro/meu-vertice
+databricks bundle validate --profile vertice          # confere o YAML antes de subir
+databricks bundle deploy   --profile vertice          # sobe o código para o workspace
+databricks bundle run vertice_farol --profile vertice # roda o job
+cd ../../..                                           # volta para a raiz
+```
+
+(O Claude Code roda esses comandos para você e pede licença antes de cada um: leia e aprove.)
+
 Pronto. Agora é prompt a prompt.
 
 ---
 
-## 🧾 Os 6 prompts, um por um
+## 🧾 Os prompts, um por um
 
 Cada prompt termina com um **deploy**. Enquanto o Claude Code trabalha, o professor explica o
 conceito: o tempo de espera vira aula. O texto exato de cada prompt está no arquivo (copie e cole);
@@ -197,14 +267,27 @@ do Free Edition já medidas.
 
 | # | Arquivo | O que entrega | Tempo medido |
 |---|---|---|---|
+| 0 | [`prompt-00-api.md`](prd/prompt-00-api.md) | aquecimento: API em Python → `bronze.feriados` | ~1 min |
 | 1 | [`prompt-01-bundle.md`](prd/prompt-01-bundle.md) | bundle + job + conferência da bronze | ~40 s |
 | 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline, `silver.tarefas` + 6 tabelas | ~2 min |
 | 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | 3 tabelas gold (fotografia, filme, pessoas) + 10 testes | ~3 min |
 | 4 | [`prompt-04-texto-com-ia.md`](prd/prompt-04-texto-com-ia.md) | `status_estruturado` (ai_classify + ai_extract) | ~2 min |
 | 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | a metric view `mv_projetos` | ~10 s |
-| 6 | [`prompt-06-dashboard-e-genie.md`](prd/prompt-06-dashboard-e-genie.md) | dashboard + Genie + benchmark | ~6 min |
 
 Se um prompt não entregar, o **gabarito** está em [`vertice/`](vertice): compare o arquivo.
+
+### Prompt 0 · Aquecimento: uma fonte nova, por API
+
+**O que você pede:** um script Python que busca os feriados de 2026 na BrasilAPI, salva o JSON, sobe
+o arquivo para o volume (`/Volumes/lakehouse_vertice/bronze/raw/feriados/`) e cria a
+`bronze.feriados` com `read_files`.
+
+**A ideia:** na empresa, o dado não chega pronto. Quando a fonte não tem conector, entra o Python. E o
+caminho é o mesmo da noite 1: **extrair** (requests), **pousar** (o arquivo no volume, do jeito que
+veio) e **carregar** (`read_files`).
+
+**O que conferir:** 14 feriados no ano; em novembro, 2 em dia útil (02/11 e 20/11; o 15/11 é
+domingo), bem no começo do freeze da Black Friday. Travou? `python3 aulas/aula-02-engenheiro/00-buscar-feriados.py --profile vertice`.
 
 ### Prompt 1 · O projeto vira código
 
@@ -336,7 +419,7 @@ Junto com o prompt 3, é a pergunta 3 do dono inteira: **duas SREs paradas no PR
 PRJ-011 pede SRE no status há 12 semanas.**
 
 ![Gráfico de causas de bloqueio por projeto no dashboard](../../docs/img/noite2-bloqueios-ia.jpg)
-*É assim que essa tabela aparece no dashboard (prompt 6, página **Pessoas**). Repare na barra laranja do PRJ-011 no topo: `falta_sre`, 12 semanas. Cada cor é uma causa que a IA tirou do texto.*
+*É assim que essa tabela aparece no dashboard (noite 3, página **Pessoas**). Repare na barra laranja do PRJ-011 no topo: `falta_sre`, 12 semanas. Cada cor é uma causa que a IA tirou do texto.*
 
 ### Prompt 5 · O KPI definido uma vez só
 
@@ -365,55 +448,10 @@ FROM lakehouse_vertice.gold.mv_projetos;
 ![DAG do job vertice_farol com todas as tarefas verdes](../../docs/img/noite2-job.jpg)
 *O job depois do prompt 5: `conferencia_bronze` → `medalhao` → duas tarefas **em paralelo** (`status_com_ia`, `testes_de_qualidade`) → `metricas_governadas`. Hoje o seu termina aí, com cinco caixas; as três de `ml_` entram amanhã, na noite 3 (8 tarefas no total). O print é do ensaio: ainda mostra a antiga `postmortem_com_ia`.*
 
-### Prompt 6 · O dono pergunta em português
+### Prompt 6 · mudou para a noite 3
 
-**O que você pede:** o dashboard "Projeto Farol · Portfólio" (3 páginas) e o Genie "Farol ·
-Diretoria", os dois como código dentro do bundle, e o benchmark de 20 perguntas.
-
-**A ideia:** o modelo de IA do Genie é o mesmo de ontem. O que mudou é tudo que está embaixo dele:
-dado limpo, KPI com fórmula única e **instruções de negócio** (o "hoje" é 16/10/2026, o que é "próximo
-mês", o que é "gente parada"). O benchmark é o teste dessas instruções: mudou uma instrução, roda
-as 20 perguntas de novo.
-
-**O dashboard, página a página:**
-
-![Página Portfólio: cartões de KPI](../../docs/img/noite2-dashboard.jpg)
-*Página **Portfólio**: carteira, SPI, CPI e estouro previsto lidos da `mv_projetos`, mais 17 em risco, 7 críticos e 4 melancias ("Farol verde com SPI < 0,9"). O cartão arredonda: R$ 6M é o R$ 6,47 mi.*
-
-![Página Portfólio: estouro por projeto e dispersão SPI × CPI](../../docs/img/noite2-dashboard-graficos.jpg)
-*Mais abaixo, na mesma página: o estouro previsto por projeto (cor = situação) e a dispersão prazo × custo. Os pontos vermelhos no canto de baixo à esquerda são os críticos: atrasados **e** caros.*
-
-![Página Pessoas: custo da hora parada](../../docs/img/noite2-pessoas.jpg)
-*Página **Pessoas**, a pergunta 3: as duas barras maiores são as SREs do PRJ-007 (`sre · PRJ-007`). Repare que logo abaixo vêm várias pessoas do PRJ-011: o projeto que pede SRE.*
-
-![Página Fornecedores](../../docs/img/noite2-capacidade.jpg)
-*Página **Fornecedores**, metade da pergunta 4: a tabela por fornecedor e as entregas em atraso hoje, lidas direto da `silver.entregas_fornecedor`. Repare na CodeForge: 4 grafias no cadastro, prazo real 1,41 vez o prometido, 0% no prazo, 5 entregas em atraso. (O print é do ensaio, quando a página ainda se chamava "Capacidade e fornecedores" e tinha um gráfico de contratos.)*
-
-**O Genie:**
-
-![Instruções do Genie Farol · Diretoria](../../docs/img/recurso-genie-instrucoes.jpg)
-***Configure › Instructions**: as instruções que o prompt 6 gerou. Repare no "HOJE é 16/10/2026", no "nunca use current_date()" e nas regras de corte. Foi isso que faltou ao Genie de ontem.*
-
-![Genie respondendo "Tenho gente parada enquanto outro projeto pede gente?"](../../docs/img/noite2-genie.jpg)
-*A pergunta 3 do dono, no Genie da noite 2: as duas SREs a 5,5% e 5,8%, ~450 horas paradas e ~R$ 90 mil de custo ocioso cada, e o PRJ-011 com 57 dias de impacto por falta de SRE.*
-
-![Genie recomendando realocar uma SRE do PRJ-007 para o PRJ-011](../../docs/img/noite2-genie-recomendacao.jpg)
-*No fim da mesma resposta, o Genie cruza as duas fontes sozinho e recomenda: **realocar uma SRE do PRJ-007 para o PRJ-011**. É a decisão que o dono queria.*
-
-**O que conferir:**
-
-- As quatro perguntas do dono certas: 17 projetos de 13 clientes · R$ 6,47 mi de estouro · as duas
-  SREs paradas · as entregas atrasadas da CodeForge e o freeze de 01/11 nos projetos de e-commerce
-  (a previsão de verdade é o modelo da noite 3).
-- O benchmark passa de **16/20**. No ensaio de 18/10: 18/20 na primeira rodada e **20/20** depois de
-  duas instruções a mais.
-
-![Query History com as consultas do Genie](../../docs/img/recurso-query-history.jpg)
-*Desconfiou de uma resposta? **Query History** mostra o SQL que cada Genie rodou (coluna **Source**: "Farol · Diretoria"). Nada é caixa-preta.*
-
-> *"Ontem ele disse que o atraso não custava nada. Hoje ele diz quanto custa, quem está parado e o
-> que vai quebrar no mês que vem. O modelo é o mesmo. A diferença foi tudo que a gente construiu nas
-> últimas duas horas."*
+O dashboard "Projeto Farol · Portfólio" e o Genie "Farol · Diretoria" agora fecham a
+[noite 3](../aula-03-cientista): [`prompt-04-dashboard-e-genie.md`](../aula-03-cientista/prd/prompt-04-dashboard-e-genie.md).
 
 ---
 
@@ -495,7 +533,8 @@ python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 | Caminho | O que é |
 |---|---|
 | `prd/CLAUDE.md` | contexto do projeto para o Claude Code |
-| `prd/prompt-01..06-*.md` | os 6 prompts, com o que mostrar, o que falar e "se der errado" |
+| `prd/prompt-00..05-*.md` | o aquecimento e os 5 prompts, com o que mostrar, o que falar e "se der errado" |
+| `00-buscar-feriados.py` | o gabarito do prompt 0: busca a API, pousa no volume e carrega a bronze |
 | `prd/genie-benchmark.json` | 20 perguntas com o SQL de referência |
 | `prd/99-verificacao.sql` | os 20 números da noite, esperado × obtido |
 | `prd/00-reset.sh` | zera a noite 2 (simula por padrão) |

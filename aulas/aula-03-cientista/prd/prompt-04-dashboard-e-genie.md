@@ -1,9 +1,10 @@
-# Prompt 6 · Dashboard e Genie — o dono pergunta em português
+# Prompt 4 · Dashboard e Genie — o dono pergunta em português
 
 **Entrega:** o dashboard de Portfólio (3 páginas) e o Genie Agent da diretoria,
-ambos como código no bundle, e o benchmark de 20 perguntas. **Deploy nº 6.**
+ambos como código no bundle, e o benchmark de 20 perguntas. **O último deploy da noite 3.**
+(Até 20/10 era o prompt 6 da noite 2. Mudou para cá: a noite 2 fecha na modelagem.)
 
-> O fechamento da noite: o Genie que errou as quatro perguntas do dono ontem agora
+> O fechamento da noite: o Genie que errou as quatro perguntas do dono na segunda agora
 > acerta. O modelo de IA é o mesmo. Mudou tudo que está embaixo dele.
 
 ---
@@ -101,7 +102,7 @@ Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 ## O que conferir
 
 - `bundle summary` mostra a URL do dashboard e do Genie.
-- As quatro perguntas do dono, no Genie da noite 2:
+- As quatro perguntas do dono, no Genie:
   1. *atrasados e de quais clientes* → 17 projetos de 13 clientes, com SPI e CPI;
   2. *quanto custa* → **R$ 6,47 mi** de estouro previsto, margem projetada de 20%;
   3. *gente parada* → as duas SREs do PRJ-007 a ~5% de utilização, ~450 h paradas e

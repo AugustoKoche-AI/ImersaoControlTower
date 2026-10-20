@@ -59,9 +59,25 @@ errado"**. Se for a primeira vez, siga por eles.
 
 ## Noite 2 · o pipeline nasce
 
+### Prompt 0 · Aquecimento: uma API em Python
+
+*o dado não chega pronto* · noite 2 · sem deploy: fs cp + read_files · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-00-api.md)
+
+```
+Busque os feriados nacionais de 2026 na API
+https://brasilapi.com.br/api/feriados/v1/2026
+com um script Python (requests). Salve a resposta
+em feriados_2026.json, suba o arquivo para
+/Volumes/lakehouse_vertice/bronze/raw/feriados/
+e crie a tabela lakehouse_vertice.bronze.feriados
+com read_files. No fim, mostre os feriados de
+novembro com o dia da semana.
+Use o profile <perfil>.
+```
+
 ### Prompt 1 · O bundle
 
-*o projeto nasce como código* · noite 2 · deploy nº 1 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-01-bundle.md)
+*o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-01-bundle.md)
 
 ```
 Leia aulas/aula-02-engenheiro/prd/CLAUDE.md antes de começar.
@@ -116,7 +132,7 @@ Rode e me mostre a saída de cada um:
 
 ### Prompt 2 · Silver
 
-*as três ferramentas viram uma* · noite 2 · deploy nº 2 (bundle deploy + run do pipeline) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-02-silver.md)
+*as três ferramentas viram uma* · noite 2 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-02-silver.md)
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A bronze está
@@ -202,7 +218,7 @@ Rode e me mostre a saída:
 
 ### Prompt 3 · Gold
 
-*o produto de dados e as perguntas do dono* · noite 2 · deploy nº 3 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-03-gold.md)
+*o produto de dados e as perguntas do dono* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-03-gold.md)
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A silver está pronta.
@@ -262,7 +278,7 @@ Rode e me mostre a saída:
 
 ### Prompt 4 · Texto com IA
 
-*o status semanal vira coluna* · noite 2 · deploy nº 4 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
+*o status semanal vira coluna* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
@@ -309,7 +325,7 @@ Rode e me mostre a saída:
 
 ### Prompt 5 · Métricas governadas
 
-*o KPI definido uma vez só* · noite 2 · deploy nº 5 (bundle deploy + run) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-05-metricas.md)
+*o KPI definido uma vez só* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-05-metricas.md)
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora os KPIs
@@ -341,9 +357,183 @@ Rode e me mostre a saída:
   databricks bundle run vertice_farol --profile <perfil>
 ```
 
-### Prompt 6 · Dashboard e Genie
+---
 
-*o dono pergunta em português* · noite 2 · deploy nº 6 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-06-dashboard-e-genie.md)
+## Fim da noite 2 · confira antes de seguir
+
+```bash
+python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile <perfil>
+# 20 linhas, todas "ok"
+```
+
+```sql
+SELECT situacao, COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual GROUP BY 1;
+-- crítico 7 · atenção 10 · ok 24 · concluído 19
+SELECT MEASURE(estouro_previsto), MEASURE(projetos_melancia) FROM lakehouse_vertice.gold.mv_projetos;
+-- R$ 6.465.127,22 · 4
+```
+
+O job `vertice_farol` tem **5 tarefas** e roda verde de ponta a ponta. Se estes números não
+baterem, não adianta seguir: a noite 3 treina em cima deles.
+
+---
+## Noite 3 · o pipeline passa a prever
+
+### Prompt 6 · Features
+
+*o que descreve um projeto que vai estourar* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
+
+```
+Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
+em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
+não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
+
+Crie src/ml/01-features.sql (sql_task). Primeiro CREATE SCHEMA IF NOT EXISTS
+lakehouse_vertice.ml (o laboratório do cientista; na gold só vai o score).
+Depois recrie lakehouse_vertice.ml.features_projeto_semana: uma linha por
+projeto e semana (sexta-feira), a partir de gold.fato_projeto_semana +
+gold.projeto_situacao_atual (o cadastro: início, duração, segmento).
+COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
+
+- spi, cpi, indice_min = least(spi, cpi)
+- d_spi_4s, d_cpi_4s, d_spi_8s, d_cpi_8s (variação em 4 e 8 semanas, com lag())
+- d_indice_min_4s
+- semanas_cpi_caindo: em quantas das últimas 4 semanas o CPI caiu
+- cpi_ultimas_4s = (ev - ev de 4 semanas atrás) / (ac - ac de 4 semanas atrás)
+- spi_ultimas_4s = o mesmo com pv
+- pct_fisico = ev / orcamento; pct_prazo = dias desde o início / duração baseline
+- ociosidade_4s = horas ociosas / horas disponíveis das últimas 4 semanas
+- pct_consultoria_4s e pct_cloud_4s: participação no custo das últimas
+  4 semanas (silver.custos, pela coluna semana)
+- saidas_12s: pessoas do squad que se desligaram nas últimas 12 semanas.
+  Squad = quem apontou hora no projeto (silver.apontamentos) + data de
+  desligamento em silver.colaboradores
+- status_freeze_4s, status_falta_sre_4s, status_fornecedor_4s,
+  status_rotatividade_4s, status_escopo_4s, status_retrabalho_4s,
+  status_com_bloqueio_4s: quantos dos status dos últimos 28 dias tiveram
+  cada causa_bloqueio (gold.status_estruturado; vale qualquer método,
+  IA ou palavra-chave, porque a causa existe em todas as semanas)
+
+Os dois alvos, do FUTURO, que nunca entram como feature:
+- alvo_pior_indice_30d: o menor least(spi, cpi) nas 4 semanas SEGUINTES
+  (MIN ... ROWS BETWEEN 1 FOLLOWING AND 4 FOLLOWING)
+- estoura_30d: 1 se esse pior índice < 0,9, senão 0
+Os dois NULL quando ainda não há 4 semanas de futuro (é o caso de hoje).
+
+elegivel = 1 se SPI e CPI >= 0,9, o projeto tem 84+ dias, ev < 98% do
+orçamento e (status = em_andamento ou a semana é anterior a hoje).
+
+ARMADILHA MEDIDA: o Spark não aceita estender uma janela nomeada com frame
+(OVER (w ROWS BETWEEN ...) dá PARSE_SYNTAX_ERROR). Escreva o PARTITION BY
+e o ORDER BY por extenso nas janelas com ROWS BETWEEN.
+
+No fim do arquivo, uma query de conferência: linhas, linhas de treino
+(elegível com rótulo), taxa base e linhas de hoje.
+
+Acrescente ao job vertice_farol a tarefa ml_features (sql_task), depois de
+metricas_governadas. Rode e me mostre a saída:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run vertice_farol --only ml_features --profile <perfil>
+```
+
+### Prompt 7 · Modelo e MLflow
+
+*o baseline primeiro* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-02-modelo.md)
+
+```
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
+src/ml/02-modelo.py (# Databricks notebook source, widget catalog) e a
+tarefa ml_modelo (notebook_task, depois de ml_features).
+
+ARMADILHAS MEDIDAS NO FREE EDITION (siga todas):
+- O serverless vem com MLflow 2.11, e registrar modelo no Unity Catalog
+  falha com "s3:PutObject ... explicit deny". Primeira célula:
+  %pip install -q -U "mlflow-skinny[databricks]>=2.21,<3"
+  e dbutils.library.restartPython() na seguinte.
+- XGBoost treina e não carrega de volta: use HistGradientBoosting do sklearn.
+- DECIMAL vira Decimal no pandas e quebra o registro: .astype(float).
+- mlflow.set_experiment não cria a pasta pai: WorkspaceClient().workspace
+  .mkdirs("/Users/<eu>/vertice") antes.
+- MLflow 2.x: log_model(..., artifact_path="modelo"), nunca name=.
+- Toda célula de texto começa com "# MAGIC %md": sem ela o notebook quebra
+  com SyntaxError na linha do texto.
+
+O notebook, nesta ordem:
+1. Lê ml.features_projeto_semana (24 features: todas as colunas do prompt 1
+   menos segmento, farol_do_gerente, elegivel e os dois alvos). Teste = elegíveis com rótulo e semana >=
+   2026-04-03. Treino = rotulados com semana <= 2026-03-06 e pct_prazo > 0,15
+   (inclui projetos já abaixo de 0,9: eles ensinam como um projeto afunda).
+2. BASELINES no teste, impressos antes de qualquer treino: regra de corte
+   atual (0,5), folga até o corte (-indice_min), só o CPI, tendência
+   (-d_indice_min_4s).
+3. Modelo: HistGradientBoostingRegressor(random_state=42, max_depth=3,
+   learning_rate=0.05, max_iter=300, min_samples_leaf=20) prevendo
+   alvo_pior_indice_30d - indice_min. pior_previsto = indice_min + previsão.
+   sigma = desvio do erro no teste. prob = P(pior < 0,9) com erro normal
+   (math.erf). Compare com um HistGradientBoostingClassifier sim/não.
+4. Métrica do dono: um estouro é o projeto que vinha 4 semanas com SPI e CPI
+   >= 0,9, cruza para baixo e FICA abaixo por 2 semanas seguidas (pct_prazo
+   > 0,15), a partir de 4 semanas depois do início do teste. Avisado =
+   esteve no top 5 da semana (rank por prob) em alguma das 8 semanas
+   anteriores. Imprima avisados/estouros, antecedência média em dias e o
+   estouro previsto hoje (gold.projeto_situacao_atual) desses projetos.
+5. Importância por permutação.
+6. Testes com assert, ANTES de registrar: AUC >= 0,75; AUC < 0,98 (acima
+   disso é vazamento); AUC >= a folga até o corte (senão, use a regra);
+   avisados >= 70% dos estouros.
+7. Retreine com TODOS os rotulados, registre em
+   lakehouse_vertice.ml.modelo_estouro_30d com input_example, alias @prod.
+8. Grave ml.modelo_metricas (uma linha: versão, auc, todas as réguas,
+   sigma, estouros, avisados e quais, antecedência, estouro avisado,
+   feature principal).
+
+Rode e me mostre a saída:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run vertice_farol --only ml_modelo --profile <perfil>
+```
+
+### Prompt 8 · Score em lote
+
+*a probabilidade de estouro em 30 dias* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-03-score.md)
+
+```
+Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
+src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
+ml_score (notebook_task, depois de ml_modelo).
+
+1. Carregue o modelo com mlflow.sklearn.load_model("models:/lakehouse_vertice
+   .ml.modelo_estouro_30d@prod") — NÃO use spark_udf: no serverless ele
+   quebra com InvalidVersion. O sigma vem de ml.modelo_metricas.
+2. Pontue os projetos em andamento na semana 2026-10-16 de
+   ml.features_projeto_semana, com join em gold.projeto_situacao_atual:
+   pior_previsto = indice_min + previsão; prob = P(pior < 0,9) com erro
+   normal; quem tem least(spi, cpi) < 0,9 NA FOTOGRAFIA DE HOJE → 1,0.
+3. ranking por prob desc (desempate: índice de hoje asc); faixa_risco alto
+   se >= 0,5, medio se >= 0,2, senão baixo.
+4. principais_fatores: os 2 ou 3 sinais mais graves em português, com
+   números no padrão brasileiro (vírgula decimal). Sinais: já abaixo do
+   corte (sempre primeiro), status semanal abaixo do corte e cronograma
+   acima (as fontes não batem), folga < 0,05 até o corte, CPI caindo nas
+   últimas semanas, cpi_ultimas_4s < 0,85 ("cada R$ 1 gasto no último mês
+   entregou R$ X"), spi_ultimas_4s < 0,85, falta de SRE em 2+ dos últimos 4
+   status, change freeze em 2+, rotatividade (saídas em 12 semanas ou citada
+   no status), escopo crescendo em 2+, consultoria atrasando em 2+,
+   ociosidade >= 25%. Sem sinal: "sem sinal de piora".
+5. Grave lakehouse_vertice.gold.score_estouro_30d com EXATAMENTE as colunas
+   projeto_id STRING, data_referencia DATE, prob_estouro_30d DOUBLE,
+   ranking INT, faixa_risco STRING, principais_fatores STRING (overwrite).
+   COMMENT na tabela e nas colunas: a noite 4 lê daqui.
+6. Testes com assert: uma linha por projeto em andamento, prob entre 0 e 1,
+   ranking único, nenhum motivo vazio.
+
+Rode o job inteiro e me mostre o top 25:
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
+```
+
+### Prompt 9 · Dashboard e Genie
+
+*o dono pergunta em português* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-04-dashboard-e-genie.md)
 
 ```
 Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. O pipeline, a IA e
@@ -407,180 +597,6 @@ Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 
 ---
 
-## Fim da noite 2 · confira antes de seguir
-
-```bash
-python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile <perfil>
-# 20 linhas, todas "ok"
-```
-
-```sql
-SELECT situacao, COUNT(*) FROM lakehouse_vertice.gold.projeto_situacao_atual GROUP BY 1;
--- crítico 7 · atenção 10 · ok 24 · concluído 19
-SELECT MEASURE(estouro_previsto), MEASURE(projetos_melancia) FROM lakehouse_vertice.gold.mv_projetos;
--- R$ 6.465.127,22 · 4
-```
-
-O job `vertice_farol` tem **6 tarefas** e roda verde de ponta a ponta. Se estes números não
-baterem, não adianta seguir: a noite 3 treina em cima deles.
-
----
-## Noite 3 · o pipeline passa a prever
-
-### Prompt 7 · Features
-
-*o que descreve um projeto que vai estourar* · noite 3 · deploy nº 7 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
-
-```
-Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
-em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
-não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
-
-Crie src/ml/01-features.sql (sql_task). Primeiro CREATE SCHEMA IF NOT EXISTS
-lakehouse_vertice.ml (o laboratório do cientista; na gold só vai o score).
-Depois recrie lakehouse_vertice.ml.features_projeto_semana: uma linha por
-projeto e semana (sexta-feira), a partir de gold.fato_projeto_semana +
-gold.projeto_situacao_atual (o cadastro: início, duração, segmento).
-COMMENT na tabela. Toda feature olha SÓ para trás (até a sexta da linha):
-
-- spi, cpi, indice_min = least(spi, cpi)
-- d_spi_4s, d_cpi_4s, d_spi_8s, d_cpi_8s (variação em 4 e 8 semanas, com lag())
-- d_indice_min_4s
-- semanas_cpi_caindo: em quantas das últimas 4 semanas o CPI caiu
-- cpi_ultimas_4s = (ev - ev de 4 semanas atrás) / (ac - ac de 4 semanas atrás)
-- spi_ultimas_4s = o mesmo com pv
-- pct_fisico = ev / orcamento; pct_prazo = dias desde o início / duração baseline
-- ociosidade_4s = horas ociosas / horas disponíveis das últimas 4 semanas
-- pct_consultoria_4s e pct_cloud_4s: participação no custo das últimas
-  4 semanas (silver.custos, pela coluna semana)
-- saidas_12s: pessoas do squad que se desligaram nas últimas 12 semanas.
-  Squad = quem apontou hora no projeto (silver.apontamentos) + data de
-  desligamento em silver.colaboradores
-- status_freeze_4s, status_falta_sre_4s, status_fornecedor_4s,
-  status_rotatividade_4s, status_escopo_4s, status_retrabalho_4s,
-  status_com_bloqueio_4s: quantos dos status dos últimos 28 dias tiveram
-  cada causa_bloqueio (gold.status_estruturado; vale qualquer método,
-  IA ou palavra-chave, porque a causa existe em todas as semanas)
-
-Os dois alvos, do FUTURO, que nunca entram como feature:
-- alvo_pior_indice_30d: o menor least(spi, cpi) nas 4 semanas SEGUINTES
-  (MIN ... ROWS BETWEEN 1 FOLLOWING AND 4 FOLLOWING)
-- estoura_30d: 1 se esse pior índice < 0,9, senão 0
-Os dois NULL quando ainda não há 4 semanas de futuro (é o caso de hoje).
-
-elegivel = 1 se SPI e CPI >= 0,9, o projeto tem 84+ dias, ev < 98% do
-orçamento e (status = em_andamento ou a semana é anterior a hoje).
-
-ARMADILHA MEDIDA: o Spark não aceita estender uma janela nomeada com frame
-(OVER (w ROWS BETWEEN ...) dá PARSE_SYNTAX_ERROR). Escreva o PARTITION BY
-e o ORDER BY por extenso nas janelas com ROWS BETWEEN.
-
-No fim do arquivo, uma query de conferência: linhas, linhas de treino
-(elegível com rótulo), taxa base e linhas de hoje.
-
-Acrescente ao job vertice_farol a tarefa ml_features (sql_task), depois de
-metricas_governadas. Rode e me mostre a saída:
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --only ml_features --profile <perfil>
-```
-
-### Prompt 8 · Modelo e MLflow
-
-*o baseline primeiro* · noite 3 · deploy nº 8 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-02-modelo.md)
-
-```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
-src/ml/02-modelo.py (# Databricks notebook source, widget catalog) e a
-tarefa ml_modelo (notebook_task, depois de ml_features).
-
-ARMADILHAS MEDIDAS NO FREE EDITION (siga todas):
-- O serverless vem com MLflow 2.11, e registrar modelo no Unity Catalog
-  falha com "s3:PutObject ... explicit deny". Primeira célula:
-  %pip install -q -U "mlflow-skinny[databricks]>=2.21,<3"
-  e dbutils.library.restartPython() na seguinte.
-- XGBoost treina e não carrega de volta: use HistGradientBoosting do sklearn.
-- DECIMAL vira Decimal no pandas e quebra o registro: .astype(float).
-- mlflow.set_experiment não cria a pasta pai: WorkspaceClient().workspace
-  .mkdirs("/Users/<eu>/vertice") antes.
-- MLflow 2.x: log_model(..., artifact_path="modelo"), nunca name=.
-- Toda célula de texto começa com "# MAGIC %md": sem ela o notebook quebra
-  com SyntaxError na linha do texto.
-
-O notebook, nesta ordem:
-1. Lê ml.features_projeto_semana (24 features: todas as colunas do prompt 1
-   menos segmento, farol_do_gerente, elegivel e os dois alvos). Teste = elegíveis com rótulo e semana >=
-   2026-04-03. Treino = rotulados com semana <= 2026-03-06 e pct_prazo > 0,15
-   (inclui projetos já abaixo de 0,9: eles ensinam como um projeto afunda).
-2. BASELINES no teste, impressos antes de qualquer treino: regra de corte
-   atual (0,5), folga até o corte (-indice_min), só o CPI, tendência
-   (-d_indice_min_4s).
-3. Modelo: HistGradientBoostingRegressor(random_state=42, max_depth=3,
-   learning_rate=0.05, max_iter=300, min_samples_leaf=20) prevendo
-   alvo_pior_indice_30d - indice_min. pior_previsto = indice_min + previsão.
-   sigma = desvio do erro no teste. prob = P(pior < 0,9) com erro normal
-   (math.erf). Compare com um HistGradientBoostingClassifier sim/não.
-4. Métrica do dono: um estouro é o projeto que vinha 4 semanas com SPI e CPI
-   >= 0,9, cruza para baixo e FICA abaixo por 2 semanas seguidas (pct_prazo
-   > 0,15), a partir de 4 semanas depois do início do teste. Avisado =
-   esteve no top 5 da semana (rank por prob) em alguma das 8 semanas
-   anteriores. Imprima avisados/estouros, antecedência média em dias e o
-   estouro previsto hoje (gold.projeto_situacao_atual) desses projetos.
-5. Importância por permutação.
-6. Testes com assert, ANTES de registrar: AUC >= 0,75; AUC < 0,98 (acima
-   disso é vazamento); AUC >= a folga até o corte (senão, use a regra);
-   avisados >= 70% dos estouros.
-7. Retreine com TODOS os rotulados, registre em
-   lakehouse_vertice.ml.modelo_estouro_30d com input_example, alias @prod.
-8. Grave ml.modelo_metricas (uma linha: versão, auc, todas as réguas,
-   sigma, estouros, avisados e quais, antecedência, estouro avisado,
-   feature principal).
-
-Rode e me mostre a saída:
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --only ml_modelo --profile <perfil>
-```
-
-### Prompt 9 · Score em lote
-
-*a probabilidade de estouro em 30 dias* · noite 3 · deploy nº 9 (bundle deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-03-score.md)
-
-```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
-src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
-ml_score (notebook_task, depois de ml_modelo).
-
-1. Carregue o modelo com mlflow.sklearn.load_model("models:/lakehouse_vertice
-   .ml.modelo_estouro_30d@prod") — NÃO use spark_udf: no serverless ele
-   quebra com InvalidVersion. O sigma vem de ml.modelo_metricas.
-2. Pontue os projetos em andamento na semana 2026-10-16 de
-   ml.features_projeto_semana, com join em gold.projeto_situacao_atual:
-   pior_previsto = indice_min + previsão; prob = P(pior < 0,9) com erro
-   normal; quem tem least(spi, cpi) < 0,9 NA FOTOGRAFIA DE HOJE → 1,0.
-3. ranking por prob desc (desempate: índice de hoje asc); faixa_risco alto
-   se >= 0,5, medio se >= 0,2, senão baixo.
-4. principais_fatores: os 2 ou 3 sinais mais graves em português, com
-   números no padrão brasileiro (vírgula decimal). Sinais: já abaixo do
-   corte (sempre primeiro), status semanal abaixo do corte e cronograma
-   acima (as fontes não batem), folga < 0,05 até o corte, CPI caindo nas
-   últimas semanas, cpi_ultimas_4s < 0,85 ("cada R$ 1 gasto no último mês
-   entregou R$ X"), spi_ultimas_4s < 0,85, falta de SRE em 2+ dos últimos 4
-   status, change freeze em 2+, rotatividade (saídas em 12 semanas ou citada
-   no status), escopo crescendo em 2+, consultoria atrasando em 2+,
-   ociosidade >= 25%. Sem sinal: "sem sinal de piora".
-5. Grave lakehouse_vertice.gold.score_estouro_30d com EXATAMENTE as colunas
-   projeto_id STRING, data_referencia DATE, prob_estouro_30d DOUBLE,
-   ranking INT, faixa_risco STRING, principais_fatores STRING (overwrite).
-   COMMENT na tabela e nas colunas: a noite 4 lê daqui.
-6. Testes com assert: uma linha por projeto em andamento, prob entre 0 e 1,
-   ranking único, nenhum motivo vazio.
-
-Rode o job inteiro e me mostre o top 25:
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --profile <perfil>
-```
-
----
-
 ## Fim da noite 3 · confira antes de seguir
 
 ```bash
@@ -603,7 +619,7 @@ O job `vertice_farol` agora tem **9 tarefas** e roda verde em ~4 a 5 min. A noit
 
 ### Prompt 10 · O agente que lê contrato
 
-*o PDF que ninguém lê vira resposta* · noite 4 · deploy nº 10 (Genie publicado) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-01-agente-de-contratos.md)
+*o PDF que ninguém lê vira resposta* · noite 4 · Genie publicado · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-01-agente-de-contratos.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar. Use a skill
@@ -658,7 +674,7 @@ Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
 
 ### Prompt 11 · O app da Torre
 
-*a Torre na tela do dono* · noite 4 · deploy nº 11 (apps deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-02-app.md)
+*a Torre na tela do dono* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-02-app.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
@@ -711,7 +727,7 @@ databricks-app-design.
 
 ### Prompt 12 · A aprovação no Lakebase
 
-*a decisão fica registrada* · noite 4 · deploy nº 12 (apps deploy) · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-03-aprovacao-lakebase.md)
+*a decisão fica registrada* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-03-aprovacao-lakebase.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e

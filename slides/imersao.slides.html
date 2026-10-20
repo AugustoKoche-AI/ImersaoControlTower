@@ -1468,9 +1468,220 @@ O que vai dar errado no próximo mês?</pre>
 <section class="slide hero">
   <div class="kicker">Noite 2 · terça, 20/10 · engenheiro de dados</div>
   <h1>Integrar<br><span class="grad">uma vez, para sempre</span></h1>
-  <p class="sub" style="margin-top:30px;">Seis prompts no Claude Code viram um projeto de verdade: pipeline, testes, IA nos textos, métrica governada, dashboard e Genie, tudo em código.</p>
+  <p class="sub" style="margin-top:30px;">Python para buscar o dado, e cinco prompts no Claude Code que viram um projeto de verdade: pipeline, modelagem, testes, IA nos textos e métrica governada.</p>
   <img class="logo" alt="Jornada de Dados" style="height:44px;">
 </section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · antes de começar</div>
+  <h2>Três combinados <span class="grad">para hoje</span></h2>
+  <div class="grid g3" style="gap:24px;">
+    <div class="card hl"><div class="tag">Não precisa digitar junto</div><div class="lbl">a gravação, o código e os prompts ficam disponíveis. Se preferir, só assista e refaça depois</div></div>
+    <div class="card"><div class="tag">O nível de hoje</div><div class="lbl">nenhum código à mão: você copia o prompt e o Claude Code escreve. Começamos montando o terminal juntos (6 passos)</div></div>
+    <div class="card"><div class="tag">Travou? Siga daí</div><div class="lbl">cada etapa tem o arquivo pronto no gabarito, <code>aulas/aula-02-engenheiro/vertice/</code>. Copie e continue</div></div>
+  </div>
+  <p class="note" style="margin-top:30px;">A cada entrega, um ponto de controle: <b>chegou aqui? comenta OK no chat</b>. Primeiro o terminal, depois uma API em Python, depois o projeto.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · onde paramos ontem</div>
+  <h2>Ontem deu certo. <span class="grad">Mas foi tudo à mão</span></h2>
+  <div class="grid g4" style="gap:24px; margin-top:10px;">
+    <div class="card"><div class="tag">bronze</div><div class="num sm">9</div><div class="lbl">tabelas de CSV, Excel, JSON e XML, lidas sem converter nada</div></div>
+    <div class="card"><div class="tag">pergunta 1</div><div class="num sm">17</div><div class="lbl">projetos em risco, 7 críticos, com as 3 ferramentas juntadas numa view</div></div>
+    <div class="card"><div class="tag">pergunta 2</div><div class="num sm">R$ 6,47 mi</div><div class="lbl">de estouro previsto, calculado em SQL</div></div>
+    <div class="card hl"><div class="tag">Genie</div><div class="num sm">0 de 4</div><div class="lbl">perguntas do dono certas na bronze: "nenhum atraso custa nada"</div></div>
+  </div>
+  <p class="note" style="margin-top:40px;">A pergunta de hoje: sexta que vem os gerentes atualizam tudo de novo. Quem roda? Na mão?</p>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ terminal, Python e ingestão por API (prompt 0) -->
+
+<section class="slide">
+  <div class="kicker">Noite 2 · antes do prompt 1 · o terminal</div>
+  <h2>Seis passos, <span class="grad">uma vez só</span></h2>
+  <div class="grid g3" style="gap:24px;">
+    <div class="card"><div class="tag">1 · Python e Git</div><div class="lbl"><code>python3 --version</code>: 3.10 a 3.12. Evite o 3.13</div></div>
+    <div class="card"><div class="tag">2 · a CLI do Databricks</div><div class="lbl"><code>brew install databricks</code> no Mac, <code>winget</code> no Windows. v0.250 ou mais nova</div></div>
+    <div class="card hl"><div class="tag">3 · o login</div><div class="lbl"><code>databricks auth login --profile vertice</code>. Viu <b>refresh token is invalid</b>? Rode de novo</div></div>
+    <div class="card"><div class="tag">4 · o repositório</div><div class="lbl"><code>git clone</code> e a verificação da noite 1: 18 linhas ok</div></div>
+    <div class="card"><div class="tag">5 · o Claude Code</div><div class="lbl">abra na raiz do repositório: as skills do Databricks já vêm em <code>.claude/skills</code></div></div>
+    <div class="card"><div class="tag">6 · as travas</div><div class="lbl"><code>.claude/settings.json</code> proíbe <code>bundle destroy</code>, <code>rm -rf</code> e <code>push --force</code></div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Daqui em diante, todo comando leva <b>--profile</b>. O profile é o apelido do seu login.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ingestão · na vida real</div>
+  <h2>Na empresa, o dado <span class="grad">não chega pronto</span></h2>
+  <table class="t" style="font-size:21px;">
+    <tr><th>Jeito</th><th>Como funciona</th><th>Quando usar</th><th>No Farol</th></tr>
+    <tr><td>Carga completa</td><td><code>read_files</code> relê a pasta inteira</td><td>pouco dado, primeira carga</td><td>noite 1: as 9 tabelas</td></tr>
+    <tr><td>Incremental</td><td>Auto Loader ou streaming table: lê só o arquivo novo e lembra onde parou</td><td>pasta que recebe arquivo todo dia</td><td>o próximo passo da bronze</td></tr>
+    <tr><td>Conector pronto</td><td>Lakeflow Connect: Salesforce, SQL Server, SharePoint, Google Drive</td><td>a fonte já tem conector</td><td>o recurso "Data Ingestion" de ontem</td></tr>
+    <tr class="cur"><td>API com Python</td><td><code>requests</code> busca, o Spark grava</td><td>fonte sem conector</td><td>daqui a pouco</td></tr>
+    <tr><td>Banco externo</td><td>Lakehouse Federation: consulta o banco sem copiar</td><td>ERP em Postgres ou SQL Server</td><td>fora do escopo de hoje</td></tr>
+  </table>
+  <p class="note" style="margin-top:24px;">Alguém precisa ir buscar. Quando a fonte não tem conector, entra o Python. E qualquer caminho termina no mesmo lugar: uma tabela na bronze.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Python · por que ele</div>
+  <h2>O SQL pergunta. <span class="grad">O Python vai buscar</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <div class="card"><div class="tag">Lê quase tudo</div><div class="lbl">API, banco de dados, Excel, PDF, JSON, XML, site. Se tem dado, tem uma biblioteca para ler</div></div>
+    <div class="card"><div class="tag">Uma biblioteca para cada coisa</div><div class="lbl">ninguém escreve do zero: <code>requests</code> para API, <code>pandas</code> para tabela, <code>scikit-learn</code> para modelo</div></div>
+    <div class="card"><div class="tag">Roda em todo lugar</div><div class="lbl">no seu computador, no notebook do Databricks, num job agendado. O mesmo código</div></div>
+    <div class="card hl"><div class="tag">É a língua da IA</div><div class="lbl">quem treina modelo, chama LLM ou automatiza deploy escreve em Python. Amanhã o modelo da Vértice é Python</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Você não precisa decorar nada: hoje o Claude Code escreve, você lê e entende o que cada linha faz.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Python · e o SQL?</div>
+  <h2>SQL e Python <span class="grad">no mesmo lugar</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Tarefa</th><th>Melhor com</th><th>Na Vértice</th></tr>
+    <tr><td>Perguntar para uma tabela</td><td>SQL</td><td>os 6 exemplos da noite 1</td></tr>
+    <tr class="cur"><td>Buscar dado lá fora (API, site)</td><td>Python</td><td>os feriados, agora</td></tr>
+    <tr><td>Limpar e juntar em escala</td><td>os dois (Spark)</td><td>a silver, hoje em SQL</td></tr>
+    <tr><td>Treinar um modelo</td><td>Python</td><td>o score de estouro, amanhã</td></tr>
+    <tr><td>Automatizar: deploy, scripts, app</td><td>Python (e CLI)</td><td>o Claude Code faz por você</td></tr>
+  </table>
+  <p class="note" style="margin-top:24px;">No Databricks os dois rodam no mesmo motor (Spark) e leem as mesmas tabelas. Não é um ou outro: é cada um no que faz melhor.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Python · as bibliotecas da semana</div>
+  <h2>Seis nomes <span class="grad">para reconhecer</span></h2>
+  <div class="grid g3" style="gap:24px;">
+    <div class="card hl"><div class="tag">hoje · requests</div><div class="lbl">conversa com a API: pede, recebe o JSON</div></div>
+    <div class="card"><div class="tag">hoje · json</div><div class="lbl">já vem no Python: guarda a resposta num arquivo</div></div>
+    <div class="card"><div class="tag">sempre · pyspark</div><div class="lbl">o motor do Databricks: tabela grande, distribuída. O SQL roda nele</div></div>
+    <div class="card"><div class="tag">amanhã · pandas</div><div class="lbl">tabela pequena, em memória, para preparar o treino</div></div>
+    <div class="card"><div class="tag">amanhã · scikit-learn</div><div class="lbl">o modelo que prevê o estouro em 30 dias</div></div>
+    <div class="card"><div class="tag">amanhã · mlflow</div><div class="lbl">o caderno do cientista: cada treino anotado</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ingestão · uma API em Python</div>
+  <h2>Extrair, pousar, <span class="grad">carregar</span></h2>
+  <div class="diagrama" style="height:300px; flex:none;"><pre class="mermaid">
+flowchart LR
+  A["BrasilAPI<br/>feriados de 2026"] -- "1 · extrair<br/>Python + requests" --> B["feriados_2026.json"]
+  B -- "2 · pousar<br/>databricks fs cp" --> C["volume<br/>bronze/raw/feriados/"]
+  C -- "3 · carregar<br/>read_files" --> D["bronze.feriados"]
+  classDef hl fill:#0059DB,stroke:#22C2F4,color:#fff
+  class D hl
+  </pre></div>
+  <div class="grid g2" style="gap:24px; margin-top:22px; grid-template-columns: 1.3fr 1fr;">
+    <pre class="code" style="font-size:19px;"><span class="k">import</span> json, requests
+url = <span class="s">"https://brasilapi.com.br/api/feriados/v1/2026"</span>
+resposta = requests.get(url, timeout=30)
+resposta.raise_for_status()   <span class="c"># API caiu? para aqui</span>
+<span class="k">with</span> open(<span class="s">"feriados_2026.json"</span>, <span class="s">"w"</span>) <span class="k">as</span> f:
+    json.dump(resposta.json(), f)</pre>
+    <div class="card hl"><div class="tag">Por que pousar o arquivo</div><div class="lbl">o JSON fica no volume do jeito que veio: dá para reprocessar sem chamar a API de novo. É o mesmo caminho da noite 1</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 0 · aquecimento no Claude Code</div>
+  <h2>Uma fonte nova, <span class="grad">em um prompt</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.35fr 1fr; align-items:start;">
+    <pre class="code" style="font-size:20px; white-space:pre-wrap;">Busque os feriados nacionais de 2026 na API
+https://brasilapi.com.br/api/feriados/v1/2026
+com um script Python (requests). Salve a resposta
+em feriados_2026.json, suba o arquivo para
+/Volumes/lakehouse_vertice/bronze/raw/feriados/
+e crie a tabela lakehouse_vertice.bronze.feriados
+com read_files. No fim, mostre os feriados de
+novembro com o dia da semana.
+Use o profile vertice.</pre>
+    <div class="card hl"><div class="tag">O que o Claude Code faz</div><ul class="list">
+      <li>escreve e roda o script Python</li>
+      <li>cria a pasta e copia o arquivo para o volume</li>
+      <li>roda o <code>read_files</code> no warehouse</li>
+      <li>pede licença antes de cada comando: leia e aprove</li></ul>
+      <div class="tag" style="margin-top:22px;">Travou?</div>
+      <div class="lbl"><code>python3 aulas/aula-02-engenheiro/00-buscar-feriados.py --profile vertice</code></div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ponto de controle · a API</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Na sua tela</div><div class="num md">2 em novembro</div><div class="lbl">02/11 (segunda) e 20/11 (sexta). O 15/11 cai num domingo. No ano, 14 feriados na <code>bronze.feriados</code></div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">o erro <code>no such directory</code> é a pasta nova: <code>databricks fs mkdir</code> antes do cp. Ou rode <code>00-buscar-feriados.py</code></div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ o exemplo 05 que ficou da noite 1 -->
+
+<section class="slide">
+  <div class="kicker">Antes do prompt 1 · o exemplo 05 que ficou para trás</div>
+  <h2>As três ferramentas <span class="grad">numa fila só</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.25fr 1fr; align-items:start;">
+    <div>
+      <pre class="code" style="font-size:20px;"><span class="k">SELECT</span> <span class="s">'excel'</span>     <span class="k">AS</span> ferramenta, COUNT(*) <span class="k">AS</span> linhas
+<span class="k">FROM</span> lakehouse_vertice.bronze.excel_tarefas
+<span class="k">UNION ALL</span>
+<span class="k">SELECT</span> <span class="s">'clickup'</span>,   COUNT(*)
+<span class="k">FROM</span> lakehouse_vertice.bronze.clickup_tarefas
+<span class="k">UNION ALL</span>
+<span class="k">SELECT</span> <span class="s">'msproject'</span>, COUNT(*)
+<span class="k">FROM</span> lakehouse_vertice.bronze.msproject_tarefas</pre>
+      <p class="note" style="margin-top:20px;"><b>UNION ALL</b> empilha uma consulta embaixo da outra. A regra: as mesmas colunas, na mesma ordem. O resto do exemplo é fazer as três ferramentas terem as mesmas colunas.</p>
+    </div>
+    <div class="card hl"><div class="tag">Rode agora · 5 minutos</div>
+      <ul class="list">
+        <li>abra <code>exemplo-01-a-05-sql-na-bronze.sql</code></li>
+        <li>exemplo 05, <b>bloco 1</b>: o UNION ALL ao lado</li>
+        <li>exemplo 05, <b>bloco 3</b>: cria a view <code>bronze.rascunho_tarefas</code>, com 4.917 tarefas de 60 projetos</li>
+      </ul>
+      <div class="tag" style="margin-top:22px;">Por que agora</div>
+      <div class="lbl">a verificação da noite 1 e o prompt 2 de hoje leem essa view. Sem ela, dá erro</div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ponto de controle · exemplo 05</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">O seu número</div><div class="num">4.917</div><div class="lbl">tarefas de 60 projetos na view <code>bronze.rascunho_tarefas</code></div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">o exemplo inteiro está pronto em <code>aulas/aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql</code>. Rode o bloco 3 de novo, de cima a baixo</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Antes do prompt 1 · por que o rascunho não é produto</div>
+  <h2>O rascunho funciona. <span class="grad">Mas é frágil</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <div class="card"><div class="tag">Excel · a linha de TOTAL</div><div class="num sm">2×</div><div class="lbl">1.141.354 horas com o TOTAL, 570.677 sem. Esqueça 20 linhas e o Excel inteiro dobra</div></div>
+    <div class="card"><div class="tag">MS Project · as tarefas-resumo</div><div class="num sm">3×</div><div class="lbl">1.257.975 horas com as 105 tarefas-resumo, 419.325 só nas 1.155 tarefas de verdade</div></div>
+    <div class="card hl"><div class="tag">Custos · o try_cast</div><div class="num sm">R$ 5,4 mi</div><div class="lbl">somem sem erro nenhum: 187,94 em vez de 193,35. São 671 lançamentos com vírgula decimal</div></div>
+    <div class="card"><div class="tag">Compras · a mesma consultoria</div><div class="num sm">4 grafias</div><div class="lbl">CodeForge Consultoria Ltda, CODEFORGE CONSULTORIA LTDA, Codeforge Consultoria e Code Forge Consultoria</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Cada regra escrita uma vez, com teste, num pipeline que roda sozinho: é o prompt 2.</p>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ como rodar -->
 
 <section class="slide" style="padding-top:60px;">
   <div class="kicker">Recurso do Databricks · workspace</div>
@@ -1502,14 +1713,37 @@ O que vai dar errado no próximo mês?</pre>
       <pre class="code" style="font-size:20px; margin-top:6px;">databricks bundle deploy --profile SEU-PERFIL
 databricks bundle run vertice_farol --profile SEU-PERFIL</pre></div>
     <table class="t" style="font-size:21px;">
-      <tr><th>Prompt</th><th>O que nasce</th></tr>
-      <tr><td>1</td><td>bundle + conferência da bronze</td></tr>
-      <tr><td>2</td><td>silver: as 3 ferramentas viram uma</td></tr>
-      <tr><td>3</td><td>gold + testes de qualidade</td></tr>
-      <tr><td>4</td><td>IA no status semanal</td></tr>
-      <tr><td>5</td><td>a métrica governada (mv_projetos)</td></tr>
-      <tr><td>6</td><td>dashboard e Genie como código</td></tr>
+      <tr><th>Prompt</th><th>O que nasce</th><th class="r">Tempo</th></tr>
+      <tr><td>0</td><td>API → bronze.feriados (aquecimento)</td><td class="r">~1 min</td></tr>
+      <tr><td>1</td><td>bundle + conferência da bronze</td><td class="r">~40 s</td></tr>
+      <tr><td>2</td><td>silver: as 3 ferramentas viram uma</td><td class="r">~2 min</td></tr>
+      <tr class="cur"><td>3</td><td>gold + testes: a modelagem</td><td class="r">~3 min</td></tr>
+      <tr><td>4</td><td>IA no status semanal</td><td class="r">~2 min</td></tr>
+      <tr><td>5</td><td>a métrica governada (mv_projetos)</td><td class="r">~10 s</td></tr>
+      
     </table>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ prompt 1 -->
+
+<section class="slide">
+  <div class="kicker">Prompt 1 · o projeto vira código</div>
+  <h2>Sexta que vem, <span class="grad">quem roda tudo de novo?</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">O que você pede</div><ul class="list">
+      <li>o bundle <code>vertice</code>, na pasta <code>meu-vertice/</code></li>
+      <li>o job <code>vertice_farol</code>, toda segunda às 6h</li>
+      <li>a primeira tarefa só <b>confere</b> a bronze: as 9 tabelas com as linhas esperadas</li></ul>
+      <div class="tag" style="margin-top:22px;">Por quê</div><ul class="list">
+      <li>no Git, o projeto tem histórico e revisão</li>
+      <li>o <code>bundle deploy</code> sobe igual em qualquer máquina</li>
+      <li>melhor o dado da semana passada do que meio dado</li></ul></div>
+    <div class="card hl"><div class="tag">O que conferir · ~40 s</div>
+      <div class="lbl">uma caixa verde no job, com 9 linhas <b>ok</b>. Esse desenho cresce a noite inteira</div>
+      <div class="tag" style="margin-top:26px;">Teste se a conferência tem dente</div>
+      <div class="lbl">troque um número esperado (<code>projetos 61</code>), faça deploy e rode. O job falha com a sua mensagem. Desfaça e rode de novo</div></div>
   </div>
   [[RODAPE]]
 </section>
@@ -1532,7 +1766,7 @@ databricks bundle run vertice_farol --profile SEU-PERFIL</pre></div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · o job vertice_farol</div>
+  <div class="kicker">Prompt 1 · o job vertice_farol</div>
   <h2>A ordem <span class="grad">não é sugestão</span></h2>
   <div class="diagrama"><pre class="mermaid">
 flowchart LR
@@ -1550,14 +1784,48 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · o job no workspace</div>
-  <h2 style="margin-bottom:24px;">8 tarefas verdes, <span class="grad">5 minutos</span></h2>
-  <img class="shot" style="height:auto; max-height:480px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite2-job-v2.jpg]]" alt="DAG do job vertice_farol">
-  <div class="grid g4" style="margin-top:30px;">
-    <div class="card"><div class="tag">conferência</div><div class="lbl">6 s · as 9 tabelas da bronze, contadas</div></div>
-    <div class="card"><div class="tag">medalhão</div><div class="lbl">2 min · silver + gold no pipeline</div></div>
-    <div class="card"><div class="tag">IA + testes + métrica</div><div class="lbl">~30 s · só status novo vai para a IA</div></div>
-    <div class="card"><div class="tag">features → modelo → score</div><div class="lbl">~2,5 min · noite 3</div></div>
+  <div class="kicker">Ponto de controle · prompt 1</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Na sua tela</div><div class="num">9 ok</div><div class="lbl">o job <code>vertice_farol</code> com uma caixa verde: a conferência da bronze</div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">compare com <code>vertice/databricks.yml</code> e <code>vertice/src/conferencia/</code>. Se a bronze não tem 9 tabelas, rode a verificação da noite 1</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ prompt 2 (enquanto o pipeline roda: o read_files de ontem) -->
+
+<section class="slide">
+  <div class="kicker">Prompt 2 · a entrega mais importante da noite</div>
+  <h2>Integrar é <span class="grad">combinar as colunas</span></h2>
+  <div class="grid g3" style="gap:24px;">
+    <div class="card"><div class="tag">Contrato de colunas</div><div class="lbl">Excel, ClickUp e Project viram, cada um, uma visão com as mesmas colunas. Depois é empilhar. Ferramenta nova amanhã é mais uma visão</div></div>
+    <div class="card"><div class="tag">O de-para é dado</div><div class="lbl">quem diz que a lista <code>901200095028</code> do ClickUp é o PRJ-012 é o cadastro do PMO, não um IF no código</div></div>
+    <div class="card hl"><div class="tag">EXPECT é contrato</div><div class="lbl">tarefa sem projeto ou % acima de 100: o pipeline para em vez de gravar errado</div></div>
+  </div>
+  <pre class="code" style="font-size:20px; margin-top:26px;"><span class="k">CONSTRAINT</span> achou_o_projeto   <span class="k">EXPECT</span> (projeto_id <span class="k">IS NOT NULL</span>)               <span class="k">ON VIOLATION FAIL UPDATE</span>
+<span class="k">CONSTRAINT</span> pct_entre_0_e_100 <span class="k">EXPECT</span> (pct_concluido <span class="k">BETWEEN</span> 0 <span class="k">AND</span> 100) <span class="k">ON VIOLATION FAIL UPDATE</span></pre>
+  <p class="note" style="margin-top:22px;">O teste da integração: 4.917 tarefas, nenhuma sem projeto, e o custo total não mudou um centavo (R$ 193,35 mi).</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Prompt 2 · enquanto roda · como a bronze entrou ontem</div>
+  <h2>Ler do jeito que chegou, <span class="grad">sem consertar nada</span></h2>
+  <div class="diagrama"><pre class="mermaid">
+flowchart LR
+  A["CSV<br/>PMO, RH, timesheet,<br/>financeiro, compras"] --> V
+  B["Excel<br/>20 planilhas"] --> V
+  C["JSON<br/>25 listas do ClickUp"] --> V
+  D["XML<br/>15 cronogramas do Project"] --> V
+  V["volume bronze.raw<br/>os arquivos crus"] --> R["read_files<br/>um SQL por fonte"] --> T["bronze<br/>9 tabelas Delta"]
+  classDef hl fill:#0059DB,stroke:#22C2F4,color:#fff
+  class T hl
+  </pre></div>
+  <div class="grid g3" style="gap:24px; margin-top:24px;">
+    <div class="card"><div class="tag">Lê primeiro, entende depois</div><div class="lbl">no Excel, <code>inferColumnTypes => false</code>: tudo vira texto e a limpeza decide depois, na silver</div></div>
+    <div class="card"><div class="tag">A estrutura fica</div><div class="lbl">no JSON e no XML, lista dentro de lista continua lista: <code>custom_fields</code>, <code>Baseline</code></div></div>
+    <div class="card"><div class="tag">De onde veio</div><div class="lbl"><code>_metadata.file_name</code> grava o arquivo de cada linha. É assim que a planilha diz de qual projeto é</div></div>
   </div>
   [[RODAPE]]
 </section>
@@ -1581,7 +1849,7 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · o pipeline vertice_medalhao</div>
+  <div class="kicker">Prompt 2 · o pipeline vertice_medalhao</div>
   <h2>Você declara <span class="grad">o que cada tabela é</span>; o Lakeflow acha a ordem</h2>
   <div class="diagrama"><pre class="mermaid">
 flowchart LR
@@ -1604,14 +1872,14 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · o pipeline no workspace</div>
+  <div class="kicker">Prompt 2 · o pipeline no workspace</div>
   <h2 style="margin-bottom:20px;">O grafo que o Lakeflow desenha <span class="grad">sozinho</span></h2>
   <img class="shot" style="height:720px; object-fit:contain;" src="[[IMG:docs/img/noite2-pipeline-v2.jpg]]" alt="Grafo do pipeline vertice_medalhao">
   [[RODAPE]]
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · silver</div>
+  <div class="kicker">Prompt 2 · silver</div>
   <h2>7 tabelas limpas: <span class="grad">a sujeira resolvida uma vez</span></h2>
   <table class="t" style="font-size:21px;">
     <tr><th>silver</th><th class="r">Linhas</th><th>O que a limpeza fez</th></tr>
@@ -1627,26 +1895,106 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · silver.tarefas</div>
+  <div class="kicker">Prompt 2 · silver.tarefas</div>
   <h2 style="margin-bottom:20px;">Excel, ClickUp e Project <span class="grad">na mesma tabela</span></h2>
   <img class="shot" style="height:680px;" src="[[IMG:docs/img/agora-silver-tarefas.jpg]]" alt="silver.tarefas">
   <div class="small" style="margin-top:10px;">Mesmas colunas, mesmo tipo, mesma régua, não importa de onde veio. É aqui que o "juntar à mão" da noite 1 vira código testado.</div>
   [[RODAPE]]
 </section>
 
-<section class="slide" style="padding-top:60px;">
-  <div class="kicker">Recurso do Databricks · lineage</div>
-  <h2 style="margin-bottom:18px; font-size:52px;">Lineage: de onde veio, para onde vai</h2>
-  <div class="grid g2" style="gap:20px 24px;">
-    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/recurso-lineage-lista.jpg]]" alt="lineage em lista"><div class="small" style="margin-top:8px;">em lista: quem lê <code>projeto_situacao_atual</code> (Genie, dashboard, metric view, job) e de onde ela vem</div></div>
-    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/recurso-lineage-grafo.jpg]]" alt="lineage em grafo"><div class="small" style="margin-top:8px;">em grafo: silver → gold → metric view e as features do ml, coluna a coluna</div></div>
+<section class="slide">
+  <div class="kicker">Ponto de controle · prompt 2</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Na sua tela</div><div class="num">4.917</div><div class="lbl">tarefas na <code>silver.tarefas</code> (Excel 1.643 · ClickUp 2.119 · Project 1.155) e R$ 193,35 mi de custo</div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">copie <code>vertice/src/silver/</code> para a sua pasta, faça deploy e rode o job de novo</div></div>
   </div>
-  <p class="note" style="margin-top:18px;">Ninguém desenhou isto. O Unity Catalog anota sozinho cada leitura e cada escrita.</p>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ modelagem (enquanto o prompt 3 roda) -->
+
+<section class="slide">
+  <div class="kicker">Modelagem · o grão</div>
+  <h2>Antes de criar a tabela, <span class="grad">diga o que é uma linha</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Tabela</th><th>Uma linha é</th><th class="r">Linhas</th><th>Papel</th></tr>
+    <tr><td>silver.tarefas</td><td>uma tarefa, de qualquer ferramenta</td><td class="r">4.917</td><td>o modelo comum das 3 ferramentas</td></tr>
+    <tr><td>silver.projetos</td><td>um projeto</td><td class="r">60</td><td>o cadastro e o de-para</td></tr>
+    <tr class="cur"><td>gold.projeto_situacao_atual</td><td>um projeto, hoje</td><td class="r">60</td><td>a fotografia</td></tr>
+    <tr class="cur"><td>gold.fato_projeto_semana</td><td>um projeto numa sexta</td><td class="r">4.235</td><td>o filme</td></tr>
+    <tr><td>gold.utilizacao_pessoa_semana</td><td>uma pessoa, num projeto, numa semana</td><td class="r">30.883</td><td>as pessoas</td></tr>
+    <tr><td>gold.mv_projetos</td><td>nenhuma: guarda a fórmula</td><td class="r">—</td><td>a camada semântica</td></tr>
+  </table>
+  <p class="note" style="margin-top:24px;">O grão decide o que dá para somar. Errou o grão, o número dobra sem dar erro nenhum.</p>
   [[RODAPE]]
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · a gold no catálogo</div>
+  <div class="kicker">Modelagem · o erro de grão</div>
+  <h2>Uma linha de outro tipo <span class="grad">e as horas multiplicam</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">Excel · a linha de TOTAL</div>
+      <div class="num sm">1.141.354 h</div><div class="lbl">somando a coluna inteira</div>
+      <div class="num sm c" style="margin-top:22px;">570.677 h</div><div class="lbl">sem as 20 linhas de TOTAL: o TOTAL já é a soma das linhas de cima</div>
+      <pre class="code" style="font-size:20px; margin-top:22px;"><span class="k">WHERE</span> tarefa &lt;&gt; <span class="s">'TOTAL'</span></pre></div>
+    <div class="card"><div class="tag">MS Project · as tarefas-resumo</div>
+      <div class="num sm">1.257.975 h</div><div class="lbl">somando as 1.260 linhas do XML</div>
+      <div class="num sm c" style="margin-top:22px;">419.325 h</div><div class="lbl">sem as 105 tarefas-resumo: a fase soma as tarefas de baixo, e o projeto soma as fases</div>
+      <pre class="code" style="font-size:20px; margin-top:22px;"><span class="k">WHERE</span> Summary = 0</pre></div>
+  </div>
+  <p class="note" style="margin-top:24px;">A regra: toda linha de uma tabela é a mesma coisa. Total e resumo são outra coisa, e saem na silver.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Modelagem · fotografia × filme</div>
+  <h2>Duas golds de projeto, <span class="grad">duas perguntas</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">A fotografia · projeto_situacao_atual</div><div class="num sm">60 linhas</div>
+      <ul class="list" style="margin-top:20px;">
+        <li>um projeto, em 16/10/2026</li>
+        <li>o % vem das tarefas das 3 ferramentas</li>
+        <li>responde: quem atrasa hoje? quanto vai custar?</li></ul></div>
+    <div class="card hl"><div class="tag">O filme · fato_projeto_semana</div><div class="num sm">4.235 linhas</div>
+      <ul class="list" style="margin-top:20px;">
+        <li>um projeto em cada sexta</li>
+        <li>o % vem do status semanal</li>
+        <li>responde: quem está piorando? E amanhã treina o modelo</li></ul></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Pergunta para a turma: de onde vem o histórico? Excel, ClickUp e Project só guardam o % de hoje. O único lugar com o % de cada semana é o status que o gerente publica toda sexta.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Modelagem · estrela ou tabela larga?</div>
+  <h2>O modelo serve <span class="grad">a quem vai ler</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.1fr 1fr; align-items:center;">
+    <div>
+      <div class="diagrama"><pre class="mermaid">
+flowchart LR
+  T["tarefas"] -- projeto_id --> P["silver.projetos<br/>o cadastro"]
+  S["status_semanal"] -- projeto_id --> P
+  C["custos"] -- projeto_id --> P
+  A["apontamentos"] -- projeto_id --> P
+  P ==> G["gold.projeto_situacao_atual<br/>cadastro + KPIs<br/>30 colunas"]
+  classDef hl fill:#0059DB,stroke:#22C2F4,color:#fff
+  class G hl
+      </pre></div>
+    </div>
+    <div class="card"><ul class="list">
+      <li><b>no livro</b> (Kimball): fato e dimensão separados, ligados por JOIN</li>
+      <li><b>na silver</b>: é assim. Cada assunto no seu grão, todos apontando para o cadastro</li>
+      <li><b>na gold</b>: a fotografia já traz o cadastro junto. Quem lê é o Genie e o dashboard: tabela larga com COMMENT é menos JOIN para a IA errar</li>
+      <li>por isso não tem <code>dim_projeto</code></li></ul></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ prompt 3 -->
+
+<section class="slide">
+  <div class="kicker">Prompt 3 · a gold no catálogo</div>
   <h2 style="margin-bottom:20px;">7 objetos, <span class="grad">uma pergunta cada</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start; grid-template-columns: 1.5fr 1fr;">
     <img class="shot" style="height:640px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite2-gold-v2.jpg]]" alt="A gold no Catalog Explorer">
@@ -1660,7 +2008,7 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Gold · 1 de 5 · gold.projeto_situacao_atual</div>
+  <div class="kicker">Prompt 3 · gold 1 de 5 · projeto_situacao_atual</div>
   <h2>A fotografia de hoje: <span class="grad">perguntas 1 e 2</span></h2>
   <div class="grid g2" style="gap:30px;">
     <div class="card"><div class="tag">Uma linha por projeto (60)</div><ul class="list">
@@ -1678,7 +2026,7 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Gold · 2 de 5 · gold.fato_projeto_semana</div>
+  <div class="kicker">Prompt 3 · gold 2 de 5 · fato_projeto_semana</div>
   <h2>A evolução: <span class="grad">projeto × semana</span></h2>
   <div class="grid g2" style="gap:30px;">
     <div class="card"><div class="tag">4.235 linhas</div><ul class="list">
@@ -1696,7 +2044,7 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Gold · 3 de 5 · gold.utilizacao_pessoa_semana</div>
+  <div class="kicker">Prompt 3 · gold 3 de 5 · utilizacao_pessoa_semana</div>
   <h2>Pergunta 3: <span class="grad">gente parada × gente pedida</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start;">
     <img class="shot" style="height:600px;" src="[[IMG:docs/img/noite2-pessoas.jpg]]" alt="Página Pessoas do dashboard">
@@ -1710,6 +2058,49 @@ flowchart LR
   </div>
   [[RODAPE]]
 </section>
+
+<section class="slide">
+  <div class="kicker">Prompt 3 · testes de qualidade</div>
+  <h2>Melhor o dado de ontem <span class="grad">que o dado errado de hoje</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card"><div class="tag">10 testes, depois do medalhão</div><ul class="list">
+      <li>os 60 projetos têm cronograma na silver</li>
+      <li>cada projeto veio da ferramenta do cadastro</li>
+      <li>horas da silver = linha de TOTAL de cada planilha</li>
+      <li>uma linha por pessoa; CodeForge virou 1</li>
+      <li>a limpeza não mudou o custo total</li>
+      <li>EV do status bate com o das ferramentas (&lt; 1%)</li></ul></div>
+    <div class="card hl"><div class="tag">Como quebra</div>
+      <pre class="code" style="font-size:19px; background:transparent; border:none; padding:0;">CASE WHEN passou THEN 'ok'
+     ELSE raise_error('Teste ' || n
+                      || ' falhou') END</pre>
+      <div class="lbl" style="margin-top:16px;">raise_error interrompe o job antes de o dashboard mostrar meio dado com cara de dado inteiro. Verificação da noite: <b>20 de 20 ok</b>.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Recurso do Databricks · lineage</div>
+  <h2 style="margin-bottom:18px; font-size:52px;">Lineage: de onde veio, para onde vai</h2>
+  <div class="grid g2" style="gap:20px 24px;">
+    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/recurso-lineage-lista.jpg]]" alt="lineage em lista"><div class="small" style="margin-top:8px;">em lista: quem lê <code>projeto_situacao_atual</code> (Genie, dashboard, metric view, job) e de onde ela vem</div></div>
+    <div><img class="shot" style="height:560px;" src="[[IMG:docs/img/recurso-lineage-grafo.jpg]]" alt="lineage em grafo"><div class="small" style="margin-top:8px;">em grafo: silver → gold → metric view e as features do ml, coluna a coluna</div></div>
+  </div>
+  <p class="note" style="margin-top:18px;">Ninguém desenhou isto. O Unity Catalog anota sozinho cada leitura e cada escrita.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ponto de controle · prompt 3</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Na sua tela</div><div class="num">7 · 10 · 4</div><div class="lbl">críticos, em atenção e melancias na <code>gold.projeto_situacao_atual</code>. Estouro previsto: R$ 6,47 mi</div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">copie <code>vertice/src/gold/</code> e <code>vertice/src/testes/</code>. Se um teste falhou, a mensagem diz qual número não fechou</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ prompt 4 -->
 
 <section class="slide" style="padding-top:60px;">
   <div class="kicker">Recurso do Databricks · funções de IA</div>
@@ -1729,7 +2120,7 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Gold · 4 de 5 · gold.status_estruturado · a função de IA</div>
+  <div class="kicker">Prompt 4 · gold 4 de 5 · status_estruturado</div>
   <h2>O texto livre <span class="grad">vira coluna</span></h2>
   <pre class="code" style="font-size:19px;"><span class="k">ai_classify</span>(texto_status, <span class="s">'["change_freeze","falta_sre","dependencia_fornecedor","rotatividade",
                             "mudanca_escopo","bug_retrabalho","aprovacao_cliente","sem_bloqueio"]'</span>)
@@ -1744,14 +2135,16 @@ flowchart LR
 </section>
 
 <section class="slide">
-  <div class="kicker">Gold · 4 de 5 · a IA no dashboard</div>
+  <div class="kicker">Prompt 4 · prévia: amanhã, no dashboard</div>
   <h2 style="margin-bottom:20px;">Por que travou, <span class="grad">projeto a projeto</span></h2>
   <img class="shot" style="height:700px; object-fit:contain;" src="[[IMG:docs/img/noite2-bloqueios-ia.jpg]]" alt="Causas de bloqueio extraídas por IA">
   [[RODAPE]]
 </section>
 
+<!-- ------------------------------------------------ prompt 5 -->
+
 <section class="slide">
-  <div class="kicker">Gold · 5 de 5 · gold.mv_projetos · a métrica governada</div>
+  <div class="kicker">Prompt 5 · gold 5 de 5 · mv_projetos</div>
   <h2>O SPI definido <span class="grad">uma vez só</span></h2>
   <div class="grid g2" style="gap:30px; align-items:start;">
     <pre class="code" style="font-size:19px;"><span class="k">CREATE VIEW</span> gold.mv_projetos <span class="k">WITH METRICS</span>
@@ -1797,80 +2190,16 @@ $$</pre>
 </section>
 
 <section class="slide">
-  <div class="kicker">Noite 2 · testes de qualidade</div>
-  <h2>Melhor o dado de ontem <span class="grad">que o dado errado de hoje</span></h2>
+  <div class="kicker">Ponto de controle · prompts 4 e 5</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
   <div class="grid g2" style="gap:30px;">
-    <div class="card"><div class="tag">10 testes, depois do medalhão</div><ul class="list">
-      <li>os 60 projetos têm cronograma na silver</li>
-      <li>cada projeto veio da ferramenta do cadastro</li>
-      <li>horas da silver = linha de TOTAL de cada planilha</li>
-      <li>uma linha por pessoa; CodeForge virou 1</li>
-      <li>a limpeza não mudou o custo total</li>
-      <li>EV do status bate com o das ferramentas (&lt; 1%)</li></ul></div>
-    <div class="card hl"><div class="tag">Como quebra</div>
-      <pre class="code" style="font-size:19px; background:transparent; border:none; padding:0;">CASE WHEN passou THEN 'ok'
-     ELSE raise_error('Teste ' || n
-                      || ' falhou') END</pre>
-      <div class="lbl" style="margin-top:16px;">raise_error interrompe o job antes de o dashboard mostrar meio dado com cara de dado inteiro. Verificação da noite: <b>20 de 20 ok</b>.</div></div>
+    <div class="card hl"><div class="tag">Na sua tela</div><div class="num">falta_sre</div><div class="lbl">a causa do PRJ-011 em 12 semanas, lida pela IA. E <code>MEASURE(spi)</code> = 0,92 na <code>mv_projetos</code></div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">copie <code>vertice/src/ia/</code> e <code>vertice/src/metricas/</code>. A metric view roda pelo job, nunca colada no terminal</div></div>
   </div>
   [[RODAPE]]
 </section>
 
-<section class="slide">
-  <div class="kicker">Noite 2 · dashboard como código · Portfólio</div>
-  <h2 style="margin-bottom:20px;">"Projeto Farol · Portfólio", <span class="grad">agora sobre a gold</span></h2>
-  <div class="grid g2" style="gap:24px;">
-    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite2-dashboard.jpg]]" alt="Portfólio: KPIs">
-    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite2-dashboard-graficos.jpg]]" alt="Portfólio: gráficos">
-  </div>
-  <div class="small" style="margin-top:10px;">Três páginas: Portfólio, Pessoas e Fornecedores. É um JSON no Git, gerado por script e publicado pelo bundle: tem diff, revisão e rollback.</div>
-  [[RODAPE]]
-</section>
-
-<section class="slide">
-  <div class="kicker">Noite 2 · dashboard · Fornecedores</div>
-  <h2 style="margin-bottom:20px;">Quem promete <span class="grad">e não cumpre</span></h2>
-  <div class="grid g2" style="gap:30px; align-items:start;">
-    <img class="shot" style="height:620px; object-fit:contain;" src="[[IMG:docs/img/noite2-fornecedores.jpg]]" alt="Página Fornecedores">
-    <table class="t" style="font-size:22px;">
-      <tr><th>Fornecedor</th><th class="r">Real ÷ prometido</th></tr>
-      <tr class="cur"><td>CodeForge (4 grafias)</td><td class="r bad">1,41</td></tr>
-      <tr><td>QualiTest Brasil</td><td class="r">0,98</td></tr>
-      <tr><td>DataPrime Analytics</td><td class="r">0,98</td></tr>
-      <tr><td>SecureOps Segurança</td><td class="r">0,98</td></tr>
-      <tr><td>Pixel Design Studio</td><td class="r">0,98</td></tr>
-    </table>
-  </div>
-  [[RODAPE]]
-</section>
-
-<section class="slide" style="padding-top:60px;">
-  <div class="kicker">Recurso do Databricks · Query History</div>
-  <h2 style="margin-bottom:18px; font-size:52px;">Query History: o que cada um perguntou</h2>
-  <div class="grid g2" style="gap:28px; grid-template-columns: 1.6fr 1fr;">
-    <div><img class="shot" style="height:640px;" src="[[IMG:docs/img/recurso-query-history.jpg]]" alt="Query History com as consultas dos Genies"></div>
-    <div class="card hl"><div class="tag">O que é</div>
-      <ul class="list">
-        <li>toda consulta que passou pelo warehouse: quem, quando, quanto tempo, de onde</li>
-        <li>abre o plano e o perfil de cada uma</li>
-      </ul>
-      <div class="tag" style="margin-top:22px;">No Farol</div>
-      <div class="lbl">mostra o SQL que o Genie escreveu por trás de cada resposta. É assim que se audita a IA</div>
-    </div>
-  </div>
-  [[RODAPE]]
-</section>
-
-<section class="slide">
-  <div class="kicker">Noite 2 · Genie curado · "Farol · Diretoria"</div>
-  <h2 style="margin-bottom:20px;">O mesmo modelo de IA, <span class="grad">agora acerta</span></h2>
-  <div class="grid g2" style="gap:24px;">
-    <img class="shot" style="height:620px;" src="[[IMG:docs/img/noite2-genie.jpg]]" alt="Genie Diretoria">
-    <img class="shot" style="height:620px;" src="[[IMG:docs/img/noite2-genie-recomendacao.jpg]]" alt="Genie com recomendação">
-  </div>
-  <div class="small" style="margin-top:10px;">Gold com COMMENT em toda tabela, a metric view, instruções de negócio ("hoje é 16/10/2026", as regras de corte) e 9 SQLs de exemplo. Também é código no bundle.</div>
-  [[RODAPE]]
-</section>
+<!-- ------------------------------------------------ fecho da noite 2 -->
 
 <section class="slide">
   <div class="kicker">Noite 2 · o que mudou da noite 1 para cá</div>
@@ -1880,9 +2209,65 @@ $$</pre>
     <tr><td>Integração</td><td>uma view com CASE, replace e conversão de data</td><td>silver.tarefas, testada, num pipeline</td></tr>
     <tr><td>KPI</td><td>fórmula repetida em cada query e gráfico</td><td>mv_projetos: uma fórmula para todos</td></tr>
     <tr><td>Por que atrasou</td><td>ler 3.911 textos</td><td>causa como coluna (IA)</td></tr>
-    <tr><td>Genie</td><td>erra as 4 perguntas</td><td>acerta, com instrução e exemplo</td></tr>
+    <tr><td>Fonte nova</td><td>só arquivo, subido à mão</td><td>API em Python, num prompt</td></tr>
     <tr><td>Atualizar</td><td>rodar tudo de novo</td><td>job toda segunda às 6h</td></tr>
   </table>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · fecho</div>
+  <h2>As 4 perguntas do dono, <span class="grad">respondidas</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Pergunta do dono</th><th>Onde nasce</th><th>O que aparece</th></tr>
+    <tr><td>1. Quais projetos atrasam, e de quais clientes?</td><td>prompt 3 · gold</td><td>7 críticos, 10 em atenção, 4 melancias</td></tr>
+    <tr><td>2. Quanto esse atraso vai custar?</td><td>prompts 3 e 5 · gold + métrica</td><td>R$ 6,47 mi de estouro previsto</td></tr>
+    <tr class="cur"><td>3. Tenho gente parada enquanto outro pede gente?</td><td>prompts 3 e 4 · timesheet + IA</td><td>2 SREs a ~5% no PRJ-007; o PRJ-011 pede SRE há 12 semanas</td></tr>
+    <tr><td>4. O que vai dar errado no próximo mês?</td><td>silver · fornecedores</td><td>5 entregas da CodeForge atrasadas e o freeze da Black Friday (01/11)</td></tr>
+  </table>
+  <p class="note" style="margin-top:24px;">A pergunta 4 ganha um modelo de previsão amanhã, e o dono passa a perguntar no Genie. Hoje ela já tem os sinais.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · o que deve aparecer na tela</div>
+  <h2>Seu número é diferente? <span class="grad">O erro está no código</span></h2>
+  <table class="t" style="font-size:21px;">
+    <tr><th>Métrica</th><th>Valor</th></tr>
+    <tr><td>Tarefas na silver</td><td>4.917 · Excel 1.643 · ClickUp 2.119 · MS Project 1.155</td></tr>
+    <tr><td>Custo real (silver = bronze)</td><td>R$ 193,35 mi</td></tr>
+    <tr class="cur"><td>Em andamento · críticos · em atenção</td><td>41 · 7 · 10 · estouro previsto R$ 6,47 mi</td></tr>
+    <tr><td>SPI · CPI · margem da carteira</td><td>0,92 · 0,97 · 20,4%</td></tr>
+    <tr><td>Melancias</td><td>PRJ-012, PRJ-028, PRJ-034, PRJ-042</td></tr>
+    <tr><td>Fornecedores</td><td>5 entregas em atraso, todas da CodeForge (1,41 × o prazo)</td></tr>
+    <tr><td>Pessoas</td><td>COL0017 e COL0018 a ~5,5% no PRJ-007 · PRJ-011: falta de SRE, 12 semanas</td></tr>
+    <tr><td>API · IA</td><td>14 feriados na bronze.feriados · 163 status lidos pela IA</td></tr>
+  </table>
+  <p class="note" style="margin-top:20px;">O dado é sempre o mesmo (seed 42). <code>prd/99-verificacao.sql</code> confere tudo: 20 linhas ok.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · se der errado</div>
+  <h2>Sintoma, causa, <span class="grad">o que fazer</span></h2>
+  <table class="t" style="font-size:19px;">
+    <tr><th>Sintoma</th><th>Causa</th><th>O que fazer</th></tr>
+    <tr><td>refresh token is invalid</td><td>login expirado</td><td><code>databricks auth login --profile ...</code></td></tr>
+    <tr><td>dev_fulano_silver não existe</td><td><code>mode: development</code> no bundle</td><td><code>presets: trigger_pause_status: PAUSED</code></td></tr>
+    <tr><td>pipeline para em achou_o_projeto</td><td>arquivo que não casou com o de-para</td><td>casar pelo nome do arquivo (Excel) e da lista (ClickUp)</td></tr>
+    <tr><td>CAST_INVALID_INPUT '1827,44'</td><td>vírgula decimal</td><td><code>replace(',', '.')</code> antes do CAST</td></tr>
+    <tr><td>METRIC_VIEW_INVALID_VIEW_DEFINITION</td><td>YAML perdeu a indentação</td><td>rodar pela <code>sql_task</code> ou pelo <code>run_sql.py</code></td></tr>
+    <tr><td>no such directory (volume)</td><td>a pasta nova não existe</td><td><code>databricks fs mkdir</code> antes do cp</td></tr>
+    <tr><td>a IA leva 15 minutos</td><td>IA no histórico inteiro</td><td>só os 90 dias com bloqueio; regra no resto</td></tr>
+  </table>
+  <p class="note" style="margin-top:18px;">Um prompt não entregou? O gabarito está em <code>aulas/aula-02-engenheiro/vertice/</code>: compare o arquivo.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide hero">
+  <div class="kicker">A frase do segundo dia</div>
+  <h2 style="font-size:72px; line-height:1.15;">"Juntei 20 planilhas, 25 listas do ClickUp e 15 cronogramas numa tabela só. <span class="grad">Nenhuma tarefa ficou sem projeto</span>, e o custo não mudou um centavo."</h2>
+  <p class="sub" style="margin-top:30px;">Amanhã o dono pergunta em português: dashboard, Genie e o modelo que avisa 40 dias antes.</p>
   [[RODAPE]]
 </section>
 
@@ -1897,16 +2282,30 @@ $$</pre>
 
 <section class="slide">
   <div class="kicker">Noite 3 · como rodar</div>
-  <h2>Três prompts, <span class="grad">três tarefas a mais no mesmo job</span></h2>
+  <h2>Quatro prompts: <span class="grad">o modelo e o dono perguntando</span></h2>
   <div class="flow" style="margin-bottom:30px;">
     <div class="card hl"><div class="tag">Prompt 1 · features</div><div class="lbl">ml.features_projeto_semana: uma linha por projeto e semana, só olhando para trás</div></div><div class="arr">→</div>
     <div class="card hl"><div class="tag">Prompt 2 · modelo</div><div class="lbl">treino, comparação com as regras de hoje, MLflow e registro no Unity Catalog (@prod)</div></div><div class="arr">→</div>
-    <div class="card hl"><div class="tag">Prompt 3 · score</div><div class="lbl">gold.score_estouro_30d: probabilidade, ranking, faixa e motivos em português</div></div>
+    <div class="card hl"><div class="tag">Prompt 3 · score</div><div class="lbl">gold.score_estouro_30d: probabilidade, ranking, faixa e motivos em português</div></div><div class="arr">→</div>
+    <div class="card hl"><div class="tag">Prompt 4 · dashboard + Genie</div><div class="lbl">"Projeto Farol · Portfólio" e o Genie "Farol · Diretoria", como código no bundle</div></div>
   </div>
   <div class="grid g2" style="gap:30px;">
     <div class="card"><div class="tag">O laboratório: schema ml</div><div class="lbl">features, métricas e o modelo moram fora da gold. Na gold fica só a resposta: o score.</div></div>
     <div class="card"><div class="tag">Rodar</div><pre class="code" style="font-size:19px; margin-top:6px;">databricks bundle deploy --profile SEU-PERFIL
 databricks bundle run vertice_farol --profile SEU-PERFIL</pre><div class="lbl">8 tarefas, 4 a 5 minutos.</div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · o job completo</div>
+  <h2 style="margin-bottom:24px;">8 tarefas verdes, <span class="grad">5 minutos</span></h2>
+  <img class="shot" style="height:auto; max-height:480px; object-fit:contain; background:#fff;" src="[[IMG:docs/img/noite2-job-v2.jpg]]" alt="DAG do job vertice_farol">
+  <div class="grid g4" style="margin-top:30px;">
+    <div class="card"><div class="tag">conferência</div><div class="lbl">6 s · as 9 tabelas da bronze, contadas</div></div>
+    <div class="card"><div class="tag">medalhão</div><div class="lbl">2 min · silver + gold no pipeline</div></div>
+    <div class="card"><div class="tag">IA + testes + métrica</div><div class="lbl">~30 s · só status novo vai para a IA</div></div>
+    <div class="card"><div class="tag">features → modelo → score</div><div class="lbl">~2,5 min · noite 3</div></div>
   </div>
   [[RODAPE]]
 </section>
@@ -2034,6 +2433,81 @@ databricks bundle run vertice_farol --profile SEU-PERFIL</pre><div class="lbl">8
     <div class="card"><div class="tag">O calendário</div><div class="num md warn">01/11</div><div class="lbl">começa o change freeze da Black Friday: marketplace sem deploy até 10/01</div></div>
   </div>
   <div class="card"><div class="tag">E a lição de qualidade: PRJ-013</div><div class="lbl" style="font-size:26px; color:#fff;">O status de sexta diz 43%; a planilha diz 45%. O modelo usa o boletim e vê índice 0,90; a ferramenta diz 0,94. Quando as fontes não batem, o modelo avisa antes de o número "melhorar" no papel.</div></div>
+  [[RODAPE]]
+</section>
+
+<!-- ------------------------------------------------ noite 3 · prompt 4: o dono pergunta (veio da noite 2) -->
+
+<section class="slide">
+  <div class="kicker">Noite 3 · prompt 4 · dashboard como código · Portfólio</div>
+  <h2 style="margin-bottom:20px;">"Projeto Farol · Portfólio", <span class="grad">agora sobre a gold</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite2-dashboard.jpg]]" alt="Portfólio: KPIs">
+    <img class="shot" style="height:640px;" src="[[IMG:docs/img/noite2-dashboard-graficos.jpg]]" alt="Portfólio: gráficos">
+  </div>
+  <div class="small" style="margin-top:10px;">Três páginas: Portfólio, Pessoas e Fornecedores. É um JSON no Git, gerado por script e publicado pelo bundle: tem diff, revisão e rollback.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · prompt 4 · dashboard · Fornecedores</div>
+  <h2 style="margin-bottom:20px;">Quem promete <span class="grad">e não cumpre</span></h2>
+  <div class="grid g2" style="gap:30px; align-items:start;">
+    <img class="shot" style="height:620px; object-fit:contain;" src="[[IMG:docs/img/noite2-fornecedores.jpg]]" alt="Página Fornecedores">
+    <table class="t" style="font-size:22px;">
+      <tr><th>Fornecedor</th><th class="r">Real ÷ prometido</th></tr>
+      <tr class="cur"><td>CodeForge (4 grafias)</td><td class="r bad">1,41</td></tr>
+      <tr><td>QualiTest Brasil</td><td class="r">0,98</td></tr>
+      <tr><td>DataPrime Analytics</td><td class="r">0,98</td></tr>
+      <tr><td>SecureOps Segurança</td><td class="r">0,98</td></tr>
+      <tr><td>Pixel Design Studio</td><td class="r">0,98</td></tr>
+    </table>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 3 · prompt 4 · Genie curado · "Farol · Diretoria"</div>
+  <h2 style="margin-bottom:20px;">O mesmo modelo de IA, <span class="grad">agora acerta</span></h2>
+  <div class="grid g2" style="gap:24px;">
+    <img class="shot" style="height:620px;" src="[[IMG:docs/img/noite2-genie.jpg]]" alt="Genie Diretoria">
+    <img class="shot" style="height:620px;" src="[[IMG:docs/img/noite2-genie-recomendacao.jpg]]" alt="Genie com recomendação">
+  </div>
+  <div class="small" style="margin-top:10px;">Gold com COMMENT em toda tabela, a metric view, instruções de negócio ("hoje é 16/10/2026", as regras de corte) e 9 SQLs de exemplo. Também é código no bundle.</div>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:60px;">
+  <div class="kicker">Recurso do Databricks · Query History</div>
+  <h2 style="margin-bottom:18px; font-size:52px;">Query History: o que cada um perguntou</h2>
+  <div class="grid g2" style="gap:28px; grid-template-columns: 1.6fr 1fr;">
+    <div><img class="shot" style="height:640px;" src="[[IMG:docs/img/recurso-query-history.jpg]]" alt="Query History com as consultas dos Genies"></div>
+    <div class="card hl"><div class="tag">O que é</div>
+      <ul class="list">
+        <li>toda consulta que passou pelo warehouse: quem, quando, quanto tempo, de onde</li>
+        <li>abre o plano e o perfil de cada uma</li>
+      </ul>
+      <div class="tag" style="margin-top:22px;">No Farol</div>
+      <div class="lbl">mostra o SQL que o Genie escreveu por trás de cada resposta. É assim que se audita a IA</div>
+    </div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div class="kicker">Ponto de controle · noite 3 · prompt 4</div>
+  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
+  <div class="grid g2" style="gap:30px;">
+    <div class="card hl"><div class="tag">Na sua tela</div><div class="num">4 de 4</div><div class="lbl">as perguntas do dono certas no Genie "Farol · Diretoria". Benchmark: 16 de 20 ou mais</div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">Genie com erro de tabela: deploy → run → deploy. O dashboard e o Genie prontos estão em <code>vertice/resources/</code></div></div>
+  </div>
+  [[RODAPE]]
+</section>
+
+<section class="slide hero">
+  <div class="kicker">A frase do terceiro dia</div>
+  <h2 style="font-size:72px; line-height:1.15;">"Ontem ele disse que o atraso não custava nada. Hoje diz <span class="grad">quanto custa, quem está parado</span> e o que vai quebrar no mês que vem."</h2>
+  <p class="sub" style="margin-top:30px;">O modelo de IA do Genie é o mesmo de segunda. A diferença foi tudo o que a gente construiu embaixo dele.</p>
   [[RODAPE]]
 </section>
 
@@ -2227,6 +2701,166 @@ data_fim_vigencia     2026-12-31</pre><div class="lbl">Vira coluna: filtra, soma
 </section>
 
 <!-- ============================================================ FECHAMENTO -->
+
+<!-- ============================================================ OS 12 PROMPTS -->
+
+<section class="slide">
+  <div class="kicker">Os 12 prompts da imersão</div>
+  <h2>12 prompts, <span class="grad">um projeto só</span></h2>
+  <table class="t" style="font-size:22px;">
+    <tr><th>Noite</th><th>Prompts</th><th>O que nasce</th></tr>
+    <tr><td>1 · segunda · analista</td><td>nenhum</td><td>tudo no navegador: bronze, SQL, dashboard e Genie sem curadoria</td></tr>
+    <tr class="cur"><td>2 · terça · engenheiro</td><td>0 a 5</td><td>API em Python (aquecimento), bundle, silver, gold, IA no texto e métrica</td></tr>
+    <tr><td>3 · quarta · cientista</td><td>6 a 9</td><td>features, modelo, score e o dono perguntando: dashboard e Genie</td></tr>
+    <tr><td>4 · quinta · engenheiro de IA</td><td>10 a 12</td><td>agente de contratos, o app da Torre e as decisões no Lakebase</td></tr>
+  </table>
+  <p class="note" style="margin-top:24px;">O prompt 0 é o aquecimento: Python buscando uma API. Os 12 seguintes constroem a Torre, e cada um deixa algo novo no workspace.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill on">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 1 de 12 · noite 2 · terça · engenheiro</div>
+  <h2>O projeto <span class="grad">vira código</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>bundle vertice</b>: o projeto inteiro em arquivos: databricks.yml</li><li><b>job vertice_farol</b>: roda toda segunda às 6h</li><li><b>tarefa conferencia_bronze</b>: confere as 9 tabelas antes de tudo</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">9 ok</div><div class="lbl">as 9 tabelas da bronze com as linhas esperadas</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~40 s · todo o resto roda dentro deste job</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill on">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 2 de 12 · noite 2 · terça · engenheiro</div>
+  <h2>As três ferramentas <span class="grad">viram uma</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>pipeline vertice_medalhao</b>: Lakeflow: você declara, ele acha a ordem</li><li><b>silver.tarefas</b>: Excel + ClickUp + Project, mesmas colunas</li><li><b>+ 6 tabelas silver</b>: projetos, status, custos, pessoas, timesheet, fornecedores</li><li><b>EXPECT</b>: regras que param o pipeline se o dado quebrar</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">4.917</div><div class="lbl">tarefas de 60 projetos. O custo não mudou: R$ 193,35 mi</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~2 min · a base de tudo que vem depois</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill on">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 3 de 12 · noite 2 · terça · engenheiro</div>
+  <h2>A gold <span class="grad">responde ao dono</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>gold.projeto_situacao_atual</b>: a fotografia: um projeto, hoje</li><li><b>gold.fato_projeto_semana</b>: o filme: um projeto em cada sexta</li><li><b>gold.utilizacao_pessoa_semana</b>: as pessoas: quem está parado</li><li><b>tarefa testes_de_qualidade</b>: 10 testes que quebram o job</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">7 · 10 · 4</div><div class="lbl">críticos, em atenção e melancias. R$ 6,47 mi de estouro previsto</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~3 min · usada pelo modelo (noite 3) e pelo app (noite 4)</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill on">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 4 de 12 · noite 2 · terça · engenheiro</div>
+  <h2>O texto do status <span class="grad">vira coluna</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>gold.status_estruturado</b>: causa, bloqueio, quem destrava, dias de impacto</li><li><b>ai_classify + ai_extract</b>: IA dentro do SQL</li><li><b>tarefa status_com_ia</b>: MERGE incremental: IA só no status novo</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">163</div><div class="lbl">status lidos pela IA em ~2 min. PRJ-011: falta de SRE há 12 semanas</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~2 min · a "causa" no app e no Genie da noite 4</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill on">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 5 de 12 · noite 2 · terça · engenheiro</div>
+  <h2>O KPI definido <span class="grad">uma vez só</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>gold.mv_projetos</b>: metric view: a fórmula, não o número</li><li><b>11 medidas</b>: SPI, CPI, estouro, críticos, melancias…</li><li><b>tarefa metricas_governadas</b>: a última caixa do job da noite 2</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">0,92 · 0,97</div><div class="lbl">SPI e CPI da carteira, iguais no SQL, no dashboard e no Genie</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~10 s · o Genie da noite 4 lê daqui</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill on">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 6 de 12 · noite 3 · quarta · cientista</div>
+  <h2>O que descreve <span class="grad">um projeto que vai estourar</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>ml.features_projeto_semana</b>: um projeto numa semana, só olhando para trás</li><li><b>2 alvos</b>: estoura em 30 dias? e o quanto</li><li><b>tarefa ml_features</b>: mais uma caixa no mesmo job</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">4.235</div><div class="lbl">linhas: cada uma é um "momento" de um projeto</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~20 s · o schema ml é o laboratório do cientista</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill on">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 7 de 12 · noite 3 · quarta · cientista</div>
+  <h2>O modelo vale mais <span class="grad">que a regra de hoje?</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>ml.modelo_estouro_30d @prod</b>: o modelo registrado no Unity Catalog</li><li><b>ml.modelo_metricas</b>: o modelo contra as regras simples</li><li><b>experimento no MLflow</b>: cada treino anotado</li><li><b>tarefa ml_modelo</b>: treina de novo toda segunda</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">AUC 0,92</div><div class="lbl">contra 0,50 da regra atual. 9 de 10 estouros achados 41 dias antes</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~1 min · com teste contra vazamento (< 0,98)</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill on">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 8 de 12 · noite 3 · quarta · cientista</div>
+  <h2>A lista que o dono <span class="grad">abre na segunda</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>gold.score_estouro_30d</b>: probabilidade, ranking, faixa e motivos em português</li><li><b>tarefa ml_score</b>: o job sai de 5 para 8 tarefas</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">18 · 4 · 19</div><div class="lbl">projetos em risco alto, médio e baixo. O PRJ-024 está ok hoje e tem 46% de estourar</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~45 s · a resposta da pergunta 4</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill on">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 9 de 12 · noite 3 · quarta · cientista</div>
+  <h2>O dono pergunta <span class="grad">em português</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>dashboard "Projeto Farol · Portfólio"</b>: 3 páginas: Portfólio, Pessoas, Fornecedores</li><li><b>Genie "Farol · Diretoria"</b>: com instruções de negócio e SQL de exemplo</li><li><b>benchmark</b>: 20 perguntas com a resposta certa</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">20 de 20</div><div class="lbl">perguntas certas no benchmark. Na segunda ele errava as 4 do dono</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">~6 min · depois do score · dashboard e Genie como código no bundle</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill on">10</span><span class="pill">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 10 de 12 · noite 4 · quinta · engenheiro de IA</div>
+  <h2>O agente <span class="grad">que lê contrato</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>ai_parse_document + ai_extract</b>: PDF vira linha e coluna</li><li><b>silver.contratos_clausulas</b>: 72 cláusulas dos 8 contratos</li><li><b>gold.contratos</b>: um contrato por linha, com multa, SLA e renovação</li><li><b>Genie "Farol · Diretoria + Contratos"</b>: responde em R$ e cita a cláusula</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">R$ 1,12 mi</div><div class="lbl">de multa cobrável da CodeForge. NuvemSul e DataPrime renovaram sozinhos</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">benchmark 10 de 10</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill on">11</span><span class="pill">12</span></div>
+  <div class="kicker">Prompt 11 de 12 · noite 4 · quinta · engenheiro de IA</div>
+  <h2>O projeto <span class="grad">ganha uma URL</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>app farol-torre</b>: Databricks App (AppKit, React)</li><li><b>Projetos em risco</b>: a lista com o score e a causa</li><li><b>Simulador</b>: e se eu mover esta pessoa?</li><li><b>Perguntar</b>: o Genie dentro do app</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">19 dias</div><div class="lbl">recuperados no PRJ-011 movendo a COL0017, com R$ 22,1 mil/mês de saldo</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">login do workspace</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide">
+  <div style="margin-bottom:22px;"><span class="pill">1</span><span class="pill">2</span><span class="pill">3</span><span class="pill">4</span><span class="pill">5</span><span class="pill">6</span><span class="pill">7</span><span class="pill">8</span><span class="pill">9</span><span class="pill">10</span><span class="pill">11</span><span class="pill on">12</span></div>
+  <div class="kicker">Prompt 12 de 12 · noite 4 · quinta · engenheiro de IA</div>
+  <h2>A decisão <span class="grad">sai do WhatsApp</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1.4fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">O que ele cria</div><ul class="list"><li><b>Lakebase (Postgres)</b>: um banco de verdade dentro do Databricks</li><li><b>torre.decisoes</b>: quem aprovou, quando e por quê</li><li><b>botão Aprovar / Recusar</b>: no simulador</li><li><b>tela Decisões</b>: o histórico</li></ul></div>
+    <div class="card hl"><div class="tag">O número que prova</div><div class="num md">R$ 3,0 mi</div><div class="lbl">de valor no ano 1, contra R$ 0,4 mi de custo para construir e manter</div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">o dado vira decisão, e a decisão vira dado</p>
+  [[RODAPE]]
+</section>
 
 <section class="slide">
   <div class="kicker">Todos os entregáveis</div>

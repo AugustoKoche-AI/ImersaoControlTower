@@ -15,7 +15,7 @@ SELECT MEASURE(estouro_previsto), MEASURE(projetos_melancia) FROM lakehouse_vert
 -- R$ 6.465.127,22 · 4
 ```
 
-O job `vertice_farol` tem **6 tarefas** e roda verde de ponta a ponta. Se estes números não
+O job `vertice_farol` tem **5 tarefas** e roda verde de ponta a ponta. Se estes números não
 baterem, não adianta seguir: a noite 3 treina em cima deles.
 
 ---

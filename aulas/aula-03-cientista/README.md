@@ -11,7 +11,9 @@ para pedir aditivo de horas, trocar gente de projeto ou renegociar o escopo ante
 
 > **"O que vai dar errado no próximo mês, e o que eu faço agora?"**
 
-> **Formato:** 3 prompts no Claude Code, 3 deploys. O mesmo bundle da terça: o job sai de 5 para **8 tarefas**.
+> **Formato:** 4 prompts no Claude Code. O mesmo bundle da terça: o job sai de 5 para **8 tarefas**, e no fim
+> o dono pergunta em português ([`prompt-04-dashboard-e-genie.md`](prd/prompt-04-dashboard-e-genie.md): o dashboard
+> "Projeto Farol · Portfólio" e o Genie "Farol · Diretoria", que até 20/10 fechavam a noite 2).
 > **Onde fica cada coisa:** o laboratório do cientista (features, métricas, modelo) mora no schema
 > `lakehouse_vertice.ml`; na `gold` entra só o resultado, `gold.score_estouro_30d`.
 > **Conexão:** a tabela de hoje (`gold.score_estouro_30d`) é o que o app da [noite 4](../aula-04-engenheiro-ia) mostra ao dono.
@@ -315,7 +317,7 @@ bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh SEU-PERFIL --apagar   # ap
 
 | Arquivo | Para que serve |
 |---|---|
-| `prd/prompt-01-features.md` · `prompt-02-modelo.md` · `prompt-03-score.md` | os 3 prompts, com roteiro e "se der errado" |
+| `prd/prompt-01-features.md` · `prompt-02-modelo.md` · `prompt-03-score.md` · `prompt-04-dashboard-e-genie.md` | os 4 prompts, com roteiro e "se der errado" |
 | `prd/99-limpar-aula-03.sh` | apaga só a noite 3 (tabelas e modelo do schema `ml`, o score da gold, experimento, `src/ml` do meu-vertice) |
 | `99-verificacao.sql` | 17 checagens esperado × obtido |
 | `notebooks/01-o-que-o-modelo-vale.sql` | conferência: métricas, lista de segunda e a curva do PRJ-024 |
