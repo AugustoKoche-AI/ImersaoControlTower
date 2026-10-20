@@ -218,9 +218,75 @@ print(calcular_receita(2, 64.79))      # 129.58
 print(calcular_receita(1, 1286.09))    # 1286.09
 ```
 
-#### 6. Bibliotecas
+#### 6. Métodos: cada tipo traz as suas funções
+
+Um **método** é uma função que já vem grudada no valor: você escreve o valor, um **ponto** e o nome.
+Cada tipo tem os seus: o texto sabe ficar em minúsculas, a lista sabe crescer, o dicionário sabe listar as
+chaves. No notebook, digite o valor, o ponto e aperte **Tab** para ver todos.
+
+| Tipo | Métodos que você vai usar | O que fazem |
+|---|---|---|
+| `str` | `.lower()` `.upper()` `.strip()` `.replace(a, b)` `.split(sep)` `.startswith(x)` | minúsculas, maiúsculas, tirar espaços, trocar, quebrar, começa com |
+| `list` | `.append(x)` `.sort()` `.count(x)` | acrescentar, ordenar, contar |
+| `dict` | `.keys()` `.values()` `.items()` `.get(chave, padrão)` | as chaves, os valores, os pares, ler sem dar erro |
+
+A sujeira da Vértice, que ontem você viu no SQL, se resolve com métodos de texto:
 
 *Célula 9*
+
+```python
+# o farol do gerente veio escrito de vários jeitos
+farol = "  VERDE "
+print(farol.strip().lower())                   # "verde": um método depois do outro (encadeamento)
+
+# o custo veio com vírgula decimal: para o Python, isso é texto, não número
+valor = "12345,67"
+print(float(valor.replace(",", ".")))          # 12345.67
+
+# o projeto está escondido no nome do arquivo
+arquivo = "Cronograma PRJ-002.xlsx"
+print(arquivo.split(" ")[1].replace(".xlsx", ""))   # "PRJ-002"
+print(arquivo.startswith("Cronograma"))             # True
+```
+
+*Célula 10*
+
+```python
+# lista: acrescentar, contar e ordenar
+farois = ["verde", "amarelo", "verde"]
+farois.append("vermelho")                      # a lista cresce no lugar
+print(farois.count("verde"))                   # 2
+farois.sort()
+print(farois)                                  # ['amarelo', 'verde', 'verde', 'vermelho']
+
+# dicionário: chaves, valores e o .get, que não quebra se a chave não existir
+projeto = {"projeto_id": "PRJ-011", "cliente": "Supermercado Bom Preço", "spi": 0.77}
+print(list(projeto.keys()))
+print(projeto.get("cpi", "sem CPI"))           # "sem CPI", em vez de KeyError
+for chave, valor in projeto.items():
+    print(f"{chave}: {valor}")
+```
+
+**Objetivo:** a lista abaixo tem o farol de 5 status. Deixe todos iguais (sem espaço, minúsculos) e conte
+quantos são verdes.
+
+*Célula 11*
+
+```python
+status = [" Verde", "VERDE", "verde ", "Amarelo", "vermelho"]
+
+limpos = [s.strip().lower() for s in status]   # o mesmo método para cada item
+print(limpos)
+print(limpos.count("verde"), "verdes")         # 3
+```
+
+> **Guarde esta ideia para o pandas:** uma tabela do pandas também tem métodos (`df.head()`,
+> `df.describe()`) e uma coluna de texto tem os mesmos métodos do `str`, depois de um `.str`:
+> `df["farol"].str.strip().str.lower()`. É o `.lower()` desta seção, aplicado à coluna inteira de uma vez.
+
+#### 7. Bibliotecas
+
+*Célula 12*
 
 ```python
 import requests
@@ -230,12 +296,12 @@ print("pandas", pd.__version__)
 print("requests", requests.__version__)
 ```
 
-#### 7. Consumindo uma API
+#### 8. Consumindo uma API
 
 `status_code` 200 significa "deu certo". O `raise_for_status()` interrompe a execução se vier erro, o que
 evita seguir o pipeline com dado vazio.
 
-*Célula 10*
+*Célula 13*
 
 ```python
 URL_IBGE = "https://servicodados.ibge.gov.br/api/v1/localidades/estados"
@@ -253,7 +319,7 @@ print("primeiro:", estados[0])
 Montando a lista só com o que interessa. As duas formas abaixo fazem a mesma coisa: a primeira com `for`,
 a segunda com *list comprehension*, que é o jeito curto de escrever o mesmo laço.
 
-*Célula 11*
+*Célula 14*
 
 ```python
 # forma 1: for tradicional
@@ -272,9 +338,9 @@ df_estados = pd.DataFrame(linhas)
 display(df_estados.head())
 ```
 
-#### 8. pandas
+#### 9. pandas
 
-*Célula 12*
+*Célula 15*
 
 ```python
 print("formato (linhas, colunas):", df_estados.shape)
@@ -288,7 +354,7 @@ print(por_regiao)
 display(df_estados[df_estados["regiao"] == "Norte"])
 ```
 
-#### 9. boto3: lendo arquivos do data lake
+#### 10. boto3: lendo arquivos do data lake
 
 O **boto3** é a biblioteca da AWS para falar com o **S3**, o serviço de arquivos na nuvem. O Storage do
 **Supabase** fala o mesmo protocolo, então o mesmo código serve para os dois: muda só o `endpoint_url`.
@@ -303,7 +369,7 @@ O **boto3** é a biblioteca da AWS para falar com o **S3**, o serviço de arquiv
 > Na aula a chave fica no notebook, para ser simples de ver. Em produção ela sai daqui e vai para o
 > secret scope do Databricks, o que entra amanhã.
 
-*Célula 13*
+*Célula 16*
 
 ```python
 import boto3
@@ -334,7 +400,7 @@ for bucket in response["Buckets"]:
 Agora os arquivos de dentro do bucket. A resposta é um dicionário: os arquivos ficam em `Contents`, e
 cada um tem `Key` (o nome) e `Size` (o tamanho em bytes).
 
-*Célula 14*
+*Célula 17*
 
 ```python
 response = s3.list_objects_v2(Bucket=S3_BUCKET)
@@ -347,12 +413,12 @@ arquivos = [objeto["Key"] for objeto in response["Contents"]]
 print("\narquivos:", arquivos)
 ```
 
-#### 10. De bytes para tabela
+#### 11. De bytes para tabela
 
 O `get_object` devolve um dicionário; o conteúdo está em `Body`, e o `.read()` transforma em bytes. O
 pandas espera um arquivo, e o que temos são bytes na memória: o `io.BytesIO` finge ser um arquivo.
 
-*Célula 15*
+*Célula 18*
 
 ```python
 import io
@@ -381,7 +447,7 @@ display(df_projetos.head())
 
 #### Fechando o esquenta
 
-Se você resolveu os 10 exercícios, tem tudo o que precisa para a aula:
+Se você resolveu os 11 exercícios, tem tudo o que precisa para a aula:
 
 - sabe guardar valores e percorrer listas;
 - entende a resposta de uma API e a de um storage S3;
