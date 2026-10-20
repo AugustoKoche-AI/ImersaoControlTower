@@ -286,20 +286,20 @@ display(df_estados[df_estados["regiao"] == "Norte"])
 # MAGIC | **Endpoint** | O endereço do serviço |
 # MAGIC | **Access key / secret** | Usuário e senha da máquina |
 # MAGIC
-# MAGIC > Na aula a chave fica no notebook, para ser simples de ver. Em produção ela sai daqui e vai para o
-# MAGIC > secret scope do Databricks, o que entra amanhã.
+# MAGIC Aqui, no aquecimento, a chave fica no código para ficar simples de ver. No notebook de ingestão ela sai
+# MAGIC do código e passa a chegar pelo ambiente (`os.environ`).
 
 # COMMAND ----------
 
 import boto3
 
-# copie do Supabase: Project Settings → Storage → S3 access keys
+# os valores estão na tabela de conexão, no começo deste README
 S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
 S3_REGION = "us-east-2"
 S3_BUCKET = "DataLakeCentralTower"
 
-ACCESS_KEY = "XXXX"
-SECRET_KEY = "XXXX"
+ACCESS_KEY = "COLE-AQUI"     # passada na aula
+SECRET_KEY = "COLE-AQUI"     # passada na aula
 
 from botocore.config import Config
 
@@ -358,7 +358,7 @@ display(df_projetos.head())
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Erros comuns neste esquenta
+# MAGIC ## Erros comuns neste aquecimento
 # MAGIC
 # MAGIC | Erro | O que aconteceu |
 # MAGIC |---|---|
@@ -366,12 +366,11 @@ display(df_projetos.head())
 # MAGIC | `NameError: name 'x' is not defined` | A variável não existe: você rodou a célula fora de ordem |
 # MAGIC | `KeyError: 'regiao'` | A chave não existe no dicionário; confira a grafia |
 # MAGIC | `KeyError: 'Contents'` | O bucket está vazio ou o nome está errado |
-# MAGIC | `ModuleNotFoundError` | Biblioteca não instalada: rode `%pip install <nome>` |
 # MAGIC | `ConnectionError` ao chamar a API | Conta do Databricks ainda não verificada |
 # MAGIC | `EndpointConnectionError` | Endpoint errado; confira o endereço do Storage |
 # MAGIC | `InvalidAccessKeyId` / `SignatureDoesNotMatch` | Chave ou segredo errados |
 # MAGIC
-# MAGIC ## Fechando o esquenta
+# MAGIC ## Fechando o aquecimento
 # MAGIC
 # MAGIC Se você resolveu os 11 exercícios, tem tudo o que precisa para a aula:
 # MAGIC

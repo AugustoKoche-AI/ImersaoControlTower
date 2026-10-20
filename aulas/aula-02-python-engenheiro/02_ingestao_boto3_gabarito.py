@@ -7,7 +7,7 @@
 # MAGIC %md
 # MAGIC Um notebook novo, `02_ingestao_boto3`, serverless. Com lacunas para fazer junto:
 # MAGIC [`02_ingestao_boto3.py`](02_ingestao_boto3.py) · código pronto: [`02_ingestao_boto3_gabarito.py`](02_ingestao_boto3_gabarito.py). O mesmo extrair-pousar-carregar da API, agora
-# MAGIC para o data lake inteiro. Preencha a célula de configuração com a tabela de conexão.
+# MAGIC para o data lake inteiro. As 4 caixinhas do topo recebem os valores da tabela de conexão.
 # MAGIC
 # MAGIC Ontem você baixou os arquivos e subiu no volume **na mão**. Numa empresa, os sistemas e as
 # MAGIC ferramentas exportam tudo para um **data lake**: um storage na nuvem que fala o protocolo **S3** da AWS.

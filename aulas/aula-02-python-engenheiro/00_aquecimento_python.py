@@ -333,8 +333,8 @@ display(df_estados.head())
 # MAGIC | **Endpoint** | O endereço do serviço |
 # MAGIC | **Access key / secret** | Usuário e senha da máquina |
 # MAGIC
-# MAGIC > Na aula a chave fica no notebook, para ser simples de ver. Em produção ela sai daqui e vai para o
-# MAGIC > secret scope do Databricks, o que entra amanhã.
+# MAGIC Aqui, no aquecimento, a chave fica no código para ficar simples de ver. No notebook de ingestão ela sai
+# MAGIC do código e passa a chegar pelo ambiente (`os.environ`).
 
 # COMMAND ----------
 
@@ -343,13 +343,13 @@ display(df_estados.head())
 
 import boto3
 
-# copie do Supabase: Project Settings → Storage → S3 access keys
+# os valores estão na tabela de conexão, no README da noite 2
 S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
 S3_REGION = "us-east-2"
 S3_BUCKET = "DataLakeCentralTower"
 
-ACCESS_KEY = "XXXX"
-SECRET_KEY = "XXXX"
+ACCESS_KEY = "COLE-AQUI"     # passada na aula
+SECRET_KEY = "COLE-AQUI"     # passada na aula
 
 # escreva seu código aqui: s3 = boto3.client(...) e depois liste os buckets
 # atenção: o Supabase exige o bucket no caminho da URL. Passe também:
@@ -390,7 +390,7 @@ import io
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Fechando o esquenta
+# MAGIC ## Fechando o aquecimento
 # MAGIC
 # MAGIC Se você resolveu os 10 exercícios, tem tudo o que precisa para a aula:
 # MAGIC

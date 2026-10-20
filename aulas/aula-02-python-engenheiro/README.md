@@ -89,8 +89,8 @@ job, pelos parâmetros. Um passo além, em produção: guardar a chave num *secr
 |---|---|
 | `S3_ENDPOINT` | `https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3` |
 | `AWS_DEFAULT_REGION` | `us-east-2` |
-| `AWS_ACCESS_KEY_ID` | `A-DEFINIR` |
-| `AWS_SECRET_ACCESS_KEY` | `A-DEFINIR` |
+| `AWS_ACCESS_KEY_ID` | passada na aula |
+| `AWS_SECRET_ACCESS_KEY` | passada na aula |
 
 O bucket é `DataLakeCentralTower` (maiúsculas e minúsculas contam). Esses valores entram como **Job parameters** (etapa 4) ou nas caixinhas do topo do
 notebook, quando você roda na mão.
@@ -104,9 +104,9 @@ notebook, quando você roda na mão.
 - **Computação serverless** em todos os notebooks: ela tem acesso à internet e já traz o `boto3`.
 - **Conta verificada.** A Free Edition só acessa a internet com a conta verificada. Se aparecer
   `ConnectionError` ou `Max retries exceeded`, verifique a conta quando o Databricks pedir.
-- **Três notebooks**, um por etapa: o código de cada um está logo abaixo, célula por célula, com botão de copiar.
-  O notebook pronto de cada etapa (o gabarito) está nesta pasta: **Workspace › Import › URL** com o link "raw"
-  do arquivo no GitHub, se você travar.
+- **Três notebooks**, um por etapa. O código de cada um está logo abaixo, célula por célula, com botão de
+  copiar. Nesta pasta, cada etapa tem duas versões: com lacunas, para fazer junto, e o gabarito, com o
+  código pronto. Para abrir no Databricks: **Workspace › Import › URL** com o link "raw" do arquivo no GitHub.
 
 ### 1. Aquecimento de Python (20 min)
 
@@ -383,21 +383,21 @@ O **boto3** é a biblioteca da AWS para falar com o **S3**, o serviço de arquiv
 | **Endpoint** | O endereço do serviço |
 | **Access key / secret** | Usuário e senha da máquina |
 
-> Na aula a chave fica no notebook, para ser simples de ver. Em produção ela sai daqui e vai para o
-> secret scope do Databricks, o que entra amanhã.
+Aqui, no aquecimento, a chave fica no código para ficar simples de ver. No notebook de ingestão ela sai
+do código e passa a chegar pelo ambiente (`os.environ`).
 
 *Célula 15*
 
 ```python
 import boto3
 
-# copie do Supabase: Project Settings → Storage → S3 access keys
+# os valores estão na tabela de conexão, no começo deste README
 S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
 S3_REGION = "us-east-2"
 S3_BUCKET = "DataLakeCentralTower"
 
-ACCESS_KEY = "XXXX"
-SECRET_KEY = "XXXX"
+ACCESS_KEY = "COLE-AQUI"     # passada na aula
+SECRET_KEY = "COLE-AQUI"     # passada na aula
 
 from botocore.config import Config
 
@@ -452,7 +452,7 @@ print(df_projetos.shape)
 display(df_projetos.head())
 ```
 
-#### Erros comuns neste esquenta
+#### Erros comuns neste aquecimento
 
 | Erro | O que aconteceu |
 |---|---|
@@ -460,12 +460,11 @@ display(df_projetos.head())
 | `NameError: name 'x' is not defined` | A variável não existe: você rodou a célula fora de ordem |
 | `KeyError: 'regiao'` | A chave não existe no dicionário; confira a grafia |
 | `KeyError: 'Contents'` | O bucket está vazio ou o nome está errado |
-| `ModuleNotFoundError` | Biblioteca não instalada: rode `%pip install <nome>` |
 | `ConnectionError` ao chamar a API | Conta do Databricks ainda não verificada |
 | `EndpointConnectionError` | Endpoint errado; confira o endereço do Storage |
 | `InvalidAccessKeyId` / `SignatureDoesNotMatch` | Chave ou segredo errados |
 
-#### Fechando o esquenta
+#### Fechando o aquecimento
 
 Se você resolveu os 11 exercícios, tem tudo o que precisa para a aula:
 
@@ -583,11 +582,9 @@ ORDER BY data
 Espere 2 ou 3 minutos e rode de novo as células 4 e 5: o raw ganhou um arquivo por execução e a
 bronze, 14 linhas por captura. Ninguém clicou em nada. **É isso que um engenheiro de dados entrega.**
 
-> Cada execução leva uns **4 minutos** no Free Edition (a computação serverless do job sobe do zero a cada
-> rodada). Com o agendamento a cada 1 minuto, as execuções entram na **fila** e rodam uma atrás da outra.
->
-> Assim que conferir, **pause o job** (botão **Pause** no agendamento): a cada 1 minuto ele consome a cota
-> do Free Edition. Na etapa 4 ele passa a rodar uma vez por dia.
+Cada execução leva uns 4 minutos: a computação serverless do job sobe do zero a cada rodada. Por isso,
+com o agendamento a cada 1 minuto, as execuções esperam na fila e rodam uma atrás da outra. Depois de
+conferir, clique em **Pause** no agendamento: na etapa 4, o job passa a rodar uma vez por dia.
 
 ---
 
@@ -595,7 +592,7 @@ bronze, 14 linhas por captura. Ninguém clicou em nada. **É isso que um engenhe
 
 Um notebook novo, `02_ingestao_boto3`, serverless. Com lacunas para fazer junto:
 [`02_ingestao_boto3.py`](02_ingestao_boto3.py) · código pronto: [`02_ingestao_boto3_gabarito.py`](02_ingestao_boto3_gabarito.py). O mesmo extrair-pousar-carregar da API, agora
-para o data lake inteiro. Preencha a célula de configuração com a tabela de conexão.
+para o data lake inteiro. As 4 caixinhas do topo recebem os valores da tabela de conexão.
 
 Ontem você baixou os arquivos e subiu no volume **na mão**. Numa empresa, os sistemas e as
 ferramentas exportam tudo para um **data lake**: um storage na nuvem que fala o protocolo **S3** da AWS.
@@ -866,26 +863,8 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `InvalidAccessKeyId`, `SignatureDoesNotMatch` | chave ou segredo errados | copie de novo da tabela de conexão, sem espaço |
 | `AssertionError: preencha: [...]` | faltou um parâmetro | preencha a caixinha no topo, ou o Job parameter de mesmo nome |
 | `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `DataLakeCentralTower`, com as maiúsculas |
-| `ClientError: An error occurred () when calling the ListObjectsV2` | o boto3 pôs o bucket no endereço, e o Supabase não entende | `config=Config(s3={"addressing_style": "path"})` no `boto3.client` |
 | `PATH_NOT_FOUND` no `read_files` | o arquivo não foi baixado | rode a célula que baixa os arquivos para o raw |
 | a contagem não bate com a de ontem | faltou arquivo no bucket | o passo 2 mostra quantos arquivos tem em cada pasta |
-
----
-
-## 🧑‍🏫 Para o professor: montar o data lake no Supabase
-
-1. **Storage › New bucket**, nome `DataLakeCentralTower`.
-2. Suba as pastas de [`dados/`](../../dados) **com os mesmos nomes**: `pmo/`, `rh/`, `timesheet/`,
-   `financeiro/`, `compras/`, `excel/`, `clickup/` e `msproject/` (o `read_files` procura nesses caminhos).
-   Gere os dados com `python3 material/gerar_dataset.py --saida ./dados --seed 42`.
-   Confira depois: `excel/` com 20 arquivos, `clickup/` com 25 e `msproject/` com 15. Arquivo repetido
-   (`... (1).xlsx`) entra em dobro na bronze. O Supabase tira os acentos dos nomes: não tem problema.
-3. **Project Settings › Storage › S3 access keys › New access key.** Guarde as duas partes.
-4. Na mesma tela estão o **endpoint** e a **região**. Preencha a tabela de conexão acima.
-
-> **Cuidado:** a chave S3 do Supabase tem acesso total ao storage (lê, grava e apaga). Publicar a chave
-> para a turma significa que qualquer pessoa pode apagar o bucket. Tenha o `dados/` à mão para subir de
-> novo, ou troque a chave depois da aula.
 
 ---
 
