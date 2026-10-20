@@ -12,53 +12,6 @@ custa nada"), porque olhava dado sujo e espalhado. Hoje a gente constrói o dado
 
 ---
 
-## 🎯 As perguntas do dono e onde a noite 2 responde
-
-| Pergunta do dono | Onde a resposta nasce hoje | O que aparece |
-|---|---|---|
-| 1. Quais projetos estão atrasados, e de quais clientes? | prompt 3 (gold) | 7 críticos, 10 em atenção, 4 "melancias" |
-| 2. Quanto esse atraso vai custar? | prompt 3 (gold) + prompt 5 (métricas) | R$ 6,47 mi de estouro previsto |
-| 3. Tenho gente parada enquanto outro projeto pede gente? | prompt 3 (timesheet) + prompt 4 (IA no status) | 2 SREs a ~5% no PRJ-007; o PRJ-011 pede SRE há 12 semanas |
-| 4. O que vai dar errado no próximo mês? | silver (fornecedores); no Genie, amanhã | 5 entregas da CodeForge atrasadas e o change freeze da Black Friday (01/11 a 10/01) nos projetos de e-commerce |
-
-A pergunta 4 ganha um modelo de previsão amanhã (`gold.score_estouro_30d`, noite 3). Hoje ela já tem os sinais.
-
----
-
-## 🔁 Antes × depois: o que "integrar" quer dizer
-
-**Ontem (bronze):** a planilha do gerente, do jeito que chegou. Data como número de série do Excel
-(`45700`) misturada com `13/03/2025`, fase em maiúscula, cada planilha com as suas colunas.
-
-![Tabela bronze.excel_tarefas no Catalog Explorer](../../docs/img/ontem-excel-sujo.jpg)
-*Repare na coluna `inicio_previsto`: metade é número (`45700`), metade é data escrita. E isso é só o Excel.*
-
-**Hoje, depois do prompt 2 (silver):** as três ferramentas com as **mesmas colunas**, uma tarefa por
-linha, com o projeto (`PRJ-019`) e a ferramenta de origem ao lado.
-
-![Tabela silver.tarefas no Catalog Explorer](../../docs/img/agora-silver-tarefas.jpg)
-*Repare no `tarefa_id` (projeto-ferramenta-número) e nas colunas `projeto_id` e `ferramenta`: é assim que 4.917 tarefas de 60 arquivos viram uma tabela.*
-
----
-
-## 📖 As palavras da noite (em uma frase)
-
-| Termo | O que é |
-|---|---|
-| **Bronze / silver / gold** | As três camadas do dado: bronze é como chegou (noite 1), silver é limpo e integrado, gold é pronto para responder ao negócio. |
-| **Bundle** | O projeto inteiro (job, pipeline, dashboard, Genie) descrito em arquivos, num `databricks.yml`. Um `bundle deploy` sobe tudo. |
-| **Deploy** | Mandar o que está no seu computador para o workspace do Databricks. |
-| **Pipeline (Lakeflow)** | Um conjunto de tabelas que você só *declara* ("a silver.tarefas é isto"); o Databricks descobre a ordem e roda. |
-| **`EXPECT`** | Uma regra de qualidade escrita na tabela. Se o dado quebrar a regra, o pipeline para em vez de gravar errado. |
-| **Job** | A lista de tarefas que roda numa ordem e num horário (aqui: toda segunda às 6h). |
-| **SPI / CPI** | Índices de prazo e de custo. Abaixo de 1 = atrasado / gastando mais que o previsto. |
-| **`ai_classify` / `ai_extract`** | Funções de IA dentro do SQL. A primeira põe o texto numa categoria; a segunda tira campos dele (quem destrava, quantos dias). |
-| **Metric view** | Onde a **fórmula** de um KPI mora uma vez só. Dashboard, Genie e SQL usam a mesma. |
-| **Genie curado** | O Genie com instruções de negócio, exemplos e tabelas certas. É o que faltou ontem. |
-| **Benchmark** | 20 perguntas com a resposta certa. É o teste do Genie. |
-
----
-
 ## 🏗️ O desenho do que você vai construir
 
 ```mermaid
