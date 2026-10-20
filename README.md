@@ -138,10 +138,10 @@ Os KPIs são definidos **uma vez** (Metric Views no Unity Catalog) e reusados no
 
 | Noite | Data | Chapéu | A pergunta | O que existe no fim | Como constrói | Pasta |
 |---|---|---|---|---|---|---|
-| **1** | seg 19/10 | Analista | O que o Databricks faz? Quem está atrasado? | bronze lendo Excel, JSON e XML, ranking de atraso das 3 ferramentas, R$ de estouro, 1º dashboard, Genie que erra | navegador (SQL Editor) | [`aula-01-analista`](aulas/aula-01-analista) |
-| **2** | ter 20/10 | Engenheiro de Dados | Como integrar tudo e rodar sozinho? | pipeline Lakeflow, silver que integra as 3 ferramentas, IA nos status semanais, a metric view mv_projetos, Genie curado | prompts no Claude Code | [`aula-02-engenheiro`](aulas/aula-02-engenheiro) |
-| **3** | qua 21/10 | Cientista de Dados | Quais vão estourar nos próximos 30 dias? | modelo no Unity Catalog, score por projeto com motivo | prompts no Claude Code | [`aula-03-cientista`](aulas/aula-03-cientista) |
-| **4** | qui 22/10 | Engenheiro de IA | E o dono, que não escreve SQL? | agente de contratos, app da Torre com aprovação no Lakebase, pitch de 3 min | prompts no Claude Code | [`aula-04-engenheiro-ia`](aulas/aula-04-engenheiro-ia) |
+| **1** | seg 19/10 | Analista · SQL | O que o Databricks faz? Quem está atrasado? | bronze lendo Excel, JSON e XML, ranking de atraso das 3 ferramentas, R$ de estouro, 1º dashboard, Genie que erra | navegador (SQL Editor) | [`aula-01-analista-sql`](aulas/aula-01-analista-sql) |
+| **2** | ter 20/10 | Engenheiro de Dados · Python | E se o dado não estiver no meu computador? | aquecimento de Python, data lake (S3/boto3 no Supabase) → raw → bronze, API de feriados, job de ingestão às 6h | notebooks no Databricks | [`aula-02-python-engenheiro`](aulas/aula-02-python-engenheiro) |
+| **3** | qua 21/10 | Analytics Engineer · modelagem | Como as três ferramentas viram uma, com teste? | bundle, silver que integra as 3 ferramentas, gold (fotografia × filme), testes e a metric view mv_projetos | prompts no Claude Code | [`aula-03-modelagem-claude-code`](aulas/aula-03-modelagem-claude-code) |
+| **4** | qui 22/10 | Engenheiro de IA · produtos de dados | E o dono, que não escreve SQL? | IA no texto do status, agente de contratos, dashboard + Genie curado, app da Torre, pitch de 3 min | prompts no Claude Code | [`aula-04-produtos-de-dados-ia`](aulas/aula-04-produtos-de-dados-ia) |
 
 **Apresentações** (abra o `.html` no navegador; ← → navega, F tela cheia):
 [**slides/imersao.html**](slides/imersao.html), um deck só para as 4 noites: o case, cada noite com passo a passo,
@@ -176,11 +176,11 @@ Cada pasta é **autocontida** (README, roteiro, verificação e checkpoint). Per
 
 1. Crie a conta grátis: [databricks.com/learn/free-edition](https://www.databricks.com/learn/free-edition).
 2. No Databricks: **Workspace → Create → Git folder** → `https://github.com/lvgalvao/ImersaoControlTower`.
-3. Abra `aulas/aula-01-analista/00-carregar-dados` → **Run all**. O catálogo nasce e os dados são gerados direto no volume.
-4. Abra `aulas/aula-01-analista/01-ingestao-bronze.sql` no **SQL Editor** → rode tudo.
-5. Rode o exemplo 05 e depois `aulas/aula-01-analista/99-verificacao.sql`. As 18 linhas devem dar `ok`.
+3. Abra `aulas/aula-01-analista-sql/00-carregar-dados` → **Run all**. O catálogo nasce e os dados são gerados direto no volume.
+4. Abra `aulas/aula-01-analista-sql/01-ingestao-bronze.sql` no **SQL Editor** → rode tudo.
+5. Rode o exemplo 05 e depois `aulas/aula-01-analista-sql/99-verificacao.sql`. As 18 linhas devem dar `ok`.
 
-Daí em diante, siga o [README da noite 1](aulas/aula-01-analista/README.md).
+Daí em diante, siga o [README da noite 1](aulas/aula-01-analista-sql/README.md).
 
 ### Para as noites 2 a 4 (terminal)
 
@@ -244,10 +244,10 @@ de 8 jeitos no PMO, vírgula decimal, estorno negativo, pessoa duplicada no RH e
 
 ```
 aulas/
-├── aula-01-analista/          navegador: catálogo, bronze das 3 ferramentas, 6 exemplos SQL, dashboard, Genie sem curadoria
-├── aula-02-engenheiro/        Claude Code: bundle, pipeline Lakeflow, IA nos textos, Metric Views, Genie curado
-├── aula-03-cientista/         Claude Code: features, modelo de estouro em 30 dias, score por projeto
-└── aula-04-engenheiro-ia/     Claude Code: app da Torre + Lakebase, agente de contratos, pitch
+├── aula-01-analista-sql/          navegador: catálogo, bronze das 3 ferramentas, 6 exemplos SQL, dashboard, Genie sem curadoria
+├── aula-02-python-engenheiro/    notebooks: aquecimento de Python, data lake (boto3) → raw → bronze, API, job
+├── aula-03-modelagem-claude-code/ Claude Code: bundle, silver, gold, testes, metric view
+└── aula-04-produtos-de-dados-ia/  Claude Code: IA no texto, contratos, dashboard + Genie, app da Torre, pitch
 material/
 ├── gerar_dataset.py           o gerador (seed 42)
 ├── validar_padroes.py         o gabarito: junta as 3 ferramentas e confere a história
@@ -272,15 +272,15 @@ slides/                        as apresentações de cada noite (abra o .html no
 |---|---|---|
 | Dataset reproduzível | gerar duas vezes e comparar o sha256 que o validador imprime | idênticos |
 | Padrões da história | `python3 material/validar_padroes.py --dados ./dados` | `TODOS OS PADRÕES OK` |
-| Noite 1 no workspace | `python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile P` | 22 × `ok` |
+| Noite 1 no workspace | `python3 scripts/run_sql.py aulas/aula-01-analista-sql/99-verificacao.sql --profile P` | 22 × `ok` |
 | Genie da noite 1 | `python3 scripts/genie.py perguntar "Farol · Noite 1 (bronze, sem curadoria)" "Quanto esse atraso vai me custar?" --profile P` | resposta errada, de propósito |
-| Job completo (noites 2 e 3) | `cd aulas/aula-02-engenheiro/vertice && databricks bundle deploy --profile P && databricks bundle run vertice_farol --profile P` | 8 tarefas verdes, ~4 a 5 min |
-| Noite 2 | `python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile P` | 20 × `ok` |
-| Genie da noite 2 | `python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-engenheiro/prd/genie-benchmark.json --profile P` | 20/20 |
-| Noite 3 | `python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile P` | 17 × `ok` |
-| Noite 4 | `python3 scripts/run_sql.py aulas/aula-04-engenheiro-ia/99-verificacao.sql --profile P` | 12 × `ok` |
-| Genie de contratos | `python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" aulas/aula-04-engenheiro-ia/prd/genie-benchmark.json --profile P` | 10/10 |
-| App + Lakebase | `cd aulas/aula-04-engenheiro-ia/torre-app && npm test` e `python3 scripts/ver_decisoes.py` | 5 testes; a aprovação aparece no Postgres |
+| Job completo (noites 2 e 3) | `cd aulas/aula-02-python-engenheiro/vertice && databricks bundle deploy --profile P && databricks bundle run vertice_farol --profile P` | 8 tarefas verdes, ~4 a 5 min |
+| Noite 2 | `python3 scripts/run_sql.py aulas/aula-02-python-engenheiro/prd/99-verificacao.sql --profile P` | 20 × `ok` |
+| Genie da noite 2 | `python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-02-python-engenheiro/prd/genie-benchmark.json --profile P` | 20/20 |
+| Noite 3 | `python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/99-verificacao.sql --profile P` | 17 × `ok` |
+| Noite 4 | `python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile P` | 12 × `ok` |
+| Genie de contratos | `python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" aulas/aula-04-produtos-de-dados-ia/prd/genie-benchmark.json --profile P` | 10/10 |
+| App + Lakebase | `cd aulas/aula-04-produtos-de-dados-ia/torre-app && npm test` e `python3 scripts/ver_decisoes.py` | 5 testes; a aprovação aparece no Postgres |
 
 ---
 

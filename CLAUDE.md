@@ -20,16 +20,16 @@ Uma pasta por noite, autocontida (README, roteiro, verificação), no mesmo esqu
 
 | Pasta | Noite |
 |---|---|
-| `aulas/aula-01-analista/` | 1 · navegador: setup, bronze (CSV, Excel, JSON, XML), 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
-| `aulas/aula-02-engenheiro/` | 2 · prompts no Claude Code: bundle `vertice`, pipeline Lakeflow que integra as 3 ferramentas, ai_classify + ai_extract nos status semanais, a metric view mv_projetos, Genie curado |
-| `aulas/aula-03-cientista/` | 3 · prompts: features projeto × semana, modelo de estouro em 30 dias, score por projeto |
-| `aulas/aula-04-engenheiro-ia/` | 4 · prompts: agente de contratos (ai_parse_document + ai_extract → gold.contratos), app da Torre (AppKit) + Lakebase, pitch |
+| `aulas/aula-01-analista-sql/` | 1 · navegador: setup, bronze (CSV, Excel, JSON, XML), 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
+| `aulas/aula-02-python-engenheiro/` | 2 · notebooks: aquecimento de Python, data lake (Supabase Storage via S3/boto3) → raw → bronze, API de feriados, job de ingestão. Guarda também os prompts e o gabarito `vertice/` usados na noite 3 (`README-claude-code.md`) |
+| `aulas/aula-03-modelagem-claude-code/` | 3 · prompts no Claude Code: bundle, silver (as 3 ferramentas viram uma), gold, testes, metric view. O ML (features, modelo, score) fica como bônus |
+| `aulas/aula-04-produtos-de-dados-ia/` | 4 · prompts: IA no texto do status, agente de contratos (ai_parse_document + ai_extract → gold.contratos), dashboard + Genie curado, app da Torre (AppKit) + Lakebase, pitch |
 | `material/` | PRD, gerador do dataset, validador dos padrões, writer de PDF |
 | `scripts/` | `run_sql.py`, `genie.py`, `gerar_notebooks.py`, `gerar_slides.py`, `gerar_prompts.py` |
 | `slides/` | `_modelo.html` (motor dos slides do jornada-ops, com Mermaid) + `imersao.slides.html` → `imersao.html` (um deck só, as 4 noites) e `pptx/` (versão editável) |
 
 Exemplos novos na aula 01 seguem `exemplo-NN-tema.sql`, com cabeçalho de conceito, pergunta de negócio e
-conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 scripts/gerar_notebooks.py aulas/aula-01-analista`.
+conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 scripts/gerar_notebooks.py aulas/aula-01-analista-sql`.
 
 ## Databricks
 
@@ -97,7 +97,7 @@ lê as 3 ferramentas em Python). Um `random.Random` por assunto (`f"{seed}:{nome
 - **"Hoje" = 2026-10-16.** Nunca `current_date()`.
 - **A sujeira é conteúdo, não bug.** Nunca conserte o gerador para limpar dado. A limpeza é na silver (noite 2).
 - **Seed fixa.** Mudou o gerador? Rode o validador, regere, recarregue a bronze e atualize os números esperados
-  em `aulas/aula-01-analista/99-verificacao.sql`, nos READMEs e nos slides, nessa ordem.
+  em `aulas/aula-01-analista-sql/99-verificacao.sql`, nos READMEs e nos slides, nessa ordem.
 - Fontes: `pmo/` (projetos, status_semanal com texto livre e farol), `excel/` (20 .xlsx), `clickup/` (25 .json),
   `msproject/` (15 .xml MSPDI), `rh/`, `timesheet/`, `financeiro/`, `compras/` (entregas de fornecedor), `documentos/`
   (8 contratos de fornecedor/SaaS e o manual de tecnologias em PDF; o agente da noite 4 lê só os contratos).
@@ -140,11 +140,11 @@ Genie sem curadoria erra as 4 perguntas do dono (ensaio 18/10).
 
 ```bash
 python3 scripts/run_sql.py <arquivo.sql> --profile imersao-out26 [--continuar] [--quiet]
-python3 aulas/aula-01-analista/gerar_dashboard.py --deploy --profile imersao-out26
+python3 aulas/aula-01-analista-sql/gerar_dashboard.py --deploy --profile imersao-out26
 python3 scripts/genie.py publicar <espaco.json> --titulo "..." --profile imersao-out26
 python3 scripts/genie.py perguntar "<título>" "pergunta" --profile imersao-out26
 python3 scripts/genie.py benchmark "<título>" <benchmark.json> --profile imersao-out26
-python3 scripts/gerar_notebooks.py aulas/aula-01-analista [--importar --profile imersao-out26]
+python3 scripts/gerar_notebooks.py aulas/aula-01-analista-sql [--importar --profile imersao-out26]
 python3 scripts/gerar_slides.py slides/imersao.slides.html
 python3 scripts/gerar_prompts.py                 # regera o PROMPTS.md a partir de aulas/*/prd/prompt-*.md
 ```

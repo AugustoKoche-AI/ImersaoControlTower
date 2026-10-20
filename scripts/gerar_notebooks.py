@@ -2,8 +2,8 @@
 """Transforma os exemplo-NN-*.sql de uma aula em notebooks do Databricks.
 
 Uso:
-  python3 scripts/gerar_notebooks.py aulas/aula-01-analista
-  python3 scripts/gerar_notebooks.py aulas/aula-01-analista --importar --profile SEU-PERFIL
+  python3 scripts/gerar_notebooks.py aulas/aula-01-analista-sql
+  python3 scripts/gerar_notebooks.py aulas/aula-01-analista-sql --importar --profile SEU-PERFIL
 
 Gera duas versões em <aula>/notebooks/:
   resolvidos/   cada bloco do exemplo vira uma célula, com a query

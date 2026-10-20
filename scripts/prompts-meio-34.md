@@ -4,7 +4,7 @@
 ## Fim da noite 3 · confira antes de seguir
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/99-verificacao.sql --profile <perfil>
 # 17 linhas, todas "ok"
 ```
 

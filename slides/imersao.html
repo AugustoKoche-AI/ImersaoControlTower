@@ -1472,8 +1472,8 @@ Use CASE WHEN e escreva um comentário curto em português antes de cada coluna.
   </div>
   <table class="t" style="font-size:22px;">
     <tr><th>Dataset</th><th>Arquivo no GitHub (copie e cole)</th><th>Deve trazer</th></tr>
-    <tr><td>Projetos em andamento</td><td>aulas/aula-01-analista/<b>dashboard-dataset-projetos.sql</b></td><td>41 linhas: SPI, CPI, situação, farol, estouro</td></tr>
-    <tr><td>Custos por mês</td><td>aulas/aula-01-analista/<b>dashboard-dataset-custos.sql</b></td><td>23.640 lançamentos com mês e categoria</td></tr>
+    <tr><td>Projetos em andamento</td><td>aulas/aula-01-analista-sql/<b>dashboard-dataset-projetos.sql</b></td><td>41 linhas: SPI, CPI, situação, farol, estouro</td></tr>
+    <tr><td>Custos por mês</td><td>aulas/aula-01-analista-sql/<b>dashboard-dataset-custos.sql</b></td><td>23.640 lançamentos com mês e categoria</td></tr>
   </table>
   <p class="note" style="margin-top:24px;">O primeiro dataset lê a view do <b>exemplo 05</b>: rode o 05 antes. Repare no SQL: CAST, replace e try_to_date em toda coluna. É o preço de ler a bronze.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
@@ -1606,7 +1606,7 @@ O que vai dar errado no próximo mês?</pre>
   <div class="grid g3" style="gap:24px;">
     <div class="card hl"><div class="tag">Não precisa digitar junto</div><div class="lbl">a gravação, o código e os prompts ficam disponíveis. Se preferir, só assista e refaça depois</div></div>
     <div class="card"><div class="tag">O nível de hoje</div><div class="lbl">nenhum código à mão: você copia o prompt e o Claude Code escreve. Começamos montando o terminal juntos (6 passos)</div></div>
-    <div class="card"><div class="tag">Travou? Siga daí</div><div class="lbl">cada etapa tem o arquivo pronto no gabarito: <code>github.com/lvgalvao/ImersaoControlTower</code>, pasta <code>aulas/aula-02-engenheiro/vertice/</code>. Copie e continue</div></div>
+    <div class="card"><div class="tag">Travou? Siga daí</div><div class="lbl">cada etapa tem o arquivo pronto no gabarito: <code>github.com/lvgalvao/ImersaoControlTower</code>, pasta <code>aulas/aula-02-python-engenheiro/vertice/</code>. Copie e continue</div></div>
   </div>
   <p class="note" style="margin-top:30px;">A cada entrega, um ponto de controle: <b>chegou aqui? comenta OK no chat</b>. Primeiro um aquecimento em Python no Databricks; depois o terminal e o projeto.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
@@ -2343,7 +2343,7 @@ $$</pre>
     <tr><td>no such directory (volume)</td><td>a pasta nova não existe</td><td><code>databricks fs mkdir</code> antes do cp</td></tr>
     <tr><td>a IA leva 15 minutos</td><td>IA no histórico inteiro</td><td>só os 90 dias com bloqueio; regra no resto</td></tr>
   </table>
-  <p class="note" style="margin-top:18px;">Um prompt não entregou? O gabarito está em <code>aulas/aula-02-engenheiro/vertice/</code>: compare o arquivo.</p>
+  <p class="note" style="margin-top:18px;">Um prompt não entregou? O gabarito está em <code>aulas/aula-02-python-engenheiro/vertice/</code>: compare o arquivo.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
@@ -2613,7 +2613,7 @@ databricks bundle run vertice_farol --profile SEU-PERFIL</pre><div class="lbl">8
     <tr><td>3 · aprovação</td><td>a aba Decisões, gravando no <b>Lakebase</b> (Postgres) com o usuário e o horário</td></tr>
   </table>
   <pre class="code" style="margin-top:26px; font-size:20px;"><span class="c"># do zero, na ordem que funciona: Lakebase → contratos → Genie → app</span>
-bash aulas/aula-04-engenheiro-ia/torre-app/scripts/subir-tudo.sh SEU-PERFIL</pre>
+bash aulas/aula-04-produtos-de-dados-ia/torre-app/scripts/subir-tudo.sh SEU-PERFIL</pre>
   <p class="note" style="margin-top:20px;">O app é um usuário do Unity Catalog: <b>conceder-acesso.sh</b> dá USE e SELECT na gold e na silver antes do build. O primeiro acesso pede "Authorize", feito por uma pessoa.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>

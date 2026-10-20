@@ -10,9 +10,9 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status semanal com IA, a metric view mv_projetos, dashboard e Genie |
-| [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
-| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | o agente de contratos, o app da Torre e a decisão gravada no Lakebase |
+| [**2** · engenheiro de dados](aulas/aula-02-python-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status semanal com IA, a metric view mv_projetos, dashboard e Genie |
+| [**3** · cientista de dados](aulas/aula-03-modelagem-claude-code) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
+| [**4** · engenheiro de IA](aulas/aula-04-produtos-de-dados-ia) | 10 a 12 | o agente de contratos, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
@@ -20,8 +20,8 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 A noite 1 precisa estar feita: o catálogo `lakehouse_vertice` com a bronze
 carregada (13 tabelas). Se não estiver, rode o
-[`00-carregar-dados`](aulas/aula-01-analista/00-carregar-dados.py) e o
-[`01-ingestao-bronze.sql`](aulas/aula-01-analista/01-ingestao-bronze.sql).
+[`00-carregar-dados`](aulas/aula-01-analista-sql/00-carregar-dados.py) e o
+[`01-ingestao-bronze.sql`](aulas/aula-01-analista-sql/01-ingestao-bronze.sql).
 
 ```bash
 # 1 · a CLI do Databricks (v0.250 ou mais nova) e o login
@@ -33,12 +33,12 @@ databricks auth profiles                                # o seu aparece com Vali
 npm install -g @anthropic-ai/claude-code
 
 # 3 · conferir que a bronze está lá
-python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-01-analista-sql/99-verificacao.sql --profile <perfil>
 ```
 
-**A pasta `aulas/aula-02-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
+**A pasta `aulas/aula-02-python-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
 a preenche. A pasta `vertice/` ao lado é o gabarito. Se você já rodou antes, zere
-com `BUNDLE_DIR=aulas/aula-02-engenheiro/meu-vertice bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar`.
+com `BUNDLE_DIR=aulas/aula-02-python-engenheiro/meu-vertice bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil> --apagar`.
 
 Nos prompts abaixo, **troque `<perfil>` pelo seu profile**.
 

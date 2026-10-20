@@ -10,9 +10,9 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**2** · engenheiro de dados](aulas/aula-02-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status semanal com IA, a metric view mv_projetos, dashboard e Genie |
-| [**3** · cientista de dados](aulas/aula-03-cientista) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
-| [**4** · engenheiro de IA](aulas/aula-04-engenheiro-ia) | 10 a 12 | o agente de contratos, o app da Torre e a decisão gravada no Lakebase |
+| [**2** · engenheiro de dados](aulas/aula-02-python-engenheiro) | 1 a 6 | bundle, pipeline declarativo que integra as 3 ferramentas, status semanal com IA, a metric view mv_projetos, dashboard e Genie |
+| [**3** · cientista de dados](aulas/aula-03-modelagem-claude-code) | 7 a 9 | modelo de estouro em 30 dias no Unity Catalog e o score por projeto |
+| [**4** · engenheiro de IA](aulas/aula-04-produtos-de-dados-ia) | 10 a 12 | o agente de contratos, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
@@ -20,8 +20,8 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 A noite 1 precisa estar feita: o catálogo `lakehouse_vertice` com a bronze
 carregada (13 tabelas). Se não estiver, rode o
-[`00-carregar-dados`](aulas/aula-01-analista/00-carregar-dados.py) e o
-[`01-ingestao-bronze.sql`](aulas/aula-01-analista/01-ingestao-bronze.sql).
+[`00-carregar-dados`](aulas/aula-01-analista-sql/00-carregar-dados.py) e o
+[`01-ingestao-bronze.sql`](aulas/aula-01-analista-sql/01-ingestao-bronze.sql).
 
 ```bash
 # 1 · a CLI do Databricks (v0.250 ou mais nova) e o login
@@ -33,12 +33,12 @@ databricks auth profiles                                # o seu aparece com Vali
 npm install -g @anthropic-ai/claude-code
 
 # 3 · conferir que a bronze está lá
-python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-01-analista-sql/99-verificacao.sql --profile <perfil>
 ```
 
-**A pasta `aulas/aula-02-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
+**A pasta `aulas/aula-02-python-engenheiro/meu-vertice/` nasce vazia** — é o prompt 1 que
 a preenche. A pasta `vertice/` ao lado é o gabarito. Se você já rodou antes, zere
-com `BUNDLE_DIR=aulas/aula-02-engenheiro/meu-vertice bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar`.
+com `BUNDLE_DIR=aulas/aula-02-python-engenheiro/meu-vertice bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil> --apagar`.
 
 Nos prompts abaixo, **troque `<perfil>` pelo seu profile**.
 
@@ -61,7 +61,7 @@ errado"**. Se for a primeira vez, siga por eles.
 
 ### Prompt 1 · O bundle
 
-*o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-01-bundle.md)
+*o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-01-bundle.md)
 
 ```
 Leia o CLAUDE.md da raiz do repositório antes de começar.
@@ -116,7 +116,7 @@ Rode e me mostre a saída de cada um:
 
 ### Prompt 2 · Silver
 
-*as três ferramentas viram uma* · noite 2 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-02-silver.md)
+*as três ferramentas viram uma* · noite 2 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-02-silver.md)
 
 ```
 Continue o bundle na raiz deste repositório. A bronze está
@@ -202,7 +202,7 @@ Rode e me mostre a saída:
 
 ### Prompt 3 · Gold
 
-*o produto de dados e as perguntas do dono* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-03-gold.md)
+*o produto de dados e as perguntas do dono* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-03-gold.md)
 
 ```
 Continue o bundle na raiz deste repositório. A silver está pronta.
@@ -262,7 +262,7 @@ Rode e me mostre a saída:
 
 ### Prompt 4 · Texto com IA
 
-*o status semanal vira coluna* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
+*o status semanal vira coluna* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-04-texto-com-ia.md)
 
 ```
 Continue o bundle na raiz deste repositório. Agora o texto livre
@@ -309,7 +309,7 @@ Rode e me mostre a saída:
 
 ### Prompt 5 · Métricas governadas
 
-*o KPI definido uma vez só* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-05-metricas.md)
+*o KPI definido uma vez só* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-python-engenheiro/prd/prompt-05-metricas.md)
 
 ```
 Continue o bundle na raiz deste repositório. Agora os KPIs
@@ -346,7 +346,7 @@ Rode e me mostre a saída:
 ## Fim da noite 2 · confira antes de seguir
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-02-engenheiro/prd/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-02-python-engenheiro/prd/99-verificacao.sql --profile <perfil>
 # 20 linhas, todas "ok"
 ```
 
@@ -365,7 +365,7 @@ baterem, não adianta seguir: a noite 3 treina em cima deles.
 
 ### Prompt 6 · Features
 
-*o que descreve um projeto que vai estourar* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
+*o que descreve um projeto que vai estourar* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/prd/prompt-01-features.md)
 
 ```
 Leia o CLAUDE.md da raiz. Vamos continuar o MESMO bundle
@@ -422,7 +422,7 @@ metricas_governadas. Rode e me mostre a saída:
 
 ### Prompt 7 · Modelo e MLflow
 
-*o baseline primeiro* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-02-modelo.md)
+*o baseline primeiro* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/prd/prompt-02-modelo.md)
 
 ```
 Continue o bundle na raiz deste repositório. Crie o notebook
@@ -478,7 +478,7 @@ Rode e me mostre a saída:
 
 ### Prompt 8 · Score em lote
 
-*a probabilidade de estouro em 30 dias* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-03-score.md)
+*a probabilidade de estouro em 30 dias* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/prd/prompt-03-score.md)
 
 ```
 Continue o bundle na raiz deste repositório. Crie o notebook
@@ -517,7 +517,7 @@ Rode o job inteiro e me mostre o top 25:
 
 ### Prompt 9 · Dashboard e Genie
 
-*o dono pergunta em português* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-04-dashboard-e-genie.md)
+*o dono pergunta em português* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/prd/prompt-04-dashboard-e-genie.md)
 
 ```
 Continue o bundle na raiz deste repositório. O pipeline, a IA e
@@ -584,7 +584,7 @@ Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 ## Fim da noite 3 · confira antes de seguir
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-03-cientista/99-verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/99-verificacao.sql --profile <perfil>
 # 17 linhas, todas "ok"
 ```
 
@@ -603,7 +603,7 @@ O job `vertice_farol` agora tem **9 tarefas** e roda verde em ~4 a 5 min. A noit
 
 ### Prompt 10 · O agente que lê contrato
 
-*o PDF que ninguém lê vira resposta* · noite 4 · Genie publicado · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-01-agente-de-contratos.md)
+*o PDF que ninguém lê vira resposta* · noite 4 · Genie publicado · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-01-agente-de-contratos.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md antes de começar. Use a skill
@@ -658,7 +658,7 @@ Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
 
 ### Prompt 11 · O app da Torre
 
-*a Torre na tela do dono* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-02-app.md)
+*a Torre na tela do dono* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-02-app.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
@@ -711,7 +711,7 @@ databricks-app-design.
 
 ### Prompt 12 · A aprovação no Lakebase
 
-*a decisão fica registrada* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-engenheiro-ia/prd/prompt-03-aprovacao-lakebase.md)
+*a decisão fica registrada* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-03-aprovacao-lakebase.md)
 
 ```
 Leia aulas/aula-04-engenheiro-ia/prd/CLAUDE.md. Use as skills databricks-apps e
@@ -754,8 +754,8 @@ Cada noite tem o próprio script de limpeza. Sem `--apagar`, eles apenas
 **mostram** o que fariam. Nenhum deles toca na bronze da noite 1.
 
 ```bash
-bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil>             # simula
-bash aulas/aula-02-engenheiro/prd/00-reset.sh <perfil> --apagar    # apaga silver, gold e os recursos do bundle
-bash aulas/aula-03-cientista/prd/99-limpar-aula-03.sh <perfil>     # simula; --apagar tira features, modelo e score
-bash aulas/aula-04-engenheiro-ia/prd/99-limpar-aula-04.sh <perfil> # simula; --apagar tira contratos, app e Lakebase
+bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil>             # simula
+bash aulas/aula-02-python-engenheiro/prd/00-reset.sh <perfil> --apagar    # apaga silver, gold e os recursos do bundle
+bash aulas/aula-03-modelagem-claude-code/prd/99-limpar-aula-03.sh <perfil>     # simula; --apagar tira features, modelo e score
+bash aulas/aula-04-produtos-de-dados-ia/prd/99-limpar-aula-04.sh <perfil> # simula; --apagar tira contratos, app e Lakebase
 ```
