@@ -59,22 +59,6 @@ errado"**. Se for a primeira vez, siga por eles.
 
 ## Noite 2 · o pipeline nasce
 
-### Prompt 0 · Aquecimento: uma API em Python
-
-*o dado não chega pronto* · noite 2 · sem deploy: fs cp + read_files · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-00-api.md)
-
-```
-Busque os feriados nacionais de 2026 na API
-https://brasilapi.com.br/api/feriados/v1/2026
-com um script Python (requests). Salve a resposta
-em feriados_2026.json, suba o arquivo para
-/Volumes/lakehouse_vertice/bronze/raw/feriados/
-e crie a tabela lakehouse_vertice.bronze.feriados
-com read_files. No fim, mostre os feriados de
-novembro com o dia da semana.
-Use o profile <perfil>.
-```
-
 ### Prompt 1 · O bundle
 
 *o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-01-bundle.md)

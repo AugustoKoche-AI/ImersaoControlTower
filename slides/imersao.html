@@ -1608,7 +1608,7 @@ O que vai dar errado no próximo mês?</pre>
     <div class="card"><div class="tag">O nível de hoje</div><div class="lbl">nenhum código à mão: você copia o prompt e o Claude Code escreve. Começamos montando o terminal juntos (6 passos)</div></div>
     <div class="card"><div class="tag">Travou? Siga daí</div><div class="lbl">cada etapa tem o arquivo pronto no gabarito: <code>github.com/lvgalvao/ImersaoControlTower</code>, pasta <code>aulas/aula-02-engenheiro/vertice/</code>. Copie e continue</div></div>
   </div>
-  <p class="note" style="margin-top:30px;">A cada entrega, um ponto de controle: <b>chegou aqui? comenta OK no chat</b>. Primeiro o terminal, depois uma API em Python, depois o projeto.</p>
+  <p class="note" style="margin-top:30px;">A cada entrega, um ponto de controle: <b>chegou aqui? comenta OK no chat</b>. Primeiro um aquecimento em Python no Databricks; depois o terminal e o projeto.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
@@ -1617,7 +1617,7 @@ O que vai dar errado no próximo mês?</pre>
   <h2>Ontem deu certo. <span class="grad">Mas foi tudo à mão</span></h2>
   <div class="grid g4" style="gap:24px; margin-top:10px;">
     <div class="card"><div class="tag">bronze</div><div class="num sm">9</div><div class="lbl">tabelas de CSV, Excel, JSON e XML, lidas sem converter nada</div></div>
-    <div class="card"><div class="tag">pergunta 1</div><div class="num sm">17</div><div class="lbl">projetos em risco, 7 críticos, com as 3 ferramentas juntadas numa view</div></div>
+    <div class="card"><div class="tag">pergunta 1</div><div class="num sm">17</div><div class="lbl">projetos em risco, 7 críticos, com as 3 ferramentas juntadas à mão</div></div>
     <div class="card"><div class="tag">pergunta 2</div><div class="num sm">R$ 6,47 mi</div><div class="lbl">de estouro previsto, calculado em SQL</div></div>
     <div class="card hl"><div class="tag">Genie</div><div class="num sm">0 de 4</div><div class="lbl">perguntas do dono certas na bronze: "nenhum atraso custa nada"</div></div>
   </div>
@@ -1625,22 +1625,7 @@ O que vai dar errado no próximo mês?</pre>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
-<!-- ------------------------------------------------ terminal, Python e ingestão por API (prompt 0) -->
-
-<section class="slide">
-  <div class="kicker">Noite 2 · antes do prompt 1 · o terminal</div>
-  <h2>Seis passos, <span class="grad">uma vez só</span></h2>
-  <div class="grid g3" style="gap:24px;">
-    <div class="card"><div class="tag">1 · Python e Git</div><div class="lbl"><code>python3 --version</code>: 3.10 a 3.12. Evite o 3.13</div></div>
-    <div class="card"><div class="tag">2 · a CLI do Databricks</div><div class="lbl"><code>brew install databricks</code> no Mac, <code>winget</code> no Windows. v0.250 ou mais nova</div></div>
-    <div class="card hl"><div class="tag">3 · o login</div><div class="lbl"><code>databricks auth login --profile vertice</code>. Viu <b>refresh token is invalid</b>? Rode de novo</div></div>
-    <div class="card"><div class="tag">4 · o seu repositório</div><div class="lbl"><code>git init</code> numa pasta nova, o <code>CLAUDE.md</code> do curso na raiz e <code>gh repo create</code></div></div>
-    <div class="card"><div class="tag">5 · o Claude Code</div><div class="lbl">abra na raiz do repositório e instale as skills: <code>databricks aitools install</code></div></div>
-    <div class="card"><div class="tag">6 · as travas</div><div class="lbl"><code>.claude/settings.json</code> proíbe <code>bundle destroy</code>, <code>rm -rf</code> e <code>push --force</code></div></div>
-  </div>
-  <p class="note" style="margin-top:26px;">Daqui em diante, todo comando leva <b>--profile</b>. O profile é o apelido do seu login.</p>
-  <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
-</section>
+<!-- ------------------------------------------------ aquecimento: Python e API no Databricks, depois o terminal -->
 
 <section class="slide">
   <div class="kicker">Ingestão · na vida real</div>
@@ -1700,105 +1685,61 @@ O que vai dar errado no próximo mês?</pre>
 </section>
 
 <section class="slide">
-  <div class="kicker">Ingestão · uma API em Python</div>
+  <div class="kicker">Aquecimento · uma API em Python</div>
   <h2>Extrair, pousar, <span class="grad">carregar</span></h2>
   <div class="diagrama" style="height:300px; flex:none;"><pre class="mermaid">
 flowchart LR
-  A["BrasilAPI<br/>feriados de 2026"] -- "1 · extrair<br/>Python + requests" --> B["feriados_2026.json"]
-  B -- "2 · pousar<br/>databricks fs cp" --> C["volume<br/>bronze/raw/feriados/"]
+  A["BrasilAPI<br/>feriados de 2026"] -- "1 · extrair<br/>requests" --> B["lista no Python"]
+  B -- "2 · pousar<br/>open() + json.dump" --> C["volume<br/>bronze/raw/feriados/"]
   C -- "3 · carregar<br/>read_files" --> D["bronze.feriados"]
   classDef hl fill:#0059DB,stroke:#22C2F4,color:#fff
   class D hl
   </pre></div>
   <div class="grid g2" style="gap:24px; margin-top:22px; grid-template-columns: 1.3fr 1fr;">
-    <pre class="code" style="font-size:19px;"><span class="k">import</span> json, requests
-url = <span class="s">"https://brasilapi.com.br/api/feriados/v1/2026"</span>
-resposta = requests.get(url, timeout=30)
-resposta.raise_for_status()   <span class="c"># API caiu? para aqui</span>
-<span class="k">with</span> open(<span class="s">"feriados_2026.json"</span>, <span class="s">"w"</span>) <span class="k">as</span> f:
-    json.dump(resposta.json(), f)</pre>
+    <pre class="code" style="font-size:19px;"><span class="k">import</span> requests, json, os
+resposta = requests.get(<span class="s">"https://brasilapi.com.br/api/feriados/v1/2026"</span>)
+feriados = resposta.json()                  <span class="c"># 1 · extrair</span>
+pasta = <span class="s">"/Volumes/lakehouse_vertice/bronze/raw/feriados"</span>
+os.makedirs(pasta, exist_ok=True)
+<span class="k">with</span> open(<span class="s">f"{pasta}/feriados_2026.json"</span>, <span class="s">"w"</span>) <span class="k">as</span> f:
+    json.dump(feriados, f)                 <span class="c"># 2 · pousar</span></pre>
     <div class="card hl"><div class="tag">Por que pousar o arquivo</div><div class="lbl">o JSON fica no volume do jeito que veio: dá para reprocessar sem chamar a API de novo. É o mesmo caminho da noite 1</div></div>
   </div>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Prompt 0 · aquecimento no Claude Code</div>
-  <h2>Uma fonte nova, <span class="grad">em um prompt</span></h2>
-  <div class="grid g2" style="gap:30px; grid-template-columns: 1.35fr 1fr; align-items:start;">
-    <pre class="code" style="font-size:20px; white-space:pre-wrap;">Busque os feriados nacionais de 2026 na API
-https://brasilapi.com.br/api/feriados/v1/2026
-com um script Python (requests). Salve a resposta
-em feriados_2026.json, suba o arquivo para
-/Volumes/lakehouse_vertice/bronze/raw/feriados/
-e crie a tabela lakehouse_vertice.bronze.feriados
-com read_files. No fim, mostre os feriados de
-novembro com o dia da semana.
-Use o profile vertice.</pre>
-    <div class="card hl"><div class="tag">O que o Claude Code faz</div><ul class="list">
-      <li>escreve e roda o script Python</li>
-      <li>cria a pasta e copia o arquivo para o volume</li>
-      <li>roda o <code>read_files</code> no warehouse</li>
-      <li>pede licença antes de cada comando: leia e aprove</li></ul>
+  <div class="kicker">Aquecimento · Python no Databricks</div>
+  <h2>Quatro células, <span class="grad">uma fonte nova</span></h2>
+  <div class="grid g2" style="gap:30px; grid-template-columns: 1fr 1fr; align-items:start;">
+    <div class="card"><div class="tag">No notebook</div><ul class="list">
+      <li><b>New › Notebook</b>, com a computação <b>serverless</b> (ela tem internet)</li>
+      <li><b>célula 1 · extrair</b>: <code>requests.get</code> na API</li>
+      <li><b>célula 2 · pousar</b>: o JSON no volume, com <code>open()</code></li>
+      <li><b>célula 3 · carregar</b>: <code>read_files</code> cria a <code>bronze.feriados</code></li>
+      <li><b>célula 4 · conferir</b>: os feriados de novembro</li></ul></div>
+    <div class="card hl"><div class="tag">O código</div>
+      <div class="lbl">está no README da aula 02, célula por célula, com botão de copiar</div>
       <div class="tag" style="margin-top:22px;">Travou?</div>
-      <div class="lbl">baixe o gabarito do GitHub do curso e rode: <code>python3 00-buscar-feriados.py --profile vertice</code></div></div>
+      <div class="lbl"><b>Workspace › Import › URL</b> e cole o link do notebook pronto, que está no README: <code>00-api-feriados.py</code></div></div>
   </div>
+  <p class="note" style="margin-top:26px;">Ainda sem terminal e sem Claude Code: primeiro você vê o Python fazendo o trabalho. Depois o Claude Code escreve o resto do projeto.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Ponto de controle · a API</div>
+  <div class="kicker">Ponto de controle · aquecimento</div>
   <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
   <div class="grid g2" style="gap:30px;">
     <div class="card hl"><div class="tag">Na sua tela</div><div class="num md">2 em novembro</div><div class="lbl">02/11 (segunda) e 20/11 (sexta). O 15/11 cai num domingo. No ano, 14 feriados na <code>bronze.feriados</code></div></div>
-    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">o erro <code>no such directory</code> é a pasta nova: <code>databricks fs mkdir</code> antes do cp. Ou rode o <code>00-buscar-feriados.py</code> do GitHub do curso</div></div>
-  </div>
-  <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
-</section>
-
-<!-- ------------------------------------------------ o exemplo 05 que ficou da noite 1 -->
-
-<section class="slide">
-  <div class="kicker">Antes do prompt 1 · o exemplo 05 que ficou para trás</div>
-  <h2>As três ferramentas <span class="grad">numa fila só</span></h2>
-  <div class="grid g2" style="gap:30px; grid-template-columns: 1.25fr 1fr; align-items:start;">
-    <div>
-      <pre class="code" style="font-size:20px;"><span class="k">SELECT</span> <span class="s">'excel'</span>     <span class="k">AS</span> ferramenta, COUNT(*) <span class="k">AS</span> linhas
-<span class="k">FROM</span> lakehouse_vertice.bronze.excel_tarefas
-<span class="k">UNION ALL</span>
-<span class="k">SELECT</span> <span class="s">'clickup'</span>,   COUNT(*)
-<span class="k">FROM</span> lakehouse_vertice.bronze.clickup_tarefas
-<span class="k">UNION ALL</span>
-<span class="k">SELECT</span> <span class="s">'msproject'</span>, COUNT(*)
-<span class="k">FROM</span> lakehouse_vertice.bronze.msproject_tarefas</pre>
-      <p class="note" style="margin-top:20px;"><b>UNION ALL</b> empilha uma consulta embaixo da outra. A regra: as mesmas colunas, na mesma ordem. O resto do exemplo é fazer as três ferramentas terem as mesmas colunas.</p>
-    </div>
-    <div class="card hl"><div class="tag">Rode agora · 5 minutos</div>
-      <ul class="list">
-        <li>abra <code>exemplo-01-a-05-sql-na-bronze.sql</code></li>
-        <li>exemplo 05, <b>bloco 1</b>: o UNION ALL ao lado</li>
-        <li>exemplo 05, <b>bloco 3</b>: cria a view <code>bronze.rascunho_tarefas</code>, com 4.917 tarefas de 60 projetos</li>
-      </ul>
-      <div class="tag" style="margin-top:22px;">Por que agora</div>
-      <div class="lbl">a verificação da noite 1 e o prompt 2 de hoje leem essa view. Sem ela, dá erro</div>
-    </div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">a API não respondeu? Confira se a computação é <b>serverless</b>. Ou importe o notebook pronto pelo link do README</div></div>
   </div>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
 <section class="slide">
-  <div class="kicker">Ponto de controle · exemplo 05</div>
-  <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
-  <div class="grid g2" style="gap:30px;">
-    <div class="card hl"><div class="tag">O seu número</div><div class="num">4.917</div><div class="lbl">tarefas de 60 projetos na view <code>bronze.rascunho_tarefas</code></div></div>
-    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">o exemplo inteiro está pronto em <code>aulas/aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql</code>. Rode o bloco 3 de novo, de cima a baixo</div></div>
-  </div>
-  <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
-</section>
-
-<section class="slide">
-  <div class="kicker">Antes do prompt 1 · por que o rascunho não é produto</div>
-  <h2>O rascunho funciona. <span class="grad">Mas é frágil</span></h2>
+  <div class="kicker">Antes do prompt 1 · por que juntar à mão não é produto</div>
+  <h2>Juntar à mão funciona. <span class="grad">Mas é frágil</span></h2>
   <div class="grid g2" style="gap:24px;">
     <div class="card"><div class="tag">Excel · a linha de TOTAL</div><div class="num sm">2×</div><div class="lbl">1.141.354 horas com o TOTAL, 570.677 sem. Esqueça 20 linhas e o Excel inteiro dobra</div></div>
     <div class="card"><div class="tag">MS Project · as tarefas-resumo</div><div class="num sm">3×</div><div class="lbl">1.257.975 horas com as 105 tarefas-resumo, 419.325 só nas 1.155 tarefas de verdade</div></div>
@@ -1806,6 +1747,21 @@ Use o profile vertice.</pre>
     <div class="card"><div class="tag">Compras · a mesma consultoria</div><div class="num sm">4 grafias</div><div class="lbl">CodeForge Consultoria Ltda, CODEFORGE CONSULTORIA LTDA, Codeforge Consultoria e Code Forge Consultoria</div></div>
   </div>
   <p class="note" style="margin-top:26px;">Cada regra escrita uma vez, com teste, num pipeline que roda sozinho: é o prompt 2.</p>
+  <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
+</section>
+
+<section class="slide">
+  <div class="kicker">Noite 2 · antes do prompt 1 · o terminal</div>
+  <h2>Seis passos, <span class="grad">uma vez só</span></h2>
+  <div class="grid g3" style="gap:24px;">
+    <div class="card"><div class="tag">1 · Python e Git</div><div class="lbl"><code>python3 --version</code>: 3.10 a 3.12. Evite o 3.13</div></div>
+    <div class="card"><div class="tag">2 · a CLI do Databricks</div><div class="lbl"><code>brew install databricks</code> no Mac, <code>winget</code> no Windows. v0.250 ou mais nova</div></div>
+    <div class="card hl"><div class="tag">3 · o login</div><div class="lbl"><code>databricks auth login --profile vertice</code>. Viu <b>refresh token is invalid</b>? Rode de novo</div></div>
+    <div class="card"><div class="tag">4 · o seu repositório</div><div class="lbl"><code>git init</code> numa pasta nova, o <code>CLAUDE.md</code> do curso na raiz e <code>gh repo create</code></div></div>
+    <div class="card"><div class="tag">5 · o Claude Code</div><div class="lbl">abra na raiz do repositório e instale as skills: <code>databricks aitools install</code></div></div>
+    <div class="card"><div class="tag">6 · as travas</div><div class="lbl"><code>.claude/settings.json</code> proíbe <code>bundle destroy</code>, <code>rm -rf</code> e <code>push --force</code></div></div>
+  </div>
+  <p class="note" style="margin-top:26px;">Daqui em diante, todo comando leva <b>--profile</b>. O profile é o apelido do seu login.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 
@@ -1842,7 +1798,6 @@ Use o profile vertice.</pre>
 databricks bundle run vertice_farol --profile SEU-PERFIL</pre></div>
     <table class="t" style="font-size:21px;">
       <tr><th>Prompt</th><th>O que nasce</th><th class="r">Tempo</th></tr>
-      <tr><td>0</td><td>API → bronze.feriados (aquecimento)</td><td class="r">~1 min</td></tr>
       <tr><td>1</td><td>bundle + conferência da bronze</td><td class="r">~40 s</td></tr>
       <tr><td>2</td><td>silver: as 3 ferramentas viram uma</td><td class="r">~2 min</td></tr>
       <tr class="cur"><td>3</td><td>gold + testes: a modelagem</td><td class="r">~3 min</td></tr>
@@ -2838,11 +2793,11 @@ data_fim_vigencia     2026-12-31</pre><div class="lbl">Vira coluna: filtra, soma
   <table class="t" style="font-size:22px;">
     <tr><th>Noite</th><th>Prompts</th><th>O que nasce</th></tr>
     <tr><td>1 · segunda · analista</td><td>nenhum</td><td>tudo no navegador: bronze, SQL, dashboard e Genie sem curadoria</td></tr>
-    <tr class="cur"><td>2 · terça · engenheiro</td><td>0 a 5</td><td>API em Python (aquecimento), bundle, silver, gold, IA no texto e métrica</td></tr>
+    <tr class="cur"><td>2 · terça · engenheiro</td><td>1 a 5</td><td>bundle, silver, gold, IA no texto e métrica (antes, um aquecimento: Python no notebook buscando uma API)</td></tr>
     <tr><td>3 · quarta · cientista</td><td>6 a 9</td><td>features, modelo, score e o dono perguntando: dashboard e Genie</td></tr>
     <tr><td>4 · quinta · engenheiro de IA</td><td>10 a 12</td><td>agente de contratos, o app da Torre e as decisões no Lakebase</td></tr>
   </table>
-  <p class="note" style="margin-top:24px;">O prompt 0 é o aquecimento: Python buscando uma API. Os 12 seguintes constroem a Torre, e cada um deixa algo novo no workspace.</p>
+  <p class="note" style="margin-top:24px;">Cada prompt deixa algo novo no workspace. Antes do primeiro, um aquecimento sem IA: Python no notebook buscando uma API.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
 

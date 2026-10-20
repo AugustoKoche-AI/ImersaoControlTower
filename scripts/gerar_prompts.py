@@ -20,7 +20,6 @@ A2, A3, A4 = "aulas/aula-02-engenheiro/prd", "aulas/aula-03-cientista/prd", "aul
 
 # (noite, título, subtítulo, caminho, deploy) — o número do prompt é a posição na lista
 PROMPTS = [
-    (2, "Aquecimento: uma API em Python", "o dado não chega pronto", f"{A2}/prompt-00-api.md", "sem deploy: fs cp + read_files"),
     (2, "O bundle", "o projeto nasce como código", f"{A2}/prompt-01-bundle.md", "bundle deploy + run"),
     (2, "Silver", "as três ferramentas viram uma", f"{A2}/prompt-02-silver.md", "bundle deploy + run do pipeline"),
     (2, "Gold", "o produto de dados e as perguntas do dono", f"{A2}/prompt-03-gold.md", "bundle deploy + run"),
@@ -52,7 +51,7 @@ def extrair(caminho: str) -> str:
 
 def main() -> None:
     texto = (RAIZ / "scripts/prompts-cabecalho.md").read_text(encoding="utf-8")
-    n_total = -1   # o primeiro é o prompt 0, o aquecimento
+    n_total = 0
     for noite in (2, 3, 4):
         da_noite = [p for p in PROMPTS if p[0] == noite]
         existentes = [p for p in da_noite if (RAIZ / p[3]).exists()]
@@ -73,7 +72,7 @@ def main() -> None:
             texto += (RAIZ / "scripts" / INTERVALO[noite]).read_text(encoding="utf-8")
     texto += (RAIZ / "scripts/prompts-rodape.md").read_text(encoding="utf-8")
     (RAIZ / "PROMPTS.md").write_text(texto, encoding="utf-8")
-    print(f"prompt 0 + {n_total} prompts → PROMPTS.md")
+    print(f"{n_total} prompts → PROMPTS.md")
 
 
 if __name__ == "__main__":

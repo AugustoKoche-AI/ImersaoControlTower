@@ -5,7 +5,7 @@
 **Ao fim desta noite você terá** a Torre de Controle da Vértice rodando sozinha: Excel, ClickUp e
 MS Project juntos numa tabela só, os KPIs de prazo e custo calculados com teste, a causa de cada
 atraso tirada do texto do status por IA e a fórmula de cada KPI num lugar só. Tudo como código: um
-aquecimento em Python (uma API nova na bronze) e **cinco prompts no Claude Code**, num job que roda toda segunda às 6h.
+aquecimento em Python no Databricks (uma API nova na bronze) e **cinco prompts no Claude Code**, num job que roda toda segunda às 6h.
 
 > **Mudou em 20/10:** o dashboard e o Genie (o antigo prompt 6) passaram para a [noite 3](../aula-03-cientista),
 > depois do modelo. Hoje a noite fecha na modelagem: silver, gold e testes.
@@ -115,7 +115,79 @@ bronze.entregas_forn. ───► silver.entregas_fornecedor ──────
 
 ---
 
-## 🚀 Antes do prompt 0: o passo a passo, do zero
+## 🔥 Aquecimento: Python no Databricks, antes do terminal
+
+Na empresa, o dado não chega pronto: alguém precisa ir buscar. Quando a fonte não tem conector, entra o
+Python. O caminho é o mesmo da noite 1: **extrair** (o Python pede à API), **pousar** (o JSON no volume,
+do jeito que veio) e **carregar** (o `read_files` cria a tabela na bronze). Tudo no navegador, sem IA:
+primeiro você vê o Python fazendo o trabalho.
+
+1. No Databricks: **New › Notebook**, com a computação **serverless** (ela tem internet).
+2. Cole uma célula de cada vez e rode (Shift+Enter).
+
+**Célula 1 · extrair**
+
+```python
+# 1 · EXTRAIR: o Python pede o dado à API
+import requests                # conversa com a API (HTTP)
+
+url = "https://brasilapi.com.br/api/feriados/v1/2026"
+resposta = requests.get(url, timeout=30)
+resposta.raise_for_status()    # se a API cair, para aqui com o erro, em vez de seguir com nada
+
+feriados = resposta.json()     # o JSON vira uma lista do Python: um dicionário por feriado
+print(len(feriados), "feriados")
+feriados[:3]
+```
+
+**Célula 2 · pousar**
+
+```python
+# 2 · POUSAR: o arquivo vai para o volume, do jeito que veio
+import json, os               # json e os já vêm no Python
+
+pasta = "/Volumes/lakehouse_vertice/bronze/raw/feriados"
+os.makedirs(pasta, exist_ok=True)              # a pasta nova precisa existir
+
+with open(f"{pasta}/feriados_2026.json", "w") as arquivo:
+    json.dump(feriados, arquivo, ensure_ascii=False)
+
+os.listdir(pasta)                              # deve aparecer: ['feriados_2026.json']
+```
+
+**Célula 3 · carregar**
+
+```sql
+%sql
+-- 3 · CARREGAR: o mesmo read_files da noite 1, agora numa pasta nova do volume
+CREATE OR REPLACE TABLE lakehouse_vertice.bronze.feriados
+COMMENT 'Feriados nacionais de 2026, da BrasilAPI. Ingestão por API: Python busca, o arquivo pousa no volume, o read_files carrega.'
+AS SELECT date AS data, name AS feriado, type AS tipo, weekday AS dia_da_semana,
+          _metadata.file_name AS arquivo
+FROM read_files('/Volumes/lakehouse_vertice/bronze/raw/feriados/', format => 'json', multiLine => true)
+```
+
+**Célula 4 · conferir**
+
+```sql
+%sql
+-- Deve aparecer: 02/11 (segunda), 15/11 (domingo) e 20/11 (sexta).
+-- 2 dias úteis a menos em novembro, logo no começo do freeze da Black Friday.
+SELECT data, feriado, dia_da_semana
+FROM lakehouse_vertice.bronze.feriados
+WHERE data BETWEEN '2026-11-01' AND '2026-11-30'
+ORDER BY data
+```
+
+Deve aparecer: 14 feriados no ano; em novembro, **2 em dia útil** (02/11 e 20/11; o 15/11 é domingo),
+bem no começo do freeze da Black Friday.
+
+**Travou?** Importe o notebook pronto: **Workspace › Import › URL** e cole
+`https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/00-api-feriados.py`
+
+---
+
+## 🚀 Antes do prompt 1: o passo a passo, do zero
 
 A noite 1 foi toda pelo navegador. A noite 2 precisa de **terminal** (a tela onde se digitam
 comandos). Siga na ordem; cada passo termina com um comando que **confere** se deu certo.
@@ -173,7 +245,6 @@ gabarito, slides) fica no GitHub: <https://github.com/lvgalvao/ImersaoControlTow
 
 ```bash
 python3 --version      # 3.10 a 3.12. Evite o 3.13 com as bibliotecas do Databricks
-pip3 install requests  # a biblioteca do prompt 0
 ```
 
 **Passo 5 · A CLI do Databricks** (o programa que conversa com o seu workspace)
@@ -207,12 +278,10 @@ Viu `refresh token is invalid` ou `Valid: NO`? Rode o `auth login` de novo.
 ```bash
 databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile vertice
 # apontamentos, clickup_tarefas, colaboradores, custos, entregas_fornecedor,
-# excel_tarefas, msproject_tarefas, projetos, status_semanal (+ rascunho_tarefas, do exemplo 05)
+# excel_tarefas, msproject_tarefas, projetos, status_semanal (+ feriados, do aquecimento)
 ```
 
-Falta o `rascunho_tarefas`? Rode o bloco 3 do exemplo 05 no SQL Editor
-([`exemplo-01-a-05-sql-na-bronze.sql`](../aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql)). Faltam tabelas?
-Faça a noite 1 primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
+Faltam tabelas? Faça a noite 1 primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
 
 **Passo 8 · O Claude Code**
 
@@ -285,25 +354,11 @@ Pronto. Agora é prompt a prompt.
 
 ---
 
-<!-- prompts:inicio · gerado de prd/prompt-00..05-*.md (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e gere de novo. -->
+<!-- prompts:inicio · gerado de prd/prompt-01..05-*.md (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e gere de novo. -->
 ## 📋 Os prompts da noite, prontos para copiar
 
 Cole um de cada vez no Claude Code, na raiz do seu repositório (`projeto-farol`). Espere terminar,
-confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`.
-
-### Prompt 0 · Aquecimento: uma API em Python (~1 min)
-
-```
-Busque os feriados nacionais de 2026 na API
-https://brasilapi.com.br/api/feriados/v1/2026
-com um script Python (requests). Salve a resposta
-em feriados_2026.json, suba o arquivo para
-/Volumes/lakehouse_vertice/bronze/raw/feriados/
-e crie a tabela lakehouse_vertice.bronze.feriados
-com read_files. No fim, mostre os feriados de
-novembro com o dia da semana.
-Use o profile vertice.
-```
+confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`. Antes do prompt 1, faça o aquecimento (lá em cima).
 
 ### Prompt 1 · O bundle: o projeto vira código (~40 s)
 
@@ -591,7 +646,6 @@ do Free Edition já medidas.
 
 | # | Arquivo | O que entrega | Tempo medido |
 |---|---|---|---|
-| 0 | [`prompt-00-api.md`](prd/prompt-00-api.md) | aquecimento: API em Python → `bronze.feriados` | ~1 min |
 | 1 | [`prompt-01-bundle.md`](prd/prompt-01-bundle.md) | bundle + job + conferência da bronze | ~40 s |
 | 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline, `silver.tarefas` + 6 tabelas | ~2 min |
 | 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | 3 tabelas gold (fotografia, filme, pessoas) + 10 testes | ~3 min |
@@ -599,19 +653,6 @@ do Free Edition já medidas.
 | 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | a metric view `mv_projetos` | ~10 s |
 
 Se um prompt não entregar, o **gabarito** está em [`vertice/`](vertice): compare o arquivo.
-
-### Prompt 0 · Aquecimento: uma fonte nova, por API
-
-**O que você pede:** um script Python que busca os feriados de 2026 na BrasilAPI, salva o JSON, sobe
-o arquivo para o volume (`/Volumes/lakehouse_vertice/bronze/raw/feriados/`) e cria a
-`bronze.feriados` com `read_files`.
-
-**A ideia:** na empresa, o dado não chega pronto. Quando a fonte não tem conector, entra o Python. E o
-caminho é o mesmo da noite 1: **extrair** (requests), **pousar** (o arquivo no volume, do jeito que
-veio) e **carregar** (`read_files`).
-
-**O que conferir:** 14 feriados no ano; em novembro, 2 em dia útil (02/11 e 20/11; o 15/11 é
-domingo), bem no começo do freeze da Black Friday. Travou? `curl -fsSLO https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/00-buscar-feriados.py && python3 00-buscar-feriados.py --profile vertice`.
 
 ### Prompt 1 · O projeto vira código
 
@@ -650,7 +691,7 @@ cada uma do seu jeito e empilha todas na `silver.tarefas`, com as **mesmas colun
 - **`EXPECT` é contrato.** Se uma tarefa ficar sem projeto, ou um % passar de 100, o pipeline para
   em vez de gravar errado.
 
-**Por que o rascunho de ontem não serve como produto:** ele funciona, mas é frágil. Esqueça a linha
+**Por que juntar à mão não serve como produto:** funciona, mas é frágil. Esqueça a linha
 de `TOTAL` da planilha e as horas do Excel dobram. Esqueça as tarefas-resumo do Project e as horas
 dobram de novo. Use `try_cast` no custo com vírgula decimal e **R$ 5,4 milhões somem sem erro**
 (187,94 em vez de 193,35). O prompt 2 escreve cada uma dessas regras uma vez, com teste.
@@ -857,8 +898,8 @@ python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 | Caminho | O que é |
 |---|---|
 | `prd/CLAUDE.md` | contexto do projeto para o Claude Code |
-| `prd/prompt-00..05-*.md` | o aquecimento e os 5 prompts, com o que mostrar, o que falar e "se der errado" |
-| `00-buscar-feriados.py` | o gabarito do prompt 0: busca a API, pousa no volume e carrega a bronze |
+| `prd/prompt-01..05-*.md` | os 5 prompts, com o que mostrar, o que falar e "se der errado" |
+| `00-api-feriados.py` | o notebook do aquecimento: busca a API, pousa no volume e carrega a bronze |
 | `prd/genie-benchmark.json` | 20 perguntas com o SQL de referência |
 | `prd/99-verificacao.sql` | os 20 números da noite, esperado × obtido |
 | `prd/00-reset.sh` | zera a noite 2 (simula por padrão) |
