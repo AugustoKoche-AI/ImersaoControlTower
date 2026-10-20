@@ -58,7 +58,7 @@ WHERE lower(fornecedor) LIKE '%forge%' GROUP BY 1;
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A bronze está
+Continue o bundle na raiz deste repositório. A bronze está
 conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
 declarar o contrato.
 
@@ -71,7 +71,7 @@ Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
 existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
 Leia a bronze pelo nome completo lakehouse_vertice.bronze.<tabela>; dentro do
 pipeline, referencie as tabelas silver só pelo nome. COMMENT em toda tabela.
-Siga a tabela de sujeiras da seção 3 do prd/CLAUDE.md.
+Siga a tabela de sujeiras da seção 3 do CLAUDE.md.
 
 Um arquivo por assunto em src/silver/:
 

@@ -37,7 +37,7 @@ precisa morar num lugar só."*
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora os KPIs
+Continue o bundle na raiz deste repositório. Agora os KPIs
 governados, numa metric view do Unity Catalog. Uma só.
 
 Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW

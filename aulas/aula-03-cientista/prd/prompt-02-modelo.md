@@ -43,7 +43,7 @@ existir se ganhar dela — e esse é um dos `assert` que quebram a tarefa.
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
+Continue o bundle na raiz deste repositório. Crie o notebook
 src/ml/02-modelo.py (# Databricks notebook source, widget catalog) e a
 tarefa ml_modelo (notebook_task, depois de ml_features).
 

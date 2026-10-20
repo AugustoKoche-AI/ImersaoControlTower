@@ -144,17 +144,28 @@ gh auth status         # ✓ Logged in to github.com
 
 Sem conta no GitHub? Crie em <https://github.com/signup> antes do `gh auth login`.
 
-**Passo 3 · A pasta do projeto, com o repositório**
+**Passo 3 · O seu repositório, do zero**
+
+Não tem `git clone`: o projeto nasce vazio, na sua conta. No fim da semana ele é o seu portfólio.
 
 ```bash
-mkdir -p ~/projetos && cd ~/projetos
-gh repo fork lvgalvao/ImersaoControlTower --clone   # uma cópia na SUA conta: vira o seu portfólio
-cd ImersaoControlTower
-ls aulas                                            # aula-01-analista  aula-02-engenheiro ...
+mkdir -p ~/projetos/projeto-farol && cd ~/projetos/projeto-farol
+git init -b main
+
+# o contexto do projeto: o negócio, as 18 sujeiras do dado e as armadilhas do Free Edition.
+# Um CLAUDE.md na raiz é lido sozinho pelo Claude Code, antes de cada prompt.
+curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/prd/CLAUDE.md
+
+# o script que roda SQL pela API (a metric view do prompt 5 precisa dele)
+mkdir -p scripts && curl -fsSL -o scripts/run_sql.py https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/scripts/run_sql.py
+
+gh repo create projeto-farol --public --source=. --remote=origin
+ls                     # CLAUDE.md  scripts
 ```
 
-No Antigravity: **File › Open Folder** e escolha `~/projetos/ImersaoControlTower`. Daqui em diante,
-todo comando roda no terminal do Antigravity, **na raiz desta pasta**.
+No Antigravity: **File › Open Folder** e escolha `~/projetos/projeto-farol`. Daqui em diante, todo
+comando roda no terminal do Antigravity, **na raiz desta pasta**. O material do curso (prompts,
+gabarito, slides) fica no GitHub: <https://github.com/lvgalvao/ImersaoControlTower>.
 
 **Passo 4 · Python**
 
@@ -192,13 +203,14 @@ Viu `refresh token is invalid` ou `Valid: NO`? Rode o `auth login` de novo.
 **Passo 7 · Confira a bronze da noite 1**
 
 ```bash
-python3 scripts/run_sql.py aulas/aula-01-analista/99-verificacao.sql --profile vertice
-# 18 linhas "ok"
+databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile vertice
+# apontamentos, clickup_tarefas, colaboradores, custos, entregas_fornecedor,
+# excel_tarefas, msproject_tarefas, projetos, status_semanal (+ rascunho_tarefas, do exemplo 05)
 ```
 
-Deu erro em `rascunho_tarefas`? Rode o exemplo 05 (bloco 3) do
-`aulas/aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql` no SQL Editor. Faltam tabelas? Faça a noite 1
-primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
+Falta o `rascunho_tarefas`? Rode o bloco 3 do exemplo 05 no SQL Editor
+([`exemplo-01-a-05-sql-na-bronze.sql`](../aula-01-analista/exemplo-01-a-05-sql-na-bronze.sql)). Faltam tabelas?
+Faça a noite 1 primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
 
 **Passo 8 · O Claude Code**
 
@@ -212,21 +224,27 @@ claude --version
 claude                 # na RAIZ do repositório. Na primeira vez, faz o login
 ```
 
-As **skills oficiais do Databricks** (o "manual" que o Claude Code lê sobre bundles, pipelines,
-metric views e funções de IA) já vêm no repositório, em `.claude/skills/`. Para atualizar:
-`databricks aitools install --agents claude-code --scope project --skills-only --experimental`.
+Instale as **skills oficiais do Databricks** no projeto (o "manual" que o Claude Code lê sobre bundles,
+pipelines, metric views e funções de IA):
+
+```bash
+databricks aitools install --agents claude-code --scope project --skills-only --experimental
+ls .claude/skills      # databricks-core, databricks-dabs, databricks-pipelines...
+```
 
 **Passo 9 · As travas, antes de dar acesso ao workspace**
 
-Em `.claude/settings.json`, proíba o que não tem volta:
+Crie `.claude/settings.json` proibindo o que não tem volta:
 
-```json
+```bash
+cat > .claude/settings.json <<'JSON'
 {
   "permissions": {
     "deny": ["Bash(databricks bundle destroy*)", "Bash(databricks bundle deploy --target prod*)",
              "Bash(git push --force*)", "Bash(rm -rf*)"]
   }
 }
+JSON
 ```
 
 **Passo 10 · O bundle: o que é e quem cria**
@@ -240,18 +258,26 @@ databricks bundle init                 # pergunta o template: default-python, de
 
 **Hoje você não roda o `bundle init` à mão.** Os templates criam o target com `mode: development`, que
 prefixa todos os nomes com `[dev seu_nome]` e quebra os caminhos da noite. Quem cria o bundle é o
-**prompt 1**, na pasta `aulas/aula-02-engenheiro/meu-vertice/`, já do jeito certo. Depois, a cada
-prompt, o ciclo é sempre o mesmo:
+**prompt 1**, na raiz do seu repositório (o `databricks.yml` ao lado do `CLAUDE.md`), já do jeito
+certo. Depois, a cada prompt, o ciclo é sempre o mesmo, na raiz:
 
 ```bash
-cd aulas/aula-02-engenheiro/meu-vertice
 databricks bundle validate --profile vertice          # confere o YAML antes de subir
 databricks bundle deploy   --profile vertice          # sobe o código para o workspace
 databricks bundle run vertice_farol --profile vertice # roda o job
-cd ../../..                                           # volta para a raiz
 ```
 
 (O Claude Code roda esses comandos para você e pede licença antes de cada um: leia e aprove.)
+
+**Passo 11 · Ao fim de cada prompt, salve no GitHub**
+
+```bash
+git add . && git commit -m "prompt 1: bundle e conferência da bronze" && git push -u origin main
+```
+
+Os prompts dizem "na raiz deste repositório": é a sua pasta `projeto-farol`. Se um prompt não
+entregar, o **gabarito** está em
+<https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-02-engenheiro/vertice>: compare o arquivo.
 
 Pronto. Agora é prompt a prompt.
 
@@ -287,11 +313,11 @@ caminho é o mesmo da noite 1: **extrair** (requests), **pousar** (o arquivo no 
 veio) e **carregar** (`read_files`).
 
 **O que conferir:** 14 feriados no ano; em novembro, 2 em dia útil (02/11 e 20/11; o 15/11 é
-domingo), bem no começo do freeze da Black Friday. Travou? `python3 aulas/aula-02-engenheiro/00-buscar-feriados.py --profile vertice`.
+domingo), bem no começo do freeze da Black Friday. Travou? `curl -fsSLO https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/00-buscar-feriados.py && python3 00-buscar-feriados.py --profile vertice`.
 
 ### Prompt 1 · O projeto vira código
 
-**O que você pede:** criar o bundle `vertice` em `meu-vertice/`, com o job `vertice_farol` e uma
+**O que você pede:** criar o bundle `vertice` na raiz do seu repositório, com o job `vertice_farol` e uma
 primeira tarefa que só **confere** a bronze: as 9 tabelas da noite 1 têm o número de linhas
 esperado? Se não, o job para com uma mensagem dizendo o que fazer.
 

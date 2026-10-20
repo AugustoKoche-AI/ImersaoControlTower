@@ -1606,7 +1606,7 @@ O que vai dar errado no próximo mês?</pre>
   <div class="grid g3" style="gap:24px;">
     <div class="card hl"><div class="tag">Não precisa digitar junto</div><div class="lbl">a gravação, o código e os prompts ficam disponíveis. Se preferir, só assista e refaça depois</div></div>
     <div class="card"><div class="tag">O nível de hoje</div><div class="lbl">nenhum código à mão: você copia o prompt e o Claude Code escreve. Começamos montando o terminal juntos (6 passos)</div></div>
-    <div class="card"><div class="tag">Travou? Siga daí</div><div class="lbl">cada etapa tem o arquivo pronto no gabarito, <code>aulas/aula-02-engenheiro/vertice/</code>. Copie e continue</div></div>
+    <div class="card"><div class="tag">Travou? Siga daí</div><div class="lbl">cada etapa tem o arquivo pronto no gabarito: <code>github.com/lvgalvao/ImersaoControlTower</code>, pasta <code>aulas/aula-02-engenheiro/vertice/</code>. Copie e continue</div></div>
   </div>
   <p class="note" style="margin-top:30px;">A cada entrega, um ponto de controle: <b>chegou aqui? comenta OK no chat</b>. Primeiro o terminal, depois uma API em Python, depois o projeto.</p>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
@@ -1634,8 +1634,8 @@ O que vai dar errado no próximo mês?</pre>
     <div class="card"><div class="tag">1 · Python e Git</div><div class="lbl"><code>python3 --version</code>: 3.10 a 3.12. Evite o 3.13</div></div>
     <div class="card"><div class="tag">2 · a CLI do Databricks</div><div class="lbl"><code>brew install databricks</code> no Mac, <code>winget</code> no Windows. v0.250 ou mais nova</div></div>
     <div class="card hl"><div class="tag">3 · o login</div><div class="lbl"><code>databricks auth login --profile vertice</code>. Viu <b>refresh token is invalid</b>? Rode de novo</div></div>
-    <div class="card"><div class="tag">4 · o repositório</div><div class="lbl"><code>git clone</code> e a verificação da noite 1: 18 linhas ok</div></div>
-    <div class="card"><div class="tag">5 · o Claude Code</div><div class="lbl">abra na raiz do repositório: as skills do Databricks já vêm em <code>.claude/skills</code></div></div>
+    <div class="card"><div class="tag">4 · o seu repositório</div><div class="lbl"><code>git init</code> numa pasta nova, o <code>CLAUDE.md</code> do curso na raiz e <code>gh repo create</code></div></div>
+    <div class="card"><div class="tag">5 · o Claude Code</div><div class="lbl">abra na raiz do repositório e instale as skills: <code>databricks aitools install</code></div></div>
     <div class="card"><div class="tag">6 · as travas</div><div class="lbl"><code>.claude/settings.json</code> proíbe <code>bundle destroy</code>, <code>rm -rf</code> e <code>push --force</code></div></div>
   </div>
   <p class="note" style="margin-top:26px;">Daqui em diante, todo comando leva <b>--profile</b>. O profile é o apelido do seu login.</p>
@@ -1741,7 +1741,7 @@ Use o profile vertice.</pre>
       <li>roda o <code>read_files</code> no warehouse</li>
       <li>pede licença antes de cada comando: leia e aprove</li></ul>
       <div class="tag" style="margin-top:22px;">Travou?</div>
-      <div class="lbl"><code>python3 aulas/aula-02-engenheiro/00-buscar-feriados.py --profile vertice</code></div></div>
+      <div class="lbl">baixe o gabarito do GitHub do curso e rode: <code>python3 00-buscar-feriados.py --profile vertice</code></div></div>
   </div>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
@@ -1751,7 +1751,7 @@ Use o profile vertice.</pre>
   <h2>Chegou aqui? <span class="grad">Comenta OK no chat</span></h2>
   <div class="grid g2" style="gap:30px;">
     <div class="card hl"><div class="tag">Na sua tela</div><div class="num md">2 em novembro</div><div class="lbl">02/11 (segunda) e 20/11 (sexta). O 15/11 cai num domingo. No ano, 14 feriados na <code>bronze.feriados</code></div></div>
-    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">o erro <code>no such directory</code> é a pasta nova: <code>databricks fs mkdir</code> antes do cp. Ou rode <code>00-buscar-feriados.py</code></div></div>
+    <div class="card"><div class="tag">Não bateu?</div><div class="lbl">o erro <code>no such directory</code> é a pasta nova: <code>databricks fs mkdir</code> antes do cp. Ou rode o <code>00-buscar-feriados.py</code> do GitHub do curso</div></div>
   </div>
   <img class="logo" alt="Jornada de Dados"><div class="pg"></div>
 </section>
@@ -1861,7 +1861,7 @@ databricks bundle run vertice_farol --profile SEU-PERFIL</pre></div>
   <h2>Sexta que vem, <span class="grad">quem roda tudo de novo?</span></h2>
   <div class="grid g2" style="gap:30px;">
     <div class="card"><div class="tag">O que você pede</div><ul class="list">
-      <li>o bundle <code>vertice</code>, na pasta <code>meu-vertice/</code></li>
+      <li>o bundle <code>vertice</code>, na raiz do seu repositório</li>
       <li>o job <code>vertice_farol</code>, toda segunda às 6h</li>
       <li>a primeira tarefa só <b>confere</b> a bronze: as 9 tabelas com as linhas esperadas</li></ul>
       <div class="tag" style="margin-top:22px;">Por quê</div><ul class="list">

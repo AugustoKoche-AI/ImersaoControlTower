@@ -80,13 +80,13 @@ Use o profile <perfil>.
 *o projeto nasce como código* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-01-bundle.md)
 
 ```
-Leia aulas/aula-02-engenheiro/prd/CLAUDE.md antes de começar.
+Leia o CLAUDE.md da raiz do repositório antes de começar.
 
-Crie o projeto da noite 2 em aulas/aula-02-engenheiro/meu-vertice/ como um
+Crie o projeto da noite 2 na raiz deste repositório como um
 Databricks Asset Bundle chamado vertice. Esta é a primeira de seis entregas: as
 outras cinco estendem este mesmo bundle, então deixe a estrutura pronta para
 crescer (resources/, src/conferencia, src/silver, src/gold, src/ia,
-src/metricas, src/testes, scripts/). NÃO copie da pasta vertice/ (é o gabarito).
+src/metricas, src/testes, scripts/). Não copie de outro projeto: construa.
 
 CONTEXTO DO WORKSPACE
 - profile: <perfil>   (sempre passe --profile, nunca deixe implícito)
@@ -135,7 +135,7 @@ Rode e me mostre a saída de cada um:
 *as três ferramentas viram uma* · noite 2 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-02-silver.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A bronze está
+Continue o bundle na raiz deste repositório. A bronze está
 conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
 declarar o contrato.
 
@@ -148,7 +148,7 @@ Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
 existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
 Leia a bronze pelo nome completo lakehouse_vertice.bronze.<tabela>; dentro do
 pipeline, referencie as tabelas silver só pelo nome. COMMENT em toda tabela.
-Siga a tabela de sujeiras da seção 3 do prd/CLAUDE.md.
+Siga a tabela de sujeiras da seção 3 do CLAUDE.md.
 
 Um arquivo por assunto em src/silver/:
 
@@ -221,7 +221,7 @@ Rode e me mostre a saída:
 *o produto de dados e as perguntas do dono* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-03-gold.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A silver está pronta.
+Continue o bundle na raiz deste repositório. A silver está pronta.
 Agora a gold, no MESMO pipeline vertice_medalhao: acrescente o glob
 ../src/gold/** em libraries. Os arquivos da gold escrevem com o nome completo
 lakehouse_vertice.gold.<tabela>; leem a silver pelo nome curto. COMMENT em todas.
@@ -281,7 +281,7 @@ Rode e me mostre a saída:
 *o status semanal vira coluna* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-04-texto-com-ia.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
+Continue o bundle na raiz deste repositório. Agora o texto livre
 do status semanal vira coluna. Use as funções de IA na versão 2.0
 (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
 
@@ -328,7 +328,7 @@ Rode e me mostre a saída:
 *o KPI definido uma vez só* · noite 2 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-02-engenheiro/prd/prompt-05-metricas.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora os KPIs
+Continue o bundle na raiz deste repositório. Agora os KPIs
 governados, numa metric view do Unity Catalog. Uma só.
 
 Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW
@@ -384,8 +384,8 @@ baterem, não adianta seguir: a noite 3 treina em cima deles.
 *o que descreve um projeto que vai estourar* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-01-features.md)
 
 ```
-Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
-em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
+Leia o CLAUDE.md da raiz. Vamos continuar o MESMO bundle
+na raiz deste repositório: ML é mais uma camada do pipeline,
 não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
 
 Crie src/ml/01-features.sql (sql_task). Primeiro CREATE SCHEMA IF NOT EXISTS
@@ -441,7 +441,7 @@ metricas_governadas. Rode e me mostre a saída:
 *o baseline primeiro* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-02-modelo.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
+Continue o bundle na raiz deste repositório. Crie o notebook
 src/ml/02-modelo.py (# Databricks notebook source, widget catalog) e a
 tarefa ml_modelo (notebook_task, depois de ml_features).
 
@@ -497,7 +497,7 @@ Rode e me mostre a saída:
 *a probabilidade de estouro em 30 dias* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-03-score.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
+Continue o bundle na raiz deste repositório. Crie o notebook
 src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
 ml_score (notebook_task, depois de ml_modelo).
 
@@ -536,7 +536,7 @@ Rode o job inteiro e me mostre o top 25:
 *o dono pergunta em português* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-cientista/prd/prompt-04-dashboard-e-genie.md)
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. O pipeline, a IA e
+Continue o bundle na raiz deste repositório. O pipeline, a IA e
 as métricas estão prontos. Agora as duas portas para quem não escreve SQL.
 
 1. Dashboard como código

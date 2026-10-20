@@ -54,7 +54,7 @@ SELECT ai_extract('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimad
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Agora o texto livre
+Continue o bundle na raiz deste repositório. Agora o texto livre
 do status semanal vira coluna. Use as funções de IA na versão 2.0
 (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
 

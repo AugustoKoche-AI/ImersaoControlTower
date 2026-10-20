@@ -51,8 +51,8 @@ inútil na segunda-feira. O prompt 2 vai provar isso.
 ## O prompt
 
 ```
-Leia aulas/aula-02-engenheiro/prd/CLAUDE.md. Vamos continuar o MESMO bundle
-em aulas/aula-02-engenheiro/meu-vertice/: ML é mais uma camada do pipeline,
+Leia o CLAUDE.md da raiz. Vamos continuar o MESMO bundle
+na raiz deste repositório: ML é mais uma camada do pipeline,
 não um projeto à parte. O "hoje" é DATE'2026-10-16'. Nunca current_date().
 
 Crie src/ml/01-features.sql (sql_task). Primeiro CREATE SCHEMA IF NOT EXISTS

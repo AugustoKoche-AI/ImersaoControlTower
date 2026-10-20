@@ -38,7 +38,7 @@ ele errou:
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. O pipeline, a IA e
+Continue o bundle na raiz deste repositório. O pipeline, a IA e
 as métricas estão prontos. Agora as duas portas para quem não escreve SQL.
 
 1. Dashboard como código

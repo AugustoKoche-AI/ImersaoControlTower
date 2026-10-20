@@ -39,7 +39,7 @@ fato semanal usa o % do status, e a fotografia de hoje usa as tarefas.
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. A silver está pronta.
+Continue o bundle na raiz deste repositório. A silver está pronta.
 Agora a gold, no MESMO pipeline vertice_medalhao: acrescente o glob
 ../src/gold/** em libraries. Os arquivos da gold escrevem com o nome completo
 lakehouse_vertice.gold.<tabela>; leem a silver pelo nome curto. COMMENT em todas.

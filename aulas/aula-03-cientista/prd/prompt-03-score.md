@@ -38,7 +38,7 @@ score_estouro_30d
 ## O prompt
 
 ```
-Continue o bundle em aulas/aula-02-engenheiro/meu-vertice/. Crie o notebook
+Continue o bundle na raiz deste repositório. Crie o notebook
 src/ml/03-score.py (mesma primeira célula de %pip do 02-modelo) e a tarefa
 ml_score (notebook_task, depois de ml_modelo).
 

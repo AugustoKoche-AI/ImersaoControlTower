@@ -6,8 +6,9 @@ Os três passos de toda ingestão, os mesmos da noite 1:
   2. pousar   · o JSON vai, do jeito que veio, para o volume: /Volumes/lakehouse_vertice/bronze/raw/feriados/
   3. carregar · o read_files transforma o arquivo em tabela: lakehouse_vertice.bronze.feriados
 
-Travou no prompt? Rode este arquivo e siga daí:
-    python3 aulas/aula-02-engenheiro/00-buscar-feriados.py --profile <perfil>
+Travou no prompt? Baixe este arquivo para o seu repositório e rode (só precisa do Python e da CLI):
+    curl -fsSLO https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-02-engenheiro/00-buscar-feriados.py
+    python3 00-buscar-feriados.py --profile <perfil>
 
 Deve aparecer: 14 feriados em 2026. Em novembro, 2 caem em dia útil: 02/11 e 20/11 (o 15/11 é domingo).
 """
@@ -20,20 +21,21 @@ from pathlib import Path
 
 URL = "https://brasilapi.com.br/api/feriados/v1/2026"
 PASTA_NO_VOLUME = "/Volumes/lakehouse_vertice/bronze/raw/feriados"
-RAIZ = Path(__file__).resolve().parents[2]
 
 # O SQL do passo 3. É o mesmo read_files da noite 1, agora numa pasta nova do volume.
-SQL = f"""
+CARREGAR = f"""
 CREATE OR REPLACE TABLE lakehouse_vertice.bronze.feriados
 COMMENT 'Feriados nacionais de 2026, da BrasilAPI. Ingestão por API: Python busca, o arquivo pousa no volume, o read_files carrega.'
 AS SELECT date AS data, name AS feriado, type AS tipo, weekday AS dia_da_semana,
           _metadata.file_name AS arquivo
-FROM read_files('{PASTA_NO_VOLUME}/', format => 'json', multiLine => true);
+FROM read_files('{PASTA_NO_VOLUME}/', format => 'json', multiLine => true)
+"""
 
+CONFERIR = """
 SELECT data, feriado, dia_da_semana
 FROM lakehouse_vertice.bronze.feriados
 WHERE data BETWEEN '2026-11-01' AND '2026-11-30'
-ORDER BY data;
+ORDER BY data
 """
 
 
@@ -67,11 +69,10 @@ def main() -> None:
         subprocess.run(["databricks", "fs", "cp", str(arquivo), destino, "--overwrite", "--profile", profile], check=True)
         print(f"2 · pousar: {destino}")
 
-        sql = Path(pasta) / "feriados.sql"
-        sql.write_text(SQL, encoding="utf-8")
-        print("3 · carregar: bronze.feriados com read_files")
-        r = subprocess.run([sys.executable, str(RAIZ / "scripts" / "run_sql.py"), str(sql), "--profile", profile])
-        sys.exit(r.returncode)
+    print("3 · carregar: bronze.feriados com read_files")
+    for sql in (CARREGAR, CONFERIR):     # a própria CLI roda o SQL no warehouse
+        subprocess.run(["databricks", "experimental", "aitools", "tools", "query", sql.strip(),
+                        "--profile", profile], check=True)
 
 
 if __name__ == "__main__":

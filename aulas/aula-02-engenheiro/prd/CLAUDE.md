@@ -104,9 +104,10 @@ gerente, contrato, prazo), `utilizacao_pessoa_semana`, mais `status_estruturado`
 `mv_projetos` (a métrica governada). Fornecedor não tem tabela gold: lê-se direto da
 `silver.entregas_fornecedor`. Não crie `dim_projeto` nem outras metric views.
 
-- **Um bundle só**, chamado `vertice`, em `aulas/aula-02-engenheiro/meu-vertice/`.
-  A pasta `aulas/aula-02-engenheiro/vertice/` é o **gabarito**: não copie dela, a
-  graça da noite é construir.
+- **Um bundle só**, chamado `vertice`, na **raiz deste repositório** (o `databricks.yml`
+  fica ao lado deste CLAUDE.md). O gabarito, testado, está em
+  <https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-02-engenheiro/vertice>:
+  não copie dele, a graça da noite é construir.
 - **Silver e gold num pipeline declarativo** (Lakeflow Spark Declarative Pipelines,
   SQL, serverless). Silver = schema padrão do pipeline; gold = nome completo
   `lakehouse_vertice.gold.x`. Um arquivo por assunto em `src/silver/` e `src/gold/`.

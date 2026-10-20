@@ -37,13 +37,13 @@ databricks warehouses list --profile <perfil>
 ## O prompt
 
 ```
-Leia aulas/aula-02-engenheiro/prd/CLAUDE.md antes de começar.
+Leia o CLAUDE.md da raiz do repositório antes de começar.
 
-Crie o projeto da noite 2 em aulas/aula-02-engenheiro/meu-vertice/ como um
+Crie o projeto da noite 2 na raiz deste repositório como um
 Databricks Asset Bundle chamado vertice. Esta é a primeira de seis entregas: as
 outras cinco estendem este mesmo bundle, então deixe a estrutura pronta para
 crescer (resources/, src/conferencia, src/silver, src/gold, src/ia,
-src/metricas, src/testes, scripts/). NÃO copie da pasta vertice/ (é o gabarito).
+src/metricas, src/testes, scripts/). Não copie de outro projeto: construa.
 
 CONTEXTO DO WORKSPACE
 - profile: <perfil>   (sempre passe --profile, nunca deixe implícito)
