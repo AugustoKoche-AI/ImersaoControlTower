@@ -20,7 +20,7 @@ novo toda semana. Ir buscar, sem ninguém olhar, é o trabalho do engenheiro de 
 ```mermaid
 flowchart LR
   subgraph LAKE["data lake · Supabase Storage (protocolo S3)"]
-    B[("bucket vertice<br/>pmo · rh · timesheet · financeiro · compras<br/>excel · clickup · msproject")]
+    B[("bucket DataLakeCentralTower<br/>pmo · rh · timesheet · financeiro · compras<br/>excel · clickup · msproject")]
   end
   API["API pública<br/>feriados de 2026"]
   B -- "02 · boto3<br/>extrair e pousar" --> RAW["volume<br/>bronze/raw/"]
@@ -64,9 +64,9 @@ apontando para o Supabase, **o mesmo código funciona na Amazon**.
 
 | Termo | O que é | Aqui |
 |---|---|---|
-| Bucket | a pasta raiz, o "balde" | `vertice` |
+| Bucket | a pasta raiz, o "balde" | `DataLakeCentralTower` |
 | Key | o caminho do arquivo dentro do bucket | `pmo/projetos.csv` |
-| Endpoint | o endereço do serviço | `https://<ref>.storage.supabase.co/storage/v1/s3` |
+| Endpoint | o endereço do serviço | `https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3` |
 | Access key / secret | o usuário e a senha da máquina | no ambiente: `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` |
 
 **3. Extrair, pousar, carregar.** Buscar na origem, guardar uma cópia do jeito que veio (o **raw**, no
@@ -87,12 +87,12 @@ job, pelos parâmetros. Um passo além, em produção: guardar a chave num *secr
 
 | Variável (parâmetro do job) | Valor |
 |---|---|
-| `S3_ENDPOINT` | `https://A-DEFINIR.storage.supabase.co/storage/v1/s3` |
-| `AWS_DEFAULT_REGION` | `A-DEFINIR` |
+| `S3_ENDPOINT` | `https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3` |
+| `AWS_DEFAULT_REGION` | `us-east-2` |
 | `AWS_ACCESS_KEY_ID` | `A-DEFINIR` |
 | `AWS_SECRET_ACCESS_KEY` | `A-DEFINIR` |
 
-O bucket é `vertice`. Esses valores entram como **Job parameters** (etapa 4) ou nas caixinhas do topo do
+O bucket é `DataLakeCentralTower` (maiúsculas e minúsculas contam). Esses valores entram como **Job parameters** (etapa 4) ou nas caixinhas do topo do
 notebook, quando você roda na mão.
 
 ---
@@ -392,9 +392,9 @@ O **boto3** é a biblioteca da AWS para falar com o **S3**, o serviço de arquiv
 import boto3
 
 # copie do Supabase: Project Settings → Storage → S3 access keys
-S3_ENDPOINT = "https://COLE-AQUI.storage.supabase.co/storage/v1/s3"
-S3_REGION = "COLE-AQUI"
-S3_BUCKET = "vertice"
+S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
+S3_REGION = "us-east-2"
+S3_BUCKET = "DataLakeCentralTower"
 
 ACCESS_KEY = "XXXX"
 SECRET_KEY = "XXXX"
@@ -603,7 +603,7 @@ Aqui o data lake é o Storage do Supabase, e o código é exatamente o que você
 muda só o `endpoint_url`.
 
 Os três passos de toda ingestão:
-1. **extrair** · o `boto3` lista e baixa cada arquivo do bucket `vertice`
+1. **extrair** · o `boto3` lista e baixa cada arquivo do bucket `DataLakeCentralTower`
 2. **pousar** · cada arquivo vai para o volume, no mesmo caminho: `/Volumes/lakehouse_vertice/bronze/raw/`
 3. **carregar** · o mesmo `read_files` de ontem transforma o raw nas 9 tabelas da bronze
 
@@ -639,7 +639,7 @@ for nome in VARIAVEIS:
 faltando = [nome for nome in VARIAVEIS if not os.environ[nome]]
 assert not faltando, f"preencha: {faltando}"      # para aqui se faltar alguma chave
 
-S3_BUCKET = "vertice"
+S3_BUCKET = "DataLakeCentralTower"
 RAW = "/Volumes/lakehouse_vertice/bronze/raw"
 print("ambiente pronto:", os.environ["S3_ENDPOINT"])
 ```
@@ -865,7 +865,7 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `EndpointConnectionError` | endpoint errado | confira o `S3_ENDPOINT`, com `/storage/v1/s3` no fim |
 | `InvalidAccessKeyId`, `SignatureDoesNotMatch` | chave ou segredo errados | copie de novo da tabela de conexão, sem espaço |
 | `AssertionError: preencha: [...]` | faltou um parâmetro | preencha a caixinha no topo, ou o Job parameter de mesmo nome |
-| `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `vertice`, em minúsculas |
+| `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `DataLakeCentralTower`, com as maiúsculas |
 | `ClientError: An error occurred () when calling the ListObjectsV2` | o boto3 pôs o bucket no endereço, e o Supabase não entende | `config=Config(s3={"addressing_style": "path"})` no `boto3.client` |
 | `PATH_NOT_FOUND` no `read_files` | o arquivo não foi baixado | rode a célula que baixa os arquivos para o raw |
 | a contagem não bate com a de ontem | faltou arquivo no bucket | o passo 2 mostra quantos arquivos tem em cada pasta |
@@ -874,10 +874,12 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 
 ## 🧑‍🏫 Para o professor: montar o data lake no Supabase
 
-1. **Storage › New bucket**, nome `vertice`.
+1. **Storage › New bucket**, nome `DataLakeCentralTower`.
 2. Suba as pastas de [`dados/`](../../dados) **com os mesmos nomes**: `pmo/`, `rh/`, `timesheet/`,
    `financeiro/`, `compras/`, `excel/`, `clickup/` e `msproject/` (o `read_files` procura nesses caminhos).
    Gere os dados com `python3 material/gerar_dataset.py --saida ./dados --seed 42`.
+   Confira depois: `excel/` com 20 arquivos, `clickup/` com 25 e `msproject/` com 15. Arquivo repetido
+   (`... (1).xlsx`) entra em dobro na bronze. O Supabase tira os acentos dos nomes: não tem problema.
 3. **Project Settings › Storage › S3 access keys › New access key.** Guarde as duas partes.
 4. Na mesma tela estão o **endpoint** e a **região**. Preencha a tabela de conexão acima.
 

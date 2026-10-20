@@ -294,9 +294,9 @@ display(df_estados[df_estados["regiao"] == "Norte"])
 import boto3
 
 # copie do Supabase: Project Settings → Storage → S3 access keys
-S3_ENDPOINT = "https://COLE-AQUI.storage.supabase.co/storage/v1/s3"
-S3_REGION = "COLE-AQUI"
-S3_BUCKET = "vertice"
+S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
+S3_REGION = "us-east-2"
+S3_BUCKET = "DataLakeCentralTower"
 
 ACCESS_KEY = "XXXX"
 SECRET_KEY = "XXXX"

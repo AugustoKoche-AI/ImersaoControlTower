@@ -344,9 +344,9 @@ display(df_estados.head())
 import boto3
 
 # copie do Supabase: Project Settings → Storage → S3 access keys
-S3_ENDPOINT = "https://COLE-AQUI.storage.supabase.co/storage/v1/s3"
-S3_REGION = "COLE-AQUI"
-S3_BUCKET = "vertice"
+S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
+S3_REGION = "us-east-2"
+S3_BUCKET = "DataLakeCentralTower"
 
 ACCESS_KEY = "XXXX"
 SECRET_KEY = "XXXX"
@@ -360,7 +360,7 @@ SECRET_KEY = "XXXX"
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Objetivo:** listar os arquivos do bucket `vertice`, imprimindo o nome e o tamanho de cada um.
+# MAGIC **Objetivo:** listar os arquivos do bucket `DataLakeCentralTower`, imprimindo o nome e o tamanho de cada um.
 # MAGIC
 # MAGIC Dica: `s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]`, onde cada item tem `"Key"` e `"Size"`.
 
