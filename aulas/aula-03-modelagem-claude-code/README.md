@@ -165,9 +165,48 @@ pipelines, dashboards...): é o manual que o Claude Code consulta antes de cada 
 Sempre na raiz do repositório `vertice`. O prompt 1 começa arrumando o bundle (nomes, agendamento,
 o `CLAUDE.md` do curso) e depois faz a silver.
 
-**Antes do prompt 1:** o Claude Code em 5 minutos (`/model`, `Shift+Tab`, `!`, `@`, `/voice`) e o ritmo
-**plan → auto** estão no começo do [`prompt-01-silver.md`](claude-code/prd/prompt-01-silver.md). Não rode `/init`: ele
-reescreve o `CLAUDE.md`, que é o PRD do curso.
+#### O Claude Code em 5 minutos (antes do prompt 1)
+
+O Claude Code é uma conversa dentro do terminal: você escreve em português, ele lê os arquivos da
+pasta, escreve código e roda comandos, sempre pedindo licença antes (a não ser no modo auto). Tudo
+que começa com `/` é um comando dele; o resto é conversa.
+
+| Digite | O que acontece | Exemplo |
+|---|---|---|
+| `/model` | abre a lista de modelos. Opus pensa melhor, Sonnet é mais rápido | `/model` → escolha com as setas → Enter |
+| `Shift+Tab` | troca o **modo**. Cada aperto passa para o próximo; o rodapé da tela mostra qual está ligado (veja abaixo) | aperte até aparecer `plan mode on` |
+| `@` + nome do arquivo | anexa o arquivo à sua mensagem: ele lê antes de responder. Ao digitar `@` aparece a lista de arquivos | `explique a seção 3 do @CLAUDE.md em 3 linhas` |
+| `!` + comando | roda o comando **no seu terminal**, sem sair do Claude Code, e a saída entra na conversa (ele vê o resultado) | `! databricks bundle validate --profile DEFAULT` |
+| `Esc` | para o que ele está fazendo agora | ele começou a fazer algo errado → `Esc` → corrija em português |
+| `Esc` `Esc` (ou `/rewind`) | mostra as mensagens anteriores: escolha uma e ele volta a conversa **e os arquivos** para aquele ponto | desfazer um prompt inteiro |
+| `/context` | quanto da "memória" da conversa já foi usada | se passar de ~80%, `/clear` entre um prompt e outro |
+| `/clear` | começa uma conversa nova. O `CLAUDE.md` continua valendo | entre o prompt 2 e o 3, se a conversa ficou longa |
+| `/voice` | dita a mensagem em vez de digitar (se aparecer na sua versão) | `/voice` → fale → Enter |
+| `/help` · `/exit` | a lista de todos os comandos · sair | |
+
+**Os modos (o `Shift+Tab`):**
+
+| Rodapé | Modo | Quando usar |
+|---|---|---|
+| (nada) | **normal**: pede licença a cada arquivo e a cada comando | para entender o que ele faz, passo a passo |
+| `accept edits on` | edita arquivos sem perguntar; comando ainda pede licença | quando você já confia no plano |
+| `plan mode on` | **só planeja**: lê, pensa e devolve um plano, sem mexer em nada | antes de um prompt grande (o prompt 1) |
+| `auto mode` | faz tudo sozinho; um verificador barra o que for perigoso | depois de aprovar o plano |
+
+**Não rode `/init`.** O `/init` escreve um `CLAUDE.md` novo, resumindo a pasta. O nosso já existe e
+é o PRD do curso (o negócio, as sujeiras do dado, as armadilhas do Free Edition): o prompt 1 baixa
+e lê esse arquivo. O `/init` jogaria isso fora.
+
+**O ritmo da noite:**
+
+1. **Prompt 1 em plan.** `Shift+Tab` até `plan mode on`, cole o prompt. Ele lê o `CLAUDE.md` e o
+   bundle e devolve um plano. Leia com a turma: arrumou o bundle (sem `mode: development`, job
+   `vertice_farol`, pausado)? Tirou a linha de TOTAL, as tarefas-resumo, a vírgula decimal? Se
+   faltar algo, escreva a correção antes de aprovar.
+2. **Aprove e vá para auto.** Ele executa sozinho até o deploy e o run.
+3. **Quando o auto recusar** ("Credential Leakage", "Irreversible Deletion"): não é erro. Ele barrou
+   um comando que mexe com chave ou apaga dado, e mostra qual é. Rode você, com `!` na frente.
+4. **Prompts 2 a 4 direto em auto.** O plano do 1 ensinou o caminho.
 
 ### 3 · Os prompts 1 a 4, um de cada vez
 
