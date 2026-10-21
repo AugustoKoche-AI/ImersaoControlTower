@@ -450,6 +450,82 @@ sem uma cópia do dado para manter sincronizada.
 
 ---
 
+## 💡 Mais dicas para levar para o trabalho
+
+### Medalhão: bronze, silver, gold
+
+- **Não é obrigatório ter as três.** É um jeito de separar responsabilidades: guardar (bronze),
+  confiar (silver), responder (gold). Projeto pequeno pode ter só duas.
+- **Um schema por camada** (`bronze`, `silver`, `gold`) facilita a permissão: o analista recebe
+  `SELECT` só na gold; a engenharia, nas três.
+- **A bronze é reprocessável.** Se a regra da silver mudar, recalcula tudo a partir da bronze. Por
+  isso ninguém mexe nela.
+- **Cada camada lê só a anterior.** Gold lendo bronze é limpeza duplicada que vai divergir.
+
+### Data mart: a gold de uma área
+
+- **Data mart** é o pedaço da gold feito para **uma área** da empresa: PMO, financeiro, RH. Cada
+  um com as suas tabelas, a sua linguagem e as suas permissões.
+- Aqui a gold inteira é o **mart do PMO**. Se o financeiro pedir o dele amanhã, nasce um schema
+  `gold_financeiro` lendo a **mesma silver**: a limpeza é feita uma vez e serve aos dois.
+- **Estrela × tabela larga.** O modelo estrela (uma fato no meio, dimensões em volta: `dim_projeto`,
+  `dim_pessoa`) é o clássico do BI e brilha quando muitas fatos dividem as mesmas dimensões. A
+  **tabela larga** (*one big table*, como a `projeto_situacao_atual`) é mais simples de consultar e é
+  a que o Genie e o dashboard entendem melhor. Com 60 projetos, a larga ganha.
+- **Grão escrito no `COMMENT`.** "Uma linha por projeto e semana" no comentário da tabela evita o
+  erro mais comum de BI: somar o que não se soma.
+
+### Pipelines (Lakeflow Spark Declarative Pipelines)
+
+- **Materialized view × streaming table.** A MV recalcula o resultado (bom para dado que muda inteiro,
+  como a bronze recarregada). A streaming table processa só o que chegou de novo (bom para log,
+  evento, arquivo que só acumula).
+- **`EXPECT` tem três níveis:** só registrar (`EXPECT`), descartar a linha (`ON VIOLATION DROP ROW`)
+  ou parar tudo (`ON VIOLATION FAIL UPDATE`). Dado que vai para o diretor: `FAIL UPDATE`.
+- **O event log é o primeiro lugar para olhar.** O erro que importa é o **primeiro**; os seguintes
+  costumam ser consequência.
+- **Full refresh** recalcula do zero. Use quando mudar a regra de uma tabela que acumula.
+
+### Jobs (Lakeflow Jobs)
+
+- **Tipos de tarefa:** notebook, SQL (no warehouse), pipeline, script Python, dbt, e as de controle:
+  `if/else`, `for each` e "rodar outro job".
+- **Gatilhos além do horário:** chegada de arquivo num volume, atualização de tabela, ou contínuo.
+  "Toda segunda às 6h" é o mais simples, não o único.
+- **Por tarefa:** `max_retries` (tentar de novo sozinho), `timeout_seconds` (não deixar rodar para
+  sempre) e notificação por e-mail na falha. Configure no mínimo a notificação.
+- **Parâmetros do job** (`${var.…}` no bundle, `{{job.parameters.x}}` na tarefa): o mesmo job roda
+  para dev e prod mudando só o valor.
+- **Repair run** refaz só o que falhou. **`max_concurrent_runs: 1`** evita duas execuções brigando
+  pela mesma tabela.
+- **Histórico em SQL:** as tabelas de sistema (`system.lakeflow.job_run_timeline`) mostram tempo e
+  resultado de cada execução, para montar o seu próprio painel de saúde dos jobs.
+
+### Dashboards (AI/BI)
+
+- **Dataset e gráfico são coisas separadas.** Uma query (dataset) alimenta vários gráficos. Menos
+  queries, menos custo de warehouse e números coerentes entre si.
+- **Filtros e parâmetros:** um filtro de cliente ou segmento no topo vale para a página inteira; o
+  clique num gráfico filtra os outros (*cross-filter*).
+- **Rascunho × publicado.** Você edita o rascunho; o diretor vê o publicado. Ao publicar, escolha se
+  quem vê usa **as suas credenciais** (vê o mesmo que você) ou **as dele** (vale a permissão do Unity
+  Catalog de cada um).
+- **Agendamento e assinatura:** o dashboard publicado pode atualizar sozinho e mandar um PDF por
+  e-mail toda segunda, depois do job.
+- **Edite no código, não na tela.** Mudou no workspace, o próximo `bundle deploy` recusa
+  ("modified remotely"). A mudança vai para o script que gera o JSON.
+
+### Unity Catalog: a cola de tudo
+
+- **Linhagem:** abra a `gold.projeto_situacao_atual` no Catalog Explorer, aba **Lineage**, e veja o
+  caminho até as planilhas da bronze, sem ninguém ter desenhado.
+- **`COMMENT` é documentação viva:** aparece no Catalog Explorer, no dashboard e é o que o Genie lê
+  amanhã.
+- **`GRANT` por camada:** `GRANT SELECT ON SCHEMA lakehouse_vertice.gold TO analistas`. A silver e a
+  bronze ficam com quem constrói.
+
+---
+
 ## 📖 As palavras da noite (uma frase cada)
 
 | Termo | Em uma frase |
