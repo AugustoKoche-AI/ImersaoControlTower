@@ -102,7 +102,8 @@ Troque `DEFAULT` pelo seu profile, se tiver outro nome.
 cd ~/projetos
 gh repo create vertice --public --clone
 databricks bundle init default-minimal --profile DEFAULT     # nome: vertice · o resto: Enter
-cd vertice
+cd ~/projetos/vertice
+ls databricks.yml                                             # TEM que aparecer: daqui até o claude, tudo roda nesta pasta
 
 databricks jobs list --profile DEFAULT                       # copie o id do job "Ingestão"
 databricks bundle generate job --existing-job-id <id> --profile DEFAULT
@@ -115,6 +116,7 @@ Git ignora. Cole o bloco inteiro:
 python3 - <<'PY'
 import json, pathlib, re
 arquivo = pathlib.Path("resources/ingestão.job.yml")
+assert arquivo.exists(), "não achei resources/ingestão.job.yml: rode na pasta do bundle (cd ~/projetos/vertice) e depois do generate"
 yml = arquivo.read_text()
 chaves = {"s3_access_key_id": "AWS_ACCESS_KEY_ID", "s3_secret_access_key": "AWS_SECRET_ACCESS_KEY"}
 valores = {}

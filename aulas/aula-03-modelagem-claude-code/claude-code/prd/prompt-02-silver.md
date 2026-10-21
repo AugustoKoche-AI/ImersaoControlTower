@@ -74,6 +74,11 @@ NÃO mexa nos valores das chaves, nem no
 schemas (já existem). Se um comando for recusado por causa das chaves,
 pare e me mostre o comando para eu rodar com `!`.
 
+Confira antes: o databricks.yml está na pasta onde você abriu, e existe
+resources/*.job.yml com as chaves em ${var.…}. Se faltar, NÃO rode o
+bundle generate (ele grava as chaves em texto): pare e me diga qual passo
+do passo-01-bundle-na-mao.md refazer.
+
 Antes de tudo, arrume o bundle:
 - databricks.yml: tire o mode: development do target dev (ele prefixa os
   nomes) e ponha presets: trigger_pause_status: PAUSED. Variáveis catalog

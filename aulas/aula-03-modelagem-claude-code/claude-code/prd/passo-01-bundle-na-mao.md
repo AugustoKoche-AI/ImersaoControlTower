@@ -18,7 +18,8 @@ nome, troque (`databricks auth profiles` mostra os seus).
 cd ~/projetos
 gh repo create vertice --public --clone
 databricks bundle init default-minimal --profile DEFAULT
-cd vertice
+cd ~/projetos/vertice
+ls databricks.yml       # TEM que aparecer: daqui até o claude, tudo roda nesta pasta
 ```
 
 O `init` pergunta o nome: responda **`vertice`** (a pasta que o `gh` acabou de criar). Nas outras
@@ -45,6 +46,7 @@ em `.databricks/bundle/dev/variable-overrides.json`, que não vai para o Git.
 python3 - <<'PY'
 import json, pathlib, re
 arquivo = pathlib.Path("resources/ingestão.job.yml")
+assert arquivo.exists(), "não achei resources/ingestão.job.yml: rode na pasta do bundle (cd ~/projetos/vertice) e depois do generate"
 yml = arquivo.read_text()
 chaves = {"s3_access_key_id": "AWS_ACCESS_KEY_ID", "s3_secret_access_key": "AWS_SECRET_ACCESS_KEY"}
 valores = {}
@@ -88,6 +90,8 @@ Daqui em diante é prompt. O 2 começa arrumando o bundle e depois faz a confer�
 
 | Sintoma | Correção |
 |---|---|
+| `unable to locate bundle root` no `generate`, ou `FileNotFoundError` no bloco do passo 3 | Você está fora da pasta do bundle. `cd ~/projetos/vertice` e rode de novo a partir do `generate` |
+| O Claude Code diz que não acha o job importado | Ele abriu na pasta errada, ou o `generate` não rodou. Saia (`/exit`), `cd ~/projetos/vertice`, `ls resources/` (tem que ter o `.job.yml`) e abra de novo |
 | `cannot configure default credentials` | `databricks auth login --profile DEFAULT` |
 | `failed to initialize template, one or more files already exist` | A pasta `vertice` não está vazia: o `gh repo create` vai **sem** `--add-readme` |
 | `no value assigned to required variable s3_access_key_id` | Faltou o bloco do passo 3 (ou ele rodou fora da pasta `vertice`) |
