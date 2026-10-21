@@ -99,8 +99,8 @@ Só copiar e colar. Detalhes e "se der errado" em [`bundle-na-mao.md`](claude-co
 Troque `DEFAULT` pelo seu profile, se tiver outro nome.
 
 ```bash
-cd ~/projetos
-gh repo create vertice --public --clone
+mkdir -p ~/projetos && cd ~/projetos
+gh repo create vertice --public --clone          # se já existir um "vertice" no seu GitHub, use outro nome
 databricks bundle init default-minimal --profile DEFAULT     # nome: vertice · o resto: Enter
 cd ~/projetos/vertice
 ls databricks.yml                                             # TEM que aparecer: daqui até o claude, tudo roda nesta pasta

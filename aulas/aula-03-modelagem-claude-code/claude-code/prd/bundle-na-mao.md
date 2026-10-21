@@ -15,8 +15,8 @@ nome, troque (`databricks auth profiles` mostra os seus).
 ## 1 · O repositório e o bundle
 
 ```bash
-cd ~/projetos
-gh repo create vertice --public --clone
+mkdir -p ~/projetos && cd ~/projetos
+gh repo create vertice --public --clone          # se já existir um "vertice" no seu GitHub, use outro nome
 databricks bundle init default-minimal --profile DEFAULT
 cd ~/projetos/vertice
 ls databricks.yml       # TEM que aparecer: daqui até o claude, tudo roda nesta pasta
