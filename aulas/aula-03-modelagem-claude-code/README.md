@@ -50,17 +50,48 @@ A noite resolve as quatro coisas, nessa ordem.
 ingestão da noite 2 está no workspace. Hoje nada disso é recriado: um **repositório novo**, vazio,
 ganha o bundle, e o bundle passa a cuidar do job, que continua lendo e gravando no mesmo catálogo.
 
-### 0 · Confira o ponto de partida (2 min)
+### 0 · As ferramentas e o ponto de partida (5 min)
+
+**As três ferramentas da noite.** Confira as versões:
 
 ```bash
-databricks auth profiles                     # o seu profile com Valid: YES
-databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile DEFAULT
-# 10 tabelas: as 9 da noite 1 + feriados
-databricks jobs list --profile DEFAULT      # o job de ingestão da noite 2 está aqui
+gh --version            # GitHub CLI
+databricks --version    # Databricks CLI, v1.0 ou mais nova (testado na v1.13)
+claude --version        # Claude Code
 ```
 
-Login vencido? `databricks auth login --profile DEFAULT`. Instalação do zero (editor, Git, CLI,
-Claude Code): [passos 1 a 9 do passo a passo completo](claude-code/README.md#-antes-do-prompt-1-o-passo-a-passo-do-zero).
+Faltou alguma? Instale a que faltar:
+
+```bash
+# macOS
+brew install gh
+brew tap databricks/tap && brew install databricks
+curl -fsSL https://claude.ai/install.sh | bash
+
+# Windows (PowerShell)
+winget install GitHub.cli
+winget install Databricks.DatabricksCLI
+irm https://claude.ai/install.ps1 | iex
+```
+
+**O login nas três:**
+
+```bash
+gh auth login                                   # GitHub.com · HTTPS · navegador
+databricks auth login --profile DEFAULT         # abre o navegador: entre no seu Free Edition
+claude                                          # na primeira vez pede o login; depois saia com /exit
+```
+
+**O ponto de partida no workspace:**
+
+```bash
+databricks auth profiles                        # DEFAULT com Valid: YES
+databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile DEFAULT
+# 10 tabelas: as 9 da noite 1 + feriados
+databricks jobs list --profile DEFAULT          # o job de ingestão da noite 2 está aqui
+```
+
+Do zero, com editor e Git: [passos 1 a 9 do passo a passo completo](claude-code/README.md#-antes-do-prompt-1-o-passo-a-passo-do-zero).
 
 ### 1 · O bundle, à mão, com a CLI (5 min, sem Claude Code)
 
@@ -106,11 +137,15 @@ git add . && git status                                      # .databricks/ NÃO
 git commit -m "passo 1: o job de ontem vira código" && git push -u origin HEAD
 ```
 
-### 2 · Abra o Claude Code na raiz
+### 2 · As skills do Databricks e o Claude Code
 
 ```bash
+databricks aitools install --agents claude-code --scope project --skills-only --experimental
 claude
 ```
+
+O `aitools install` põe as skills oficiais do Databricks em `.claude/skills/` (CLI, bundles,
+pipelines, dashboards...): é o manual que o Claude Code consulta antes de cada comando.
 
 Sempre na raiz do repositório `vertice`. O prompt 2 começa arrumando o bundle (nomes, agendamento,
 o `CLAUDE.md` do curso) e depois faz a silver.
