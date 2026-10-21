@@ -100,7 +100,7 @@ Troque `DEFAULT` pelo seu profile, se tiver outro nome.
 
 ```bash
 mkdir -p ~/projetos && cd ~/projetos
-gh repo create vertice --public --clone          # se já existir um "vertice" no seu GitHub, use outro nome
+gh repo create vertice --public --clone          # já tem um "vertice" no GitHub? use outro nome AQUI e no init
 databricks bundle init default-minimal --profile DEFAULT     # nome: vertice · o resto: Enter
 cd ~/projetos/vertice
 ls databricks.yml                                             # TEM que aparecer: daqui até o claude, tudo roda nesta pasta
