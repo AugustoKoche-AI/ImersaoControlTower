@@ -1,4 +1,4 @@
-# Prompt 2 · Silver — as três ferramentas viram uma
+# Prompt 1 · Silver — as três ferramentas viram uma
 
 **Entrega:** o pipeline declarativo `vertice_medalhao` com a silver: o cadastro do
 PMO, a **`silver.tarefas` que integra Excel, ClickUp e MS Project**, e as outras
@@ -77,7 +77,7 @@ pare e me mostre o comando para eu rodar com `!`.
 Confira antes: o databricks.yml está na pasta onde você abriu, e existe
 resources/*.job.yml com as chaves em ${var.…}. Se faltar, NÃO rode o
 bundle generate (ele grava as chaves em texto): pare e me diga qual passo
-do passo-01-bundle-na-mao.md refazer.
+do bundle-na-mao.md refazer.
 
 Antes de tudo, arrume o bundle:
 - databricks.yml: tire o mode: development do target dev (ele prefixa os
@@ -109,7 +109,7 @@ contrato.
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
 resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
 ${var.catalog}, schema silver, serverless: true, photon: true, e libraries com
-um glob em ../src/silver/** (o prompt 3 vai acrescentar ../src/gold/**).
+um glob em ../src/silver/** (o prompt 2 vai acrescentar ../src/gold/**).
 
 Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
 existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.

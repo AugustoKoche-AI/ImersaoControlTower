@@ -8,9 +8,9 @@ só, calcula os KPIs com teste, lê a causa de cada atraso no texto do status e 
 **dashboard** que o dono abre. Tudo como código, num repositório seu no GitHub.
 
 > **Formato:** o passo 1 à mão, com a CLI do Databricks (o bundle nasce num repositório novo), e
-> os prompts 2 a 5 no Claude Code. Um deploy por passo, um bundle só (`vertice`).
+> os prompts 1 a 4 no Claude Code. Um deploy por passo, um bundle só (`vertice`).
 > **Ponto de partida:** o job de ingestão que a turma montou **clicando** na noite 2. No passo 1 ele
-> vira código; no prompt 5 o job inteiro alimenta o dashboard.
+> vira código; no prompt 4 o job inteiro alimenta o dashboard.
 > **Passo a passo completo** (instalação do zero, os 5 prompts prontos para copiar, o gabarito):
 > [`claude-code/README.md`](claude-code/README.md).
 > **Conexão:** a gold de hoje é o que o modelo, o Genie e o app da [noite 4](../aula-04-produtos-de-dados-ia) usam.
@@ -36,11 +36,11 @@ A noite resolve as quatro coisas, nessa ordem.
 
 | # | Passo | Entrega | Prova de que funcionou |
 |---|---|---|---|
-| 1 | **O bundle, à mão** (CLI) | repositório novo com `bundle init`, o job de ontem importado (`bundle generate`), as chaves fora do Git | 2 caixas verdes no DAG · `git status` sem nenhuma chave |
-| 2 | **Conferência + silver** | a conferência das 9 tabelas da bronze e o pipeline `vertice_medalhao`: as 3 ferramentas viram `silver.tarefas`, mais 6 tabelas limpas, com `EXPECT` | 9 `ok` · **4.917 tarefas** (Excel 1.643 · ClickUp 2.119 · Project 1.155) · custo R$ 193,35 mi, igual à bronze |
-| 3 | **Gold + testes** | `projeto_situacao_atual`, `fato_projeto_semana`, `utilizacao_pessoa_semana` e 10 testes que quebram o job | **7 críticos, 10 em atenção, 4 melancias, R$ 6,47 mi** de estouro previsto |
-| 4 | **O job completo** | `status_estruturado` (IA no texto do status) e o job inteiro, de ponta a ponta, toda segunda às 6h | **6 caixas verdes** · PRJ-011: falta de SRE, 12 semanas, 57 dias |
-| 5 | **O dashboard** | "Projeto Farol · Portfólio", 3 páginas, como código no bundle | SPI 0,92 · CPI 0,97 · as SREs paradas · a CodeForge ×1,41 |
+| — | **O bundle, à mão** (CLI) | repositório novo com `bundle init`, o job de ontem importado (`bundle generate`), as chaves fora do Git | 2 caixas verdes no DAG · `git status` sem nenhuma chave |
+| 1 | **Conferência + silver** | a conferência das 9 tabelas da bronze e o pipeline `vertice_medalhao`: as 3 ferramentas viram `silver.tarefas`, mais 6 tabelas limpas, com `EXPECT` | 9 `ok` · **4.917 tarefas** (Excel 1.643 · ClickUp 2.119 · Project 1.155) · custo R$ 193,35 mi, igual à bronze |
+| 2 | **Gold + testes** | `projeto_situacao_atual`, `fato_projeto_semana`, `utilizacao_pessoa_semana` e 10 testes que quebram o job | **7 críticos, 10 em atenção, 4 melancias, R$ 6,47 mi** de estouro previsto |
+| 3 | **O job completo** | `status_estruturado` (IA no texto do status) e o job inteiro, de ponta a ponta, toda segunda às 6h | **6 caixas verdes** · PRJ-011: falta de SRE, 12 semanas, 57 dias |
+| 4 | **O dashboard** | "Projeto Farol · Portfólio", 3 páginas, como código no bundle | SPI 0,92 · CPI 0,97 · as SREs paradas · a CodeForge ×1,41 |
 
 ---
 
@@ -91,11 +91,11 @@ databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.br
 databricks jobs list --profile DEFAULT          # o job de ingestão da noite 2 está aqui
 ```
 
-Do zero, com editor e Git: [passos 1 a 9 do passo a passo completo](claude-code/README.md#-antes-do-prompt-1-o-passo-a-passo-do-zero).
+Do zero, com editor e Git: [passos 1 a 9 do passo a passo completo](claude-code/README.md#-antes-de-tudo-o-passo-a-passo-do-zero).
 
 ### 1 · O bundle, à mão, com a CLI (5 min, sem Claude Code)
 
-Só copiar e colar. Detalhes e "se der errado" em [`passo-01-bundle-na-mao.md`](claude-code/prd/passo-01-bundle-na-mao.md).
+Só copiar e colar. Detalhes e "se der errado" em [`bundle-na-mao.md`](claude-code/prd/bundle-na-mao.md).
 Troque `DEFAULT` pelo seu profile, se tiver outro nome.
 
 ```bash
@@ -149,23 +149,42 @@ claude
 O `aitools install` põe as skills oficiais do Databricks em `.claude/skills/` (CLI, bundles,
 pipelines, dashboards...): é o manual que o Claude Code consulta antes de cada comando.
 
-Sempre na raiz do repositório `vertice`. O prompt 2 começa arrumando o bundle (nomes, agendamento,
+Sempre na raiz do repositório `vertice`. O prompt 1 começa arrumando o bundle (nomes, agendamento,
 o `CLAUDE.md` do curso) e depois faz a silver.
 
-### 3 · Os prompts 2 a 5, um de cada vez
+**5 minutos de Claude Code, antes do prompt 1:**
+
+| Comando | Para que serve |
+|---|---|
+| `/model` | escolhe o modelo |
+| `Shift+Tab` | troca o modo: normal (pede licença), aceitar edições, **plan** (só planeja) e **auto**. O rodapé mostra qual está ligado |
+| `@arquivo` | aponta um arquivo no prompt (`@CLAUDE.md`) |
+| `!comando` | roda o comando no seu terminal, e a saída entra na conversa |
+| `Esc` | interrompe. `Esc Esc` (ou `/rewind`) volta a um ponto anterior |
+| `/context` | quanto da memória da conversa já foi usado |
+| `/clear` | conversa nova (o `CLAUDE.md` continua valendo) |
+| `/voice` | dita o prompt em vez de digitar |
+
+**O ritmo da noite:** o `CLAUDE.md` é o PRD (o negócio, as sujeiras, as armadilhas). O **prompt 1**
+roda em **plan**: o Claude Code lê o PRD, propõe o plano, você revisa e aprova, e ele executa em
+**auto**. Os prompts 2 a 4 já vão direto em auto. O auto **recusa** sozinho comando que vaza chave
+ou apaga dado ("Credential Leakage", "Irreversible Deletion"): quando acontecer, ele mostra o
+comando e você roda com `!`.
+
+### 3 · Os prompts 1 a 4, um de cada vez
 
 Copie o prompt do arquivo, troque `<perfil>` pelo seu profile, cole no Claude Code e aprove os
 comandos que ele pedir (leia antes). No fim de cada um, confira e salve no GitHub.
 
 | # | Copie de | O Claude Code faz | Confira | Commit |
 |---|---|---|---|---|
-| 2 | [`prompt-02-silver.md`](claude-code/prd/prompt-02-silver.md) | a conferência da bronze e o pipeline `vertice_medalhao` com as 7 tabelas da silver | 9 `ok` · 4.917 tarefas · R$ 193,35 mi | `prompt 2: conferência e silver` |
-| 3 | [`prompt-03-gold.md`](claude-code/prd/prompt-03-gold.md) | as 3 tabelas da gold e os 10 testes | 7 críticos · 4 melancias · R$ 6,47 mi | `prompt 3: gold e testes` |
-| 4 | [`prompt-04-job-completo.md`](claude-code/prd/prompt-04-job-completo.md) | IA no status e o job inteiro, toda segunda às 6h | 6 caixas verdes em ~8 min · PRJ-011 `falta_sre` 12 semanas | `prompt 4: job completo` |
-| 5 | [`prompt-05-dashboard.md`](claude-code/prd/prompt-05-dashboard.md) | o dashboard "Projeto Farol · Portfólio" no bundle | SPI 0,92 · CPI 0,97 · publique | `prompt 5: dashboard` |
+| 1 | [`prompt-01-silver.md`](claude-code/prd/prompt-01-silver.md) | a conferência da bronze e o pipeline `vertice_medalhao` com as 7 tabelas da silver | 9 `ok` · 4.917 tarefas · R$ 193,35 mi | `prompt 1: conferência e silver` |
+| 2 | [`prompt-02-gold.md`](claude-code/prd/prompt-02-gold.md) | as 3 tabelas da gold e os 10 testes | 7 críticos · 4 melancias · R$ 6,47 mi | `prompt 2: gold e testes` |
+| 3 | [`prompt-03-job-completo.md`](claude-code/prd/prompt-03-job-completo.md) | IA no status e o job inteiro, toda segunda às 6h | 6 caixas verdes em ~8 min · PRJ-011 `falta_sre` 12 semanas | `prompt 3: job completo` |
+| 4 | [`prompt-04-dashboard.md`](claude-code/prd/prompt-04-dashboard.md) | o dashboard "Projeto Farol · Portfólio" no bundle | SPI 0,92 · CPI 0,97 · publique | `prompt 4: dashboard` |
 
 ```bash
-git add . && git commit -m "prompt 2: conferência e silver" && git push
+git add . && git commit -m "prompt 1: conferência e silver" && git push
 ```
 
 **O Claude Code recusou um comando por causa das chaves** (*"Credential Leakage"*, no modo
@@ -230,13 +249,13 @@ está no [passo a passo](claude-code/README.md), na seção "O desenho do que vo
 |---|---:|---|
 | Abertura | 8 | o job de ontem no workspace (verde às 6h); as 4 perguntas do dono ainda sem resposta; "o que mora num clique" |
 | Passo 1 · o bundle à mão | 15 | `bundle init`, `bundle generate`, as chaves fora do Git; o `git status` limpo; pausar o job de ontem |
-| Prompt 2 · silver | 20 | as 4 sujeiras com número (TOTAL, tarefas-resumo, vírgula, CodeForge); o grafo do pipeline; os `EXPECT` |
-| Prompt 3 · gold + testes | 15 | de trás para frente: pergunta → KPI → grão → tabela; os 7 críticos e os R$ 6,47 mi; as SREs paradas |
-| Prompt 4 · o job completo | 15 | a IA ao vivo em duas linhas; o PRJ-011; as 6 caixas verdes; o Repair run |
-| Prompt 5 · dashboard | 10 | o SQL da noite 1 × o de hoje; publicar; o dono vê a Torre |
+| Prompt 1 · silver | 20 | as 4 sujeiras com número (TOTAL, tarefas-resumo, vírgula, CodeForge); o grafo do pipeline; os `EXPECT` |
+| Prompt 2 · gold + testes | 15 | de trás para frente: pergunta → KPI → grão → tabela; os 7 críticos e os R$ 6,47 mi; as SREs paradas |
+| Prompt 3 · o job completo | 15 | a IA ao vivo em duas linhas; o PRJ-011; as 6 caixas verdes; o Repair run |
+| Prompt 4 · dashboard | 10 | o SQL da noite 1 × o de hoje; publicar; o dono vê a Torre |
 | Fecho | 7 | commit e push; o que vem amanhã (modelo, Genie, app) |
 
-**Se atrasar:** o prompt 2 nunca é cortado (é a integração, a entrega mais importante). O prompt 5
+**Se atrasar:** o prompt 1 nunca é cortado (é a integração, a entrega mais importante). O prompt 4
 vira demonstração com o gabarito (`python3 scripts/gerar_dashboard.py` + `bundle deploy`).
 
 **Antes da aula (instrutor):** rode o reset da noite 3 (`claude-code/prd/00-reset.sh`), confira que
@@ -270,8 +289,8 @@ Tudo de uma vez: `python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code
 
 | Arquivo | Para que serve |
 |---|---|
-| [`claude-code/README.md`](claude-code/README.md) | o passo a passo: instalação do zero, o passo 1 e os prompts 2 a 5 prontos para copiar, o que conferir |
-| [`claude-code/prd/`](claude-code/prd) | o passo 1 à mão e os prompts 2 a 5 (com o que mostrar, o que falar e "se der errado"), o `CLAUDE.md` da turma, a verificação e o reset |
+| [`claude-code/README.md`](claude-code/README.md) | o passo a passo: instalação do zero, o passo 1 e os prompts 1 a 4 prontos para copiar, o que conferir |
+| [`claude-code/prd/`](claude-code/prd) | o passo 1 à mão e os prompts 1 a 4 (com o que mostrar, o que falar e "se der errado"), o `CLAUDE.md` da turma, a verificação e o reset |
 | [`claude-code/vertice/`](claude-code/vertice) | **o gabarito**: o bundle completo, testado |
 | [`claude-code/APRENDIZADOS.md`](claude-code/APRENDIZADOS.md) | o que falhou no Free Edition e como foi resolvido |
 

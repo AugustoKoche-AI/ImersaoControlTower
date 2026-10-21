@@ -10,8 +10,8 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**3** · engenheiro de dados](aulas/aula-03-modelagem-claude-code) | 1 (à mão) e 2 a 5 | o job de ingestão da noite 2 como código, o pipeline que integra as 3 ferramentas, gold com testes, status semanal com IA e o dashboard |
-| [**4** · cientista e engenheiro de IA](aulas/aula-04-produtos-de-dados-ia) | 6 a 9 | modelo de estouro em 30 dias no mesmo job, metric view + Genie curado, o app da Torre e a decisão gravada no Lakebase |
+| [**3** · engenheiro de dados](aulas/aula-03-modelagem-claude-code) | o bundle (à mão) e 1 a 4 | o job de ingestão da noite 2 como código, o pipeline que integra as 3 ferramentas, gold com testes, status semanal com IA e o dashboard |
+| [**4** · cientista e engenheiro de IA](aulas/aula-04-produtos-de-dados-ia) | 5 a 8 | modelo de estouro em 30 dias no mesmo job, metric view + Genie curado, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
@@ -25,8 +25,8 @@ As noites 1 e 2 precisam estar feitas: o catálogo `lakehouse_vertice` com a bro
 **O passo 1 não é prompt: é você, com a CLI do Databricks.** Num repositório novo,
 `databricks bundle init default-minimal`, depois `databricks bundle generate job` importa o job
 de ontem, e as chaves vão para `.databricks/bundle/dev/variable-overrides.json`, fora do Git. O
-passo a passo, testado: [`passo-01-bundle-na-mao.md`](aulas/aula-03-modelagem-claude-code/claude-code/prd/passo-01-bundle-na-mao.md).
-Os prompts começam no 2.
+passo a passo, testado: [`bundle-na-mao.md`](aulas/aula-03-modelagem-claude-code/claude-code/prd/bundle-na-mao.md).
+Depois dele, os prompts 1 a 4.
 
 ```bash
 # 1 · a CLI do Databricks (v0.250 ou mais nova) e o login

@@ -1,4 +1,4 @@
-# Prompt 4 · O job completo: a Torre roda sozinha, e lê o texto do status
+# Prompt 3 · O job completo: a Torre roda sozinha, e lê o texto do status
 
 **Entrega:** o job `vertice_farol` inteiro, da ingestão aos testes, agendado para toda segunda às
 6h, com a última camada da noite: `gold.status_estruturado`, a causa de cada atraso tirada do texto

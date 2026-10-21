@@ -1,4 +1,4 @@
-# Prompt 3 · Gold — o produto de dados e as perguntas do dono
+# Prompt 2 · Gold — o produto de dados e as perguntas do dono
 
 **Entrega:** a gold no mesmo pipeline, com três tabelas (`fato_projeto_semana`,
 `projeto_situacao_atual` e `utilizacao_pessoa_semana`), e a tarefa `testes_de_qualidade`, que quebra o job se algo

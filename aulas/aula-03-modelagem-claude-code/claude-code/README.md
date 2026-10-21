@@ -1,4 +1,4 @@
-# 🤖 Claude Code: o job de ontem vira a Torre inteira (prompts 1 a 5) | Imersão Jornada de Dados
+# 🤖 Claude Code: o job de ontem vira a Torre inteira (o bundle à mão + prompts 1 a 4) | Imersão Jornada de Dados
 
 **Usado na noite 3 (quarta, 21/10).** O resumo da noite, o roteiro e os números estão no
 [README da aula](../README.md). Aqui está o passo a passo para quem constrói junto.
@@ -77,11 +77,11 @@ flowchart LR
 
 ---
 
-## 🚀 Antes do prompt 1: o passo a passo, do zero
+## 🚀 Antes de tudo: o passo a passo, do zero
 
 As noites 1 e 2 foram pelo navegador. A noite 3 precisa de **terminal** (a tela onde se digitam
 comandos). Siga na ordem; cada passo termina com um comando que **confere** se deu certo.
-Faça os passos 1 a 9 **antes da aula**: ao vivo, a gente começa direto no [passo 1, o bundle à mão](prd/passo-01-bundle-na-mao.md).
+Faça os passos 1 a 9 **antes da aula**: ao vivo, a gente começa direto no [passo 1, o bundle à mão](prd/bundle-na-mao.md).
 
 ### 🎥 Vídeos de referência
 
@@ -112,7 +112,7 @@ Sem conta no GitHub? Crie em <https://github.com/signup> antes do `gh auth login
 **Passo 3 · O seu repositório, do zero**
 
 Não tem `git clone`: o projeto nasce vazio, na sua conta, e no fim da semana é o seu portfólio.
-Quem cria a pasta é o próprio `databricks bundle init`, no [passo 1 da aula](prd/passo-01-bundle-na-mao.md):
+Quem cria a pasta é o próprio `databricks bundle init`, no [passo 1 da aula](prd/bundle-na-mao.md):
 a pasta `~/projetos/vertice` já nasce bundle, e o `git init` vem logo depois. Antes da aula, só
 crie a pasta-mãe:
 
@@ -215,7 +215,7 @@ databricks bundle init                 # pergunta o template: default-python, de
 **Hoje você roda o `bundle init` à mão**, com o template `default-minimal`, no passo 1 da aula. Ele
 vem com `mode: development`, que prefixa todos os nomes com `[dev seu_nome]` e quebra os caminhos
 da noite: o passo 1 troca o `databricks.yml` inteiro. Depois o `databricks bundle generate job` lê o
-job de ontem do workspace e escreve o YAML e os notebooks. A partir do prompt 2, o ciclo é sempre o
+job de ontem do workspace e escreve o YAML e os notebooks. A partir do prompt 1, o ciclo é sempre o
 mesmo, na raiz:
 
 ```bash
@@ -229,7 +229,7 @@ databricks bundle run vertice_farol --profile vertice # roda o job
 **Passo 11 · Ao fim de cada prompt, salve no GitHub**
 
 ```bash
-git add . && git commit -m "prompt 2: conferência e silver" && git push
+git add . && git commit -m "prompt 1: conferência e silver" && git push
 ```
 
 Os prompts dizem "na raiz deste repositório": é a sua pasta `~/projetos/vertice`. Se um prompt não
@@ -240,7 +240,7 @@ Pronto. Agora é prompt a prompt.
 
 ---
 
-<!-- prompts:inicio · copiado de prd/prompt-02..05-*.md (o passo 1 é manual: prd/passo-01-bundle-na-mao.md) (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e copie de novo. -->
+<!-- prompts:inicio · copiado de prd/prompt-02..05-*.md (o passo 1 é manual: prd/bundle-na-mao.md) (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e copie de novo. -->
 ## 📋 Os prompts da noite, prontos para copiar
 
 Cole um de cada vez no Claude Code, na raiz do seu repositório (`~/projetos/vertice`). Espere terminar,
@@ -251,9 +251,9 @@ A bronze e o job de ingestão vêm da noite 2.
 
 Não é prompt: você digita cada comando (`bundle init default-minimal`, `bundle generate job`, as
 chaves em `variable-overrides.json`, deploy e run). O passo a passo testado está em
-[`prd/passo-01-bundle-na-mao.md`](prd/passo-01-bundle-na-mao.md).
+[`prd/bundle-na-mao.md`](prd/bundle-na-mao.md).
 
-### Prompt 2 · Conferência + silver: as três ferramentas viram uma (~2 min)
+### Prompt 1 · Conferência + silver: as três ferramentas viram uma (~2 min)
 
 ```
 Leia o CLAUDE.md da raiz do repositório antes de começar. Use as skills
@@ -283,7 +283,7 @@ contrato.
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
 resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
 ${var.catalog}, schema silver, serverless: true, photon: true, e libraries com
-um glob em ../src/silver/** (o prompt 3 vai acrescentar ../src/gold/**).
+um glob em ../src/silver/** (o prompt 2 vai acrescentar ../src/gold/**).
 
 Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
 existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
@@ -359,7 +359,7 @@ Rode e me mostre a saída:
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
-### Prompt 3 · Gold + testes: a modelagem (~3 min)
+### Prompt 2 · Gold + testes: a modelagem (~3 min)
 
 ```
 Continue o bundle na raiz deste repositório. A silver está pronta.
@@ -417,7 +417,7 @@ Rode e me mostre a saída:
   databricks bundle run vertice_farol --profile vertice
 ```
 
-### Prompt 4 · O job completo, com IA no texto do status
+### Prompt 3 · O job completo, com IA no texto do status
 
 ```
 Continue o bundle na raiz deste repositório. A gold e os testes estão
@@ -476,7 +476,7 @@ Rode e me mostre a saída:
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
-### Prompt 5 · O dashboard: o dono vê a Torre (~10 s de deploy)
+### Prompt 4 · O dashboard: o dono vê a Torre (~10 s de deploy)
 
 ```
 Continue o bundle na raiz deste repositório. O job está pronto e a gold
@@ -546,20 +546,20 @@ do Free Edition já medidas.
 
 | # | Arquivo | O que entrega | Tempo |
 |---|---|---|---|
-| 1 | [`passo-01-bundle-na-mao.md`](prd/passo-01-bundle-na-mao.md) | o job de ontem como código (sem chave no Git) + conferência da bronze | ~4 min (a ingestão roda junto) |
-| 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline, `silver.tarefas` + 6 tabelas | ~2 min |
-| 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | 3 tabelas gold (fotografia, filme, pessoas) + 10 testes | ~3 min |
-| 4 | [`prompt-04-job-completo.md`](prd/prompt-04-job-completo.md) | `status_estruturado` (ai_classify + ai_extract) e o job inteiro, de ponta a ponta | ~8 min |
-| 5 | [`prompt-05-dashboard.md`](prd/prompt-05-dashboard.md) | o dashboard "Projeto Farol · Portfólio", 3 páginas | ~10 s de deploy |
+| — | [`bundle-na-mao.md`](prd/bundle-na-mao.md) | o job de ontem como código (sem chave no Git) + conferência da bronze | ~4 min (a ingestão roda junto) |
+| 1 | [`prompt-01-silver.md`](prd/prompt-01-silver.md) | pipeline, `silver.tarefas` + 6 tabelas | ~2 min |
+| 2 | [`prompt-02-gold.md`](prd/prompt-02-gold.md) | 3 tabelas gold (fotografia, filme, pessoas) + 10 testes | ~3 min |
+| 3 | [`prompt-03-job-completo.md`](prd/prompt-03-job-completo.md) | `status_estruturado` (ai_classify + ai_extract) e o job inteiro, de ponta a ponta | ~8 min |
+| 4 | [`prompt-04-dashboard.md`](prd/prompt-04-dashboard.md) | o dashboard "Projeto Farol · Portfólio", 3 páginas | ~10 s de deploy |
 
 Se um prompt não entregar, o **gabarito** está em [`vertice/`](vertice): compare o arquivo.
 
 ### Passo 1 · O bundle, à mão
 
-O job de ontem vira código sem Claude Code: [`prd/passo-01-bundle-na-mao.md`](prd/passo-01-bundle-na-mao.md).
+O job de ontem vira código sem Claude Code: [`prd/bundle-na-mao.md`](prd/bundle-na-mao.md).
 No fim, `vertice_farol` com 2 caixas verdes, `git status` sem chave e o job de ontem pausado.
 
-### Prompt 2 · As três ferramentas viram uma
+### Prompt 1 · As três ferramentas viram uma
 
 > **A entrega mais importante da noite. Não corte.**
 
@@ -579,7 +579,7 @@ cada uma do seu jeito e empilha todas na `silver.tarefas`, com as **mesmas colun
 **Por que juntar à mão não serve como produto:** funciona, mas é frágil. Esqueça a linha
 de `TOTAL` da planilha e as horas do Excel dobram. Esqueça as tarefas-resumo do Project e as horas
 dobram de novo. Use `try_cast` no custo com vírgula decimal e **R$ 5,4 milhões somem sem erro**
-(187,94 em vez de 193,35). O prompt 2 escreve cada uma dessas regras uma vez, com teste.
+(187,94 em vez de 193,35). O prompt 1 escreve cada uma dessas regras uma vez, com teste.
 
 **O que conferir:**
 
@@ -600,7 +600,7 @@ SELECT ROUND(SUM(valor) / 1e6, 2) FROM lakehouse_vertice.silver.custos;   -- 193
 > *"Juntei vinte planilhas, vinte e cinco listas do ClickUp e quinze cronogramas do Project numa
 > tabela só. Nenhuma tarefa ficou sem projeto, e o custo total não mudou um centavo. É esse o teste."*
 
-### Prompt 3 · A gold responde às perguntas do dono
+### Prompt 2 · A gold responde às perguntas do dono
 
 **O que você pede:** no mesmo pipeline, três tabelas gold, uma por pergunta:
 
@@ -627,7 +627,7 @@ FROM lakehouse_vertice.gold.projeto_situacao_atual GROUP BY situacao;
 
 O estouro previsto dos projetos em andamento dá **R$ 6,47 mi**, o mesmo do rascunho de ontem. E as
 duas SREs paradas aparecem no timesheet: COL0017 e COL0018, a ~5% no PRJ-007, que ainda está no
-desenho. É meia pergunta 3 do dono respondida (a outra metade vem no prompt 4).
+desenho. É meia pergunta 3 do dono respondida (a outra metade vem no prompt 3).
 
 ![Schema gold no Catalog Explorer](../../../docs/img/agora-gold.jpg)
 *A gold no Catalog Explorer, com a descrição do schema. As tabelas desta noite são `fato_projeto_semana`, `projeto_situacao_atual`, `utilizacao_pessoa_semana`, `status_estruturado` e a metric view `mv_projetos`. (O print é do ensaio, antes da simplificação: ainda mostra tabelas que saíram, como `dim_projeto` e `cobertura_capacidade`, e as das noites 3 e 4.)*
@@ -638,7 +638,7 @@ desenho. É meia pergunta 3 do dono respondida (a outra metade vem no prompt 4).
 > **"Melancia"** é o projeto verde por fora e vermelho por dentro: o gerente marca farol verde, mas o
 > SPI está abaixo de 0,9. São 4: PRJ-012, PRJ-028, PRJ-034, PRJ-042.
 
-### Prompt 4 · O job completo: a Torre roda sozinha, e lê o texto do status
+### Prompt 3 · O job completo: a Torre roda sozinha, e lê o texto do status
 
 **O que você pede:** a última camada da noite, a `status_estruturado`, que lê o texto livre do status
 semanal e tira a **causa do bloqueio**, o bloqueio, quem destrava e os dias de impacto. E o job
@@ -669,13 +669,13 @@ GROUP BY 1 ORDER BY 2 DESC;
 -- falta_sre · 12 semanas · 57 dias de impacto declarado
 ```
 
-Junto com o prompt 3, é a pergunta 3 do dono inteira: **duas SREs paradas no PRJ-007 enquanto o
+Junto com o prompt 2, é a pergunta 3 do dono inteira: **duas SREs paradas no PRJ-007 enquanto o
 PRJ-011 pede SRE no status há 12 semanas.**
 
 ![DAG do job vertice_farol com todas as tarefas verdes](../../../docs/img/noite2-job.jpg)
 *O job no ensaio de 18/10: `conferencia_bronze` → `medalhao` → duas tarefas **em paralelo** (`status_com_ia`, `testes_de_qualidade`). O seu tem ainda as duas caixas da ingestão na frente da conferência. (O print ainda mostra tarefas que saíram ou foram para a noite 4, como `postmortem_com_ia` e `metricas_governadas`.)*
 
-### Prompt 5 · O dashboard: o dono vê a Torre
+### Prompt 4 · O dashboard: o dono vê a Torre
 
 **O que você pede:** o dashboard "Projeto Farol · Portfólio", como código no bundle, com três
 páginas: **Portfólio** (KPIs, estouro por projeto, SPI × CPI, a evolução semanal, o farol do
@@ -744,7 +744,7 @@ a **causa** (a IA lendo o texto) e as **pessoas** (o timesheet).
 |---|---|---|
 | `refresh token is invalid` | Login expirado | `databricks auth login --profile <perfil>` |
 | O Claude Code recusa o deploy (*"Credential Leakage"*) | O modo automático barra comando que leva chave | Rode você mesmo, com `!` na frente: `! databricks bundle deploy --profile <perfil>` (o `!` roda na pasta onde o Claude Code está; sem `cd` relativo) |
-| `no value assigned to required variable s3_access_key_id` | Faltou o arquivo das chaves | `.databricks/bundle/dev/variable-overrides.json` (prompt 1, passo 4) |
+| `no value assigned to required variable s3_access_key_id` | Faltou o arquivo das chaves | `.databricks/bundle/dev/variable-overrides.json` (bundle à mão, passo 4) |
 | `ingestao_data_lake` falha com `preencha: [...]` | A chave não chegou como parâmetro | `base_parameters` com `${var.…}` na tarefa |
 | A chave aparece no `git status` | `.databricks/` fora do `.gitignore` | Acrescente ao `.gitignore` antes do commit |
 | `dev_fulano_silver` não existe | `mode: development` no target | `presets: { trigger_pause_status: PAUSED }` |
@@ -790,7 +790,7 @@ segundo `bundle deploy`, depois do `run`, porque precisa das tabelas.
 | Caminho | O que é |
 |---|---|
 | `prd/CLAUDE.md` | contexto do projeto para o Claude Code |
-| `prd/prompt-01..05-*.md` | os 5 prompts, com o que mostrar, o que falar e "se der errado" |
+| `prd/prompt-01..04-*.md` | os 4 prompts (o bundle à mão está em `bundle-na-mao.md`), com o que mostrar, o que falar e "se der errado" |
 | `prd/99-verificacao.sql` | os 20 números da noite, esperado × obtido |
 | `prd/00-reset.sh` | zera silver, gold e os recursos do bundle (simula por padrão) |
 | `vertice/` | **o gabarito**: o bundle completo, testado |

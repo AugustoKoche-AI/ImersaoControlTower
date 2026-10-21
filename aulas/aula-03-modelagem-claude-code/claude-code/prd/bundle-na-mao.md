@@ -2,7 +2,7 @@
 
 **Entrega:** um repositório novo, `vertice`, que já é um bundle, com o job de ingestão da noite 2
 importado como código e as chaves do Supabase fora do Git. Só comandos para copiar e colar; a
-arrumação fina (nomes, `mode: development`, agendamento) o Claude Code faz no prompt 2.
+arrumação fina (nomes, `mode: development`, agendamento) o Claude Code faz no prompt 1.
 
 > **A premissa:** o catálogo `lakehouse_vertice`, a bronze e o job de ingestão da noite 2 já
 > existem no workspace. Nada disso é recriado.
@@ -74,7 +74,7 @@ git commit -m "passo 1: o job de ontem vira código" && git push -u origin HEAD
 ```
 
 No workspace aparece o job **`[dev seu_usuario] Ingestão`**, criado pelo bundle. O prefixo é do
-`mode: development` do template: o prompt 2 tira e renomeia o job para `vertice_farol`.
+`mode: development` do template: o prompt 1 tira e renomeia o job para `vertice_farol`.
 
 ## 5 · Abra o Claude Code
 

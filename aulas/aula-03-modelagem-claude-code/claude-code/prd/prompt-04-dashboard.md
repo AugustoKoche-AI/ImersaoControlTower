@@ -1,4 +1,4 @@
-# Prompt 5 · O dashboard: o dono vê a Torre
+# Prompt 4 · O dashboard: o dono vê a Torre
 
 **Entrega:** o dashboard **"Projeto Farol · Portfólio"** (3 páginas: Portfólio, Pessoas,
 Fornecedores) como código no bundle, lendo a gold que o job recalcula toda segunda.
@@ -123,6 +123,6 @@ PRJ-011 com a barra de `falta_sre`. Na página **Fornecedores**, a CodeForge com
 | Dashboard vazio ou `TABLE_OR_VIEW_NOT_FOUND` | Query com catálogo escrito à mão, ou sem `dataset_schema` | Nome puro no SQL + `dataset_catalog`/`dataset_schema` no YAML |
 | `modified remotely` no deploy | O dashboard foi editado no workspace | Leve a mudança para o script, gere o JSON e use `--force` só depois disso |
 | KPI do SPI diferente de 0,92 | Média dos SPIs em vez de razão das somas | `SUM(ev) / SUM(pv)` |
-| Página Pessoas sem as causas | A tarefa `status_com_ia` não rodou | Rode o job (prompt 4) e recarregue |
+| Página Pessoas sem as causas | A tarefa `status_com_ia` não rodou | Rode o job (prompt 3) e recarregue |
 
 **Tempo medido:** deploy ~10 s.

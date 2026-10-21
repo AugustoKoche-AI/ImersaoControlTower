@@ -3,11 +3,11 @@
 # Abra o DAG no workspace depois de cada deploy: o desenho crescendo é a melhor
 # tela da aula.
 #
-#   noite 3 · prompt 1  ingestao_feriados + ingestao_data_lake (o job "Ingestão" da noite 2,
+#   noite 3 · à mão     ingestao_feriados + ingestao_data_lake (o job "Ingestão" da noite 2,
 #                       agora como código) → conferencia_bronze
-#   noite 3 · prompt 2  + medalhao (pipeline Lakeflow: silver, as 3 ferramentas viram uma)
-#   noite 3 · prompt 3  + (o mesmo pipeline ganha a gold) + testes_de_qualidade
-#   noite 3 · prompt 4  + status_com_ia, e o agendamento de segunda
+#   noite 3 · prompt 1  + medalhao (pipeline Lakeflow: silver, as 3 ferramentas viram uma)
+#   noite 3 · prompt 2  + (o mesmo pipeline ganha a gold) + testes_de_qualidade
+#   noite 3 · prompt 3  + status_com_ia, e o agendamento de segunda
 #   noite 4 · prompt 1  + ml_features → ml_modelo → ml_score
 #   noite 4 · prompt 2  + metricas_governadas
 #

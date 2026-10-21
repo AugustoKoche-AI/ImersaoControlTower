@@ -10,8 +10,8 @@ Este arquivo é a sequência inteira, na ordem, para quem quer refazer sozinho.
 
 | Noite | Prompts | O que existe no fim |
 |---|---|---|
-| [**3** · engenheiro de dados](aulas/aula-03-modelagem-claude-code) | 1 (à mão) e 2 a 5 | o job de ingestão da noite 2 como código, o pipeline que integra as 3 ferramentas, gold com testes, status semanal com IA e o dashboard |
-| [**4** · cientista e engenheiro de IA](aulas/aula-04-produtos-de-dados-ia) | 6 a 9 | modelo de estouro em 30 dias no mesmo job, metric view + Genie curado, o app da Torre e a decisão gravada no Lakebase |
+| [**3** · engenheiro de dados](aulas/aula-03-modelagem-claude-code) | o bundle (à mão) e 1 a 4 | o job de ingestão da noite 2 como código, o pipeline que integra as 3 ferramentas, gold com testes, status semanal com IA e o dashboard |
+| [**4** · cientista e engenheiro de IA](aulas/aula-04-produtos-de-dados-ia) | 5 a 8 | modelo de estouro em 30 dias no mesmo job, metric view + Genie curado, o app da Torre e a decisão gravada no Lakebase |
 
 ---
 
@@ -25,8 +25,8 @@ As noites 1 e 2 precisam estar feitas: o catálogo `lakehouse_vertice` com a bro
 **O passo 1 não é prompt: é você, com a CLI do Databricks.** Num repositório novo,
 `databricks bundle init default-minimal`, depois `databricks bundle generate job` importa o job
 de ontem, e as chaves vão para `.databricks/bundle/dev/variable-overrides.json`, fora do Git. O
-passo a passo, testado: [`passo-01-bundle-na-mao.md`](aulas/aula-03-modelagem-claude-code/claude-code/prd/passo-01-bundle-na-mao.md).
-Os prompts começam no 2.
+passo a passo, testado: [`bundle-na-mao.md`](aulas/aula-03-modelagem-claude-code/claude-code/prd/bundle-na-mao.md).
+Depois dele, os prompts 1 a 4.
 
 ```bash
 # 1 · a CLI do Databricks (v0.250 ou mais nova) e o login
@@ -65,9 +65,9 @@ errado"**. Se for a primeira vez, siga por eles.
 
 ## Noite 3 · a Torre roda sozinha
 
-### Prompt 2 · Conferência + silver
+### Prompt 1 · Conferência + silver
 
-*a bronze conferida e as três ferramentas viram uma* · noite 3 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-02-silver.md)
+*a bronze conferida e as três ferramentas viram uma* · noite 3 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-01-silver.md)
 
 ```
 Use as skills databricks-core, databricks-dabs e databricks-pipelines.
@@ -89,7 +89,7 @@ pare e me mostre o comando para eu rodar com `!`.
 Confira antes: o databricks.yml está na pasta onde você abriu, e existe
 resources/*.job.yml com as chaves em ${var.…}. Se faltar, NÃO rode o
 bundle generate (ele grava as chaves em texto): pare e me diga qual passo
-do passo-01-bundle-na-mao.md refazer.
+do bundle-na-mao.md refazer.
 
 Antes de tudo, arrume o bundle:
 - databricks.yml: tire o mode: development do target dev (ele prefixa os
@@ -121,7 +121,7 @@ contrato.
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
 resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
 ${var.catalog}, schema silver, serverless: true, photon: true, e libraries com
-um glob em ../src/silver/** (o prompt 3 vai acrescentar ../src/gold/**).
+um glob em ../src/silver/** (o prompt 2 vai acrescentar ../src/gold/**).
 
 Use CREATE OR REFRESH MATERIALIZED VIEW (nunca CREATE OR REPLACE, que não
 existe no pipeline) e CREATE TEMPORARY VIEW para as visões intermediárias.
@@ -197,9 +197,9 @@ Rode e me mostre a saída:
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
-### Prompt 3 · Gold + testes
+### Prompt 2 · Gold + testes
 
-*o produto de dados e as perguntas do dono* · noite 3 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-03-gold.md)
+*o produto de dados e as perguntas do dono* · noite 3 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-02-gold.md)
 
 ```
 Continue o bundle na raiz deste repositório. A silver está pronta.
@@ -257,9 +257,9 @@ Rode e me mostre a saída:
   databricks bundle run vertice_farol --profile DEFAULT
 ```
 
-### Prompt 4 · O job completo
+### Prompt 3 · O job completo
 
-*a Torre roda sozinha, e lê o texto do status com IA* · noite 3 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-04-job-completo.md)
+*a Torre roda sozinha, e lê o texto do status com IA* · noite 3 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-03-job-completo.md)
 
 ```
 Continue o bundle na raiz deste repositório. A gold e os testes estão
@@ -318,9 +318,9 @@ Rode e me mostre a saída:
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
-### Prompt 5 · O dashboard
+### Prompt 4 · O dashboard
 
-*o dono vê a Torre* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-05-dashboard.md)
+*o dono vê a Torre* · noite 3 · bundle deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-04-dashboard.md)
 
 ```
 Continue o bundle na raiz deste repositório. O job está pronto e a gold
@@ -400,7 +400,7 @@ modelo em cima deles.
 ---
 ## Noite 4 · a Torre prevê, responde e ganha uma URL
 
-### Prompt 6 · O modelo
+### Prompt 5 · O modelo
 
 *o que vai dar errado no próximo mês* · noite 4 · bundle deploy + run · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-01-modelo.md)
 
@@ -498,7 +498,7 @@ Rode e me mostre a saída:
 E no fim: as métricas de ml.modelo_metricas e o top 25 do score com o motivo.
 ```
 
-### Prompt 7 · Métricas + Genie
+### Prompt 6 · Métricas + Genie
 
 *o dono pergunta em português* · noite 4 · bundle deploy + run + deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-02-genie.md)
 
@@ -564,7 +564,7 @@ Se o benchmark der menos de 16/20, mostre os erros e ajuste a INSTRUÇÃO
 (não a pergunta), gere o JSON, faça deploy e rode de novo.
 ```
 
-### Prompt 8 · O app da Torre
+### Prompt 7 · O app da Torre
 
 *a Torre na tela do dono* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-03-app.md)
 
@@ -624,7 +624,7 @@ Use as skills databricks-apps e databricks-app-design. A gold, o score
    faça databricks apps deploy --profile <perfil>. Me mostre a URL.
 ```
 
-### Prompt 9 · A aprovação no Lakebase
+### Prompt 8 · A aprovação no Lakebase
 
 *a decisão fica registrada (opcional)* · noite 4 · apps deploy · [texto completo, com o que falar e as armadilhas](aulas/aula-04-produtos-de-dados-ia/prd/prompt-04-aprovacao-lakebase.md)
 
