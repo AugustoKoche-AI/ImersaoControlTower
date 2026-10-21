@@ -115,6 +115,28 @@ PRJ-011 com a barra de `falta_sre`. Na página **Fornecedores**, a CodeForge com
 
 ---
 
+## Bônus · só o professor: o Claude Code confere a tela (`/chrome`)
+
+O fechamento da noite: o Claude Code escreveu o código, fez o deploy, e agora abre o workspace no
+navegador para conferir o que fez, como uma pessoa faria.
+
+```
+/chrome
+Abra o dashboard "Projeto Farol · Portfólio" no workspace, publique,
+e me diga se os KPIs batem com a tabela do "O que conferir" do prompt 4.
+```
+
+Ele navega, clica em **Publish** e compara carteira, SPI · CPI, estouro e as contagens com a tabela
+acima.
+
+- **Não é passo da turma.** Pede a extensão Claude in Chrome instalada, login e permissão de site:
+  mais 10 minutos e mais um ponto de falha. A CLI e a verificação SQL já provam tudo.
+- **Ensaie uma vez antes** (o dashboard já existe no workspace, dá sem rodar o resto): a extensão
+  conectada, e o workspace sem pedir login no meio.
+- Se o navegador travar ao vivo, siga sem ele: abra o dashboard você mesmo e publique.
+
+---
+
 ## Se der errado
 
 | Sintoma | Causa | Correção |
