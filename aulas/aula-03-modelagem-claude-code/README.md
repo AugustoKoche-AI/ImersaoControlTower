@@ -139,6 +139,19 @@ git add . && git status                                      # .databricks/ NÃO
 git commit -m "passo 1: o job de ontem vira código" && git push -u origin HEAD
 ```
 
+**O Claude Code disse que não achou o job importado (ou o `generate` deu erro)?** O `generate` rodou
+fora da pasta do bundle. Refaça só esta parte, de dentro da pasta onde está o `databricks.yml`:
+
+```bash
+cd ~/projetos/vertice                                        # ou a pasta onde você rodou o init
+ls databricks.yml                                            # tem que aparecer
+databricks bundle generate job --existing-job-id <id> --profile DEFAULT --force
+```
+
+Cole de novo o bloco das chaves (acima) e rode `validate`, `deploy`, `commit` e `push`. Depois
+saia do Claude Code (`/exit`), abra de novo **nesta pasta** (`claude`) e cole o prompt 1. O
+`--force` reescreve o `ingestão.job.yml` do zero, então o bloco das chaves funciona de novo.
+
 ### 2 · As skills do Databricks e o Claude Code
 
 ```bash
