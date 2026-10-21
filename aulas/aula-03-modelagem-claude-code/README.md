@@ -229,6 +229,8 @@ automático)? Não contorne: rode você mesmo, com `!` na frente, o comando que 
 exemplo `! databricks bundle deploy --profile DEFAULT`. O `!` roda na pasta onde o Claude Code
 está, que já é a raiz: não precisa de `cd`.
 
+> **Enquanto o prompt 1 roda:** leia com a turma [a camada silver](#-enquanto-o-prompt-1-roda-a-camada-silver): para que serve, o que pode (UNION, JOIN, mudar tipo) e o que não pode.
+
 ### 4 · No fim, a prova
 
 ```bash
@@ -237,6 +239,84 @@ python3 scripts/run_sql.py verificacao.sql --profile DEFAULT
 
 Baixe a [`99-verificacao.sql`](claude-code/prd/99-verificacao.sql) como `verificacao.sql`: são
 20 linhas `ok`. Algum `CONFIRA`? Compare o arquivo com o [gabarito](claude-code/vertice).
+
+---
+
+## 🥈 Enquanto o prompt 1 roda: a camada silver
+
+O prompt 1 leva alguns minutos. Este é o roteiro para falar enquanto ele trabalha.
+
+### Para que serve
+
+| Camada | O que é | Analogia |
+|---|---|---|
+| **bronze** | o dado **como chegou**, com toda a sujeira. Ninguém mexe | a caixa de notas fiscais |
+| **silver** | o dado **em que dá para confiar**: limpo, tipado, padronizado e integrado | a planilha organizada |
+| **gold** | a **resposta** para a pergunta do negócio: KPIs, situação, ranking | o relatório do dono |
+
+**A regra que resume tudo:** a silver tem o **mesmo grão** da bronze (uma linha por tarefa, por
+lançamento de custo, por status semanal), só que confiável. Ela ainda **não responde pergunta**:
+prepara o dado para a gold responder.
+
+### O que pode e o que não pode na silver
+
+| Operação | Na silver? | Exemplo da Vértice |
+|---|---|---|
+| **Mudar o tipo** (texto → data, texto → número) | ✅ É o trabalho principal | data em `yyyy-MM-dd` e `dd/MM/yyyy`; número de série do Excel; `'40h'`; `'PT40H0M0S'`; `12345,67` |
+| **Padronizar texto** | ✅ Guardando o original ao lado | farol `Verde`/`VERDE`; ferramenta escrita de 8 jeitos; CodeForge de 4 jeitos; status do ClickUp de 12 jeitos |
+| **UNION** (empilhar fontes) | ✅ Quando é o **mesmo assunto**, com o **mesmo contrato de colunas** | Excel + ClickUp + MS Project viram `silver.tarefas` |
+| **JOIN** | ✅ Para **resolver chave** ou enriquecer a linha | o de-para do PMO diz que a lista 901200095028 do ClickUp é o PRJ-012 |
+| **Tirar linha que não é dado** | ✅ Com regra escrita e teste | a linha de TOTAL da planilha; as tarefas-resumo do Project |
+| **Deduplicar** | ✅ Com critério declarado | 523 linhas no RH → 520 pessoas |
+| **Corrigir valor** | ⚠️ Só por regra, nunca à mão, e com flag | % acima de 100 vira 100, com `pct_veio_acima_de_100` |
+| **Jogar fora o que parece estranho** | ❌ Sinalize | status vazio vira `status_vazio`; estorno negativo fica, com `estorno` |
+| **Agregar** (SUM por projeto, média) | ❌ Vai para a gold | horas por projeto, custo por mês |
+| **Regra de negócio** (SPI, crítico, melancia) | ❌ Vai para a gold | `situacao = 'crítico'` quando SPI < 0,8 |
+| **Alterar a bronze ou a fonte** | ❌ Nunca | a sujeira é o retrato do processo; consertar a fonte esconde o problema |
+
+### Boas práticas (as 8 que valem para qualquer projeto)
+
+1. **Mesmo grão da bronze.** Se a silver já soma, você perdeu o detalhe que a próxima pergunta vai pedir.
+2. **Guarde o original ao lado.** `ferramenta_como_veio`, `fornecedor_como_veio`, `valor_veio_com_virgula`:
+   quando alguém duvidar do número, você mostra de onde veio.
+3. **Flag em vez de DELETE.** Linha descartada em silêncio é dinheiro sumindo sem ninguém saber.
+4. **Cuidado com o `try_cast`.** Ele "funciona": devolve nulo em vez de erro. Na Vértice, o
+   `try_cast` jogaria fora 671 lançamentos com vírgula decimal, R$ 5,4 milhões, sem um aviso.
+5. **Teste de conservação.** O que entra tem que sair: custo da silver = custo da bronze
+   (R$ 193,35 mi); horas de cada planilha = a linha de TOTAL dela.
+6. **Contrato na tabela, não no script.** `CONSTRAINT ... EXPECT (...) ON VIOLATION FAIL UPDATE`:
+   se amanhã aparecer "Planilha Google" como ferramenta, o pipeline para em vez de gravar nulo.
+7. **Data fixa, nunca `current_date()`.** "Hoje" é 16/10/2026: o número não pode mudar sozinho de um dia para o outro.
+8. **`COMMENT` em toda tabela e coluna.** É o que o Genie e o próximo analista vão ler.
+
+### O que ela faz aqui (as 7 tabelas)
+
+| Tabela | O que a silver faz | Confira |
+|---|---|---|
+| `projetos` | o cadastro do PMO e o **de-para** da integração: datas em 2 formatos, ferramenta de 8 jeitos, código vazio | 60 projetos |
+| `tarefas` | **as 3 ferramentas viram uma**: 3 visões com as mesmas colunas e um `UNION ALL`. Excel (sem TOTAL, data de série, `%` de 3 jeitos, `h`), ClickUp (milissegundos, `custom_fields`, 12 status), Project (sem resumo, fase pelo `OutlineLevel`, `PT40H`) | **4.917** (Excel 1.643 · ClickUp 2.119 · Project 1.155) · 11 com % acima de 100 |
+| `status_semanal` | farol padronizado, status vazio sinalizado (não descartado) | 3.911 status |
+| `custos` | vírgula decimal recuperada, estorno mantido e sinalizado | **R$ 193,35 mi**, igual à bronze · 671 com vírgula |
+| `colaboradores` | os 3 cadastros duplicados viram 1 | 520 pessoas |
+| `apontamentos` | o timesheet tipado: horas disponíveis × apontadas | |
+| `entregas_fornecedor` | a CodeForge de 4 grafias vira 1 fornecedor; prazo real e prometido em dias; `em_atraso` | 5 entregas em atraso, todas da CodeForge |
+
+### Por que um pipeline declarativo
+
+Cada arquivo diz **o que** a tabela é (`CREATE OR REFRESH MATERIALIZED VIEW silver.tarefas AS ...`), não
+**como** rodar. O Lakeflow lê os `FROM`, descobre a ordem (primeiro `projetos`, porque `tarefas` depende
+do de-para), roda em paralelo o que dá e desenha o grafo. Ninguém escreve orquestração.
+
+### As perguntas que a turma faz
+
+- **"Por que não limpar direto na planilha ou no gerador?"** Porque amanhã chega uma planilha nova
+  com a mesma sujeira. A regra na silver vale para sempre; a correção à mão vale uma vez.
+- **"O JOIN com o cadastro não é coisa da gold?"** O JOIN que **resolve a chave** (qual projeto é
+  esta tarefa) é silver. O JOIN que **monta a resposta** (custo × orçamento por cliente) é gold.
+- **"Por que materialized view e não tabela?"** Porque o pipeline recalcula sozinho quando a bronze
+  muda. Tabela comum precisaria de alguém para mandar atualizar.
+- **"E se uma regra falhar?"** O `EXPECT ... FAIL UPDATE` para o pipeline e diz qual regra e quantas
+  linhas. Melhor parar do que gravar número errado.
 
 ---
 
