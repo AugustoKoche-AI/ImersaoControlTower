@@ -69,7 +69,7 @@ O resumo:
 
 ```bash
 cd ~/projetos
-databricks bundle init default-minimal --profile <perfil>     # nome: vertice
+databricks bundle init default-minimal --profile <perfil>     # nome: vertice · catálogo: lakehouse_vertice · personal schema: no · o resto: Enter
 cd vertice && git init -b main
 curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-03-modelagem-claude-code/claude-code/prd/CLAUDE.md
 mkdir -p scripts && curl -fsSL -o scripts/run_sql.py https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/scripts/run_sql.py

@@ -18,11 +18,23 @@ Testado em 21/10/2026 com a CLI v1.13. Troque `<perfil>` pelo seu profile em tod
 ```bash
 mkdir -p ~/projetos && cd ~/projetos
 databricks bundle init default-minimal --profile <perfil>
-# Unique name for this project: vertice
 cd vertice
 git init -b main
 ls -a        # databricks.yml  .gitignore  CLAUDE.md  AGENTS.md  README.md  pyproject.toml ...
 ```
+
+O `init` faz algumas perguntas. Responda assim (o `databricks.yml` é trocado inteiro no passo 2,
+então só o nome importa):
+
+| Pergunta | Resposta |
+|---|---|
+| `Unique name for this project [my_project]` | `vertice` |
+| `Default catalog for any tables created by this project [workspace]` | `lakehouse_vertice` |
+| `Use a personal schema for each user working on this project?` | `no` |
+| qualquer outra pergunta | Enter (aceita o padrão) |
+
+> **Profile:** qualquer profile que aponte para o workspace da imersão serve (`DEFAULT` também).
+> Confira com `databricks auth profiles`: o host tem que ser o do seu workspace.
 
 O `default-minimal` é o esqueleto vazio: um `databricks.yml` e nenhum recurso. O `.gitignore` dele
 **já deixa a `.databricks/` de fora**, e é lá que as chaves vão morar.
