@@ -86,9 +86,9 @@ de cada uma e os valores dos KPIs.
 
 Rode e me mostre a saída:
   python3 scripts/gerar_dashboard.py
-  databricks bundle validate --profile <perfil>
-  databricks bundle deploy --profile <perfil>
-  databricks bundle summary --profile <perfil>
+  databricks bundle validate --profile DEFAULT
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle summary --profile DEFAULT
 ```
 
 ---

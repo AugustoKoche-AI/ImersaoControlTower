@@ -90,8 +90,8 @@ src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
 Acrescente ao job a tarefa testes_de_qualidade, depois de medalhao.
 
 Rode e me mostre a saída:
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --profile <perfil>
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle run vertice_farol --profile DEFAULT
 ```
 
 ---

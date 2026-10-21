@@ -112,9 +112,9 @@ prontos. Agora a última camada da noite, e o job inteiro rodando sozinho.
    - atualize o comentário do topo com as 6 tarefas e o que cada uma faz
 
 Rode e me mostre a saída:
-  databricks bundle validate --profile <perfil>
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --profile <perfil>
+  databricks bundle validate --profile DEFAULT
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle run vertice_farol --profile DEFAULT
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 

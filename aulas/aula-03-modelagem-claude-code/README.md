@@ -54,55 +54,66 @@ ganha o bundle, e o bundle passa a cuidar do job, que continua lendo e gravando 
 
 ```bash
 databricks auth profiles                     # o seu profile com Valid: YES
-databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile <perfil>
+databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile DEFAULT
 # 10 tabelas: as 9 da noite 1 + feriados
-databricks jobs list --profile <perfil>      # o job de ingestão da noite 2 está aqui
+databricks jobs list --profile DEFAULT      # o job de ingestão da noite 2 está aqui
 ```
 
-Login vencido? `databricks auth login --profile <perfil>`. Instalação do zero (editor, Git, CLI,
+Login vencido? `databricks auth login --profile DEFAULT`. Instalação do zero (editor, Git, CLI,
 Claude Code): [passos 1 a 9 do passo a passo completo](claude-code/README.md#-antes-do-prompt-1-o-passo-a-passo-do-zero).
 
-### 1 · O bundle, à mão, com a CLI (15 min, sem Claude Code)
+### 1 · O bundle, à mão, com a CLI (5 min, sem Claude Code)
 
-O passo a passo completo, testado, está em [`passo-01-bundle-na-mao.md`](claude-code/prd/passo-01-bundle-na-mao.md).
-O resumo:
+Só copiar e colar. Detalhes e "se der errado" em [`passo-01-bundle-na-mao.md`](claude-code/prd/passo-01-bundle-na-mao.md).
+Troque `DEFAULT` pelo seu profile, se tiver outro nome.
 
 ```bash
 cd ~/projetos
-databricks bundle init default-minimal --profile <perfil>     # nome: vertice · catálogo: lakehouse_vertice · personal schema: no · o resto: Enter
-cd vertice && git init -b main
-curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-03-modelagem-claude-code/claude-code/prd/CLAUDE.md
-mkdir -p scripts && curl -fsSL -o scripts/run_sql.py https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/scripts/run_sql.py
+gh repo create vertice --public --clone
+databricks bundle init default-minimal --profile DEFAULT     # nome: vertice · o resto: Enter
+cd vertice
 
-# databricks.yml: troque pelo do passo 2 do arquivo (sem mode: development, com as variáveis)
-
-databricks jobs list --profile <perfil>                        # o id do job de ontem
-databricks bundle generate job --existing-job-id <id> --profile <perfil>
-mv "resources/ingestão.job.yml" resources/vertice.job.yml
-# no YAML: vertice_farol, ingestao_feriados, ingestao_data_lake, ${var.s3_...}, PAUSED
-
-mkdir -p .databricks/bundle/dev                                # as chaves, fora do Git
-echo '{"s3_access_key_id": "...", "s3_secret_access_key": "..."}' > .databricks/bundle/dev/variable-overrides.json
-
-databricks bundle validate --profile <perfil>
-databricks bundle deploy   --profile <perfil>
-databricks bundle run vertice_farol --profile <perfil>        # 2 caixas verdes, ~3 min
-
-gh repo create projeto-farol --public --source=. --remote=origin
-git add . && git commit -m "passo 1: o job de ontem vira código" && git push -u origin main
+databricks jobs list --profile DEFAULT                       # copie o id do job "Ingestão"
+databricks bundle generate job --existing-job-id <id> --profile DEFAULT
 ```
 
-Confira: `git status` não mostra a `.databricks/`, e o job "Ingestão" de ontem fica **pausado**
-(dois jobs recarregando a mesma bronze às 6h brigam).
+As chaves do Supabase saem do YAML (o repositório é público) e vão para a `.databricks/`, que o
+Git ignora. Cole o bloco inteiro:
+
+```bash
+python3 - <<'PY'
+import json, pathlib, re
+arquivo = pathlib.Path("resources/ingestão.job.yml")
+yml = arquivo.read_text()
+chaves = {"s3_access_key_id": "AWS_ACCESS_KEY_ID", "s3_secret_access_key": "AWS_SECRET_ACCESS_KEY"}
+valores = {}
+for var, param in chaves.items():
+    valores[var] = re.search(rf"{param}: (.+)", yml).group(1).strip().strip("\"'")
+    yml = re.sub(rf"{param}: .+", f"{param}: ${{var.{var}}}", yml)
+yml = "variables:\n" + "".join(f"  {v}:\n    description: chave do data lake (o valor fica fora do Git)\n" for v in chaves) + "\n" + yml
+arquivo.write_text(yml)
+pasta = pathlib.Path(".databricks/bundle/dev"); pasta.mkdir(parents=True, exist_ok=True)
+(pasta / "variable-overrides.json").write_text(json.dumps(valores))
+print("ok: as chaves saíram do YAML e foram para", pasta / "variable-overrides.json")
+PY
+```
+
+```bash
+databricks bundle validate --profile DEFAULT                 # Validation OK!
+databricks bundle deploy   --profile DEFAULT
+
+git add . && git status                                      # .databricks/ NÃO aparece
+git commit -m "passo 1: o job de ontem vira código" && git push -u origin HEAD
+```
 
 ### 2 · Abra o Claude Code na raiz
 
 ```bash
-databricks aitools install --agents claude-code --scope project --skills-only --experimental
 claude
 ```
 
-Sempre na raiz do repositório `vertice`: é dali que todo comando roda.
+Sempre na raiz do repositório `vertice`. O prompt 2 começa arrumando o bundle (nomes, agendamento,
+o `CLAUDE.md` do curso) e depois faz a silver.
 
 ### 3 · Os prompts 2 a 5, um de cada vez
 
@@ -122,13 +133,13 @@ git add . && git commit -m "prompt 2: conferência e silver" && git push
 
 **O Claude Code recusou um comando por causa das chaves** (*"Credential Leakage"*, no modo
 automático)? Não contorne: rode você mesmo, com `!` na frente, o comando que ele mostrar, por
-exemplo `! databricks bundle deploy --profile <perfil>`. O `!` roda na pasta onde o Claude Code
+exemplo `! databricks bundle deploy --profile DEFAULT`. O `!` roda na pasta onde o Claude Code
 está, que já é a raiz: não precisa de `cd`.
 
 ### 4 · No fim, a prova
 
 ```bash
-python3 scripts/run_sql.py verificacao.sql --profile <perfil>
+python3 scripts/run_sql.py verificacao.sql --profile DEFAULT
 ```
 
 Baixe a [`99-verificacao.sql`](claude-code/prd/99-verificacao.sql) como `verificacao.sql`: são
@@ -214,7 +225,7 @@ o job de ingestão da noite 2 está verde e que a bronze tem as 9 tabelas, e dei
 | Status classificados por IA / regra / palavra-chave | 163 / 2.954 / 794 |
 | CodeForge | prazo ×1,41, 0% no prazo, 5 entregas em atraso |
 
-Tudo de uma vez: `python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/99-verificacao.sql --profile <perfil>` (20 × ok).
+Tudo de uma vez: `python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/99-verificacao.sql --profile DEFAULT` (20 × ok).
 
 ---
 

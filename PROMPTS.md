@@ -70,16 +70,35 @@ errado"**. Se for a primeira vez, siga por eles.
 *a bronze conferida e as três ferramentas viram uma* · noite 3 · bundle deploy + run do pipeline · [texto completo, com o que falar e as armadilhas](aulas/aula-03-modelagem-claude-code/claude-code/prd/prompt-02-silver.md)
 
 ```
-Leia o CLAUDE.md da raiz do repositório antes de começar. Use as skills
-databricks-core, databricks-dabs e databricks-pipelines. Sempre --profile <perfil>.
+Use as skills databricks-core, databricks-dabs e databricks-pipelines.
+Sempre --profile DEFAULT.
 
-O bundle vertice está na raiz deste repositório: eu criei à mão com a CLI.
-Tem o databricks.yml (variáveis catalog, warehouse_id e as duas chaves do
-data lake) e o job vertice_farol em resources/vertice.job.yml, importado do
-job de ontem, com as tarefas ingestao_feriados e ingestao_data_lake. NÃO
-mexa nas chaves, nem no .databricks/bundle/dev/variable-overrides.json, nem
-no catálogo e nos schemas (já existem). Se um comando for recusado por causa
-das chaves, pare e me mostre o comando para eu rodar com `!`.
+Primeiro, o contexto do curso: troque o CLAUDE.md da raiz (o do template)
+por este, e leia antes de continuar:
+  curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-03-modelagem-claude-code/claude-code/prd/CLAUDE.md
+  mkdir -p scripts && curl -fsSL -o scripts/run_sql.py https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/scripts/run_sql.py
+
+O bundle vertice está na raiz: eu criei à mão com bundle init
+default-minimal e importei o job de ontem com bundle generate
+(resources/ingestão.job.yml, com as chaves do data lake já em variáveis).
+NÃO mexa nos valores das chaves, nem no
+.databricks/bundle/dev/variable-overrides.json, nem no catálogo e nos
+schemas (já existem). Se um comando for recusado por causa das chaves,
+pare e me mostre o comando para eu rodar com `!`.
+
+Antes de tudo, arrume o bundle:
+- databricks.yml: tire o mode: development do target dev (ele prefixa os
+  nomes) e ponha presets: trigger_pause_status: PAUSED. Variáveis catalog
+  (default lakehouse_vertice) e warehouse_id (descubra com
+  databricks warehouses list); saem as variáveis catalog/schema do template.
+  Mova os dois notebooks que o generate pôs em src/ para src/ingestao/
+  (ajuste o notebook_path). Apague fixtures/ e tests/ do template.
+- o job: renomeie o arquivo para resources/vertice.job.yml, a chave e o
+  name para vertice_farol, as tarefas para ingestao_feriados (a da API) e
+  ingestao_data_lake (a do boto3), e schedule.pause_status para PAUSED. O
+  bloco variables das duas chaves pode ir para o databricks.yml.
+- depois do deploy, pause o agendamento do job antigo "Ingestão" (dois jobs
+  recarregando a mesma bronze às 6h brigam). Não apague.
 
 0. Antes da silver, a conferência da bronze: src/conferencia/00-conferencia-bronze.sql,
    sql_task no warehouse ${var.warehouse_id}, tarefa conferencia_bronze no job,
@@ -167,9 +186,9 @@ Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
 Rode e me mostre a saída:
-  databricks bundle validate --profile <perfil>
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --profile <perfil>
+  databricks bundle validate --profile DEFAULT
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle run vertice_farol --profile DEFAULT
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
@@ -229,8 +248,8 @@ src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
 Acrescente ao job a tarefa testes_de_qualidade, depois de medalhao.
 
 Rode e me mostre a saída:
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --profile <perfil>
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle run vertice_farol --profile DEFAULT
 ```
 
 ### Prompt 4 · O job completo
@@ -288,9 +307,9 @@ prontos. Agora a última camada da noite, e o job inteiro rodando sozinho.
    - atualize o comentário do topo com as 6 tarefas e o que cada uma faz
 
 Rode e me mostre a saída:
-  databricks bundle validate --profile <perfil>
-  databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_farol --profile <perfil>
+  databricks bundle validate --profile DEFAULT
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle run vertice_farol --profile DEFAULT
 E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
@@ -347,9 +366,9 @@ de cada uma e os valores dos KPIs.
 
 Rode e me mostre a saída:
   python3 scripts/gerar_dashboard.py
-  databricks bundle validate --profile <perfil>
-  databricks bundle deploy --profile <perfil>
-  databricks bundle summary --profile <perfil>
+  databricks bundle validate --profile DEFAULT
+  databricks bundle deploy --profile DEFAULT
+  databricks bundle summary --profile DEFAULT
 ```
 
 ---
