@@ -97,7 +97,7 @@ Antes de tudo, arrume o bundle:
   (default lakehouse_vertice) e warehouse_id (descubra com
   databricks warehouses list); saem as variáveis catalog/schema do template.
   Mova os dois notebooks que o generate pôs em src/ para src/ingestao/
-  (ajuste o notebook_path). Apague fixtures/ e tests/ do template.
+  (ajuste o notebook_path). Deixe fixtures/ e tests/ do template onde estão.
 - o job: renomeie o arquivo para resources/vertice.job.yml, a chave e o
   name para vertice_farol, as tarefas para ingestao_feriados (a da API) e
   ingestao_data_lake (a do boto3), e schedule.pause_status para PAUSED. O
@@ -141,8 +141,10 @@ Um arquivo por assunto em src/silver/:
 Três CREATE TEMPORARY VIEW com as MESMAS colunas (projeto_id, ferramenta,
 id_na_ferramenta, fase, tarefa, responsavel, inicio_baseline, fim_baseline,
 inicio_real, fim_real, pct_como_veio, horas, status_na_ferramenta):
-- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se o
-  código faltar, o PRJ-xxx do nome do arquivo. Datas: com '/' é dd/MM/yyyy,
+- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se não
+  casar (código vazio, ou o arquivo chegou sem acento: 'Core bancario' ×
+  'Core bancário'), o PRJ-xxx do nome do arquivo:
+  coalesce(p.projeto_id, regexp_extract(arquivo, 'PRJ-[0-9]{3}', 0)). Datas: com '/' é dd/MM/yyyy,
   senão é número de série do Excel: date_add(DATE'1899-12-30', CAST(x AS INT)).
   %: com '%' tire o '%' e troque vírgula por ponto; sem '%' é fração (× 100).
   Horas: tire o 'h'. TIRE a linha onde tarefa = 'TOTAL'.
@@ -190,11 +192,17 @@ custos, colaboradores, apontamentos e entregas_fornecedor.
 Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
-Rode e me mostre a saída:
+Trabalhe direto, sem testar cada SELECT antes do deploy: o EXPECT e o
+pipeline são o teste. Se o pipeline falhar, leia o PRIMEIRO erro do evento,
+corrija e rode de novo. Nunca dispare um run com outro ainda ativo: o Free
+Edition tem limite de compute serverless (RESOURCE_EXHAUSTED).
+
+Rode e me mostre a saída (a bronze já está carregada: a ingestão fica para
+o prompt 3):
   databricks bundle validate --profile DEFAULT
   databricks bundle deploy --profile DEFAULT
-  databricks bundle run vertice_farol --profile DEFAULT
-E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
+  databricks bundle run vertice_farol --only conferencia_bronze,medalhao --profile DEFAULT
+E no fim, numa tabela: cada tarefa, quanto tempo levou e o resultado.
 ```
 
 ### Prompt 2 · Gold + testes
@@ -252,9 +260,12 @@ src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
 
 Acrescente ao job a tarefa testes_de_qualidade, depois de medalhao.
 
-Rode e me mostre a saída:
+Trabalhe direto: o EXPECT e os testes são a conferência. Nunca dispare um
+run com outro ainda ativo (limite de compute do Free Edition).
+
+Rode e me mostre a saída (só o medalhão e os testes; a bronze não muda):
   databricks bundle deploy --profile DEFAULT
-  databricks bundle run vertice_farol --profile DEFAULT
+  databricks bundle run vertice_farol --only medalhao,testes_de_qualidade --profile DEFAULT
 ```
 
 ### Prompt 3 · O job completo
@@ -314,8 +325,10 @@ prontos. Agora a última camada da noite, e o job inteiro rodando sozinho.
 Rode e me mostre a saída:
   databricks bundle validate --profile DEFAULT
   databricks bundle deploy --profile DEFAULT
-  databricks bundle run vertice_farol --profile DEFAULT
-E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
+  databricks bundle run vertice_farol --only medalhao+ --profile DEFAULT
+(medalhao+ = o medalhão e tudo depois dele: testes e IA, em paralelo. A
+ingestão já rodou; o job inteiro roda sozinho toda segunda às 6h.)
+E no fim, numa tabela: cada tarefa, quanto tempo levou e o resultado.
 ```
 
 ### Prompt 4 · O dashboard

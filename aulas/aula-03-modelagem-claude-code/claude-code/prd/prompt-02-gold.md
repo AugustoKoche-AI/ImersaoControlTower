@@ -89,9 +89,12 @@ src/testes/testes.sql (sql_task) — cada teste com raise_error se falhar:
 
 Acrescente ao job a tarefa testes_de_qualidade, depois de medalhao.
 
-Rode e me mostre a saída:
+Trabalhe direto: o EXPECT e os testes são a conferência. Nunca dispare um
+run com outro ainda ativo (limite de compute do Free Edition).
+
+Rode e me mostre a saída (só o medalhão e os testes; a bronze não muda):
   databricks bundle deploy --profile DEFAULT
-  databricks bundle run vertice_farol --profile DEFAULT
+  databricks bundle run vertice_farol --only medalhao,testes_de_qualidade --profile DEFAULT
 ```
 
 ---

@@ -114,15 +114,17 @@ prontos. Agora a última camada da noite, e o job inteiro rodando sozinho.
 Rode e me mostre a saída:
   databricks bundle validate --profile DEFAULT
   databricks bundle deploy --profile DEFAULT
-  databricks bundle run vertice_farol --profile DEFAULT
-E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
+  databricks bundle run vertice_farol --only medalhao+ --profile DEFAULT
+(medalhao+ = o medalhão e tudo depois dele: testes e IA, em paralelo. A
+ingestão já rodou; o job inteiro roda sozinho toda segunda às 6h.)
+E no fim, numa tabela: cada tarefa, quanto tempo levou e o resultado.
 ```
 
 ---
 
 ## O que conferir
 
-Abra o `vertice_farol` no workspace: **seis caixas verdes**, e o gráfico de tempo de cada tarefa
+Abra o `vertice_farol` no workspace: o DAG com as **seis caixas**, e nesta execução o medalhão, os testes e a IA verdes, com o gráfico de tempo de cada tarefa
 (a ingestão do data lake e o medalhão são as mais longas).
 
 ```sql
@@ -161,4 +163,4 @@ não se paga duas vezes.
 | `testes_de_qualidade` falhou e a IA rodou mesmo assim | As duas dependem só do medalhão | É o desenho: os testes barram o que vem **depois** deles (na noite 4, o modelo) |
 | Uma tarefa falhou no meio | Qualquer erro numa camada | **Repair run** no workspace: refaz só a que falhou e as seguintes |
 
-**Tempo medido (21/10):** o job da noite 3 leva ~8 min: data lake 2 min 53 s (feriados 81 s, em paralelo) · conferência 30 s · medalhão 1 min 52 s · IA 2 min 38 s (163 textos) · testes 21 s, em paralelo com a IA. Com as tarefas do ML da noite 4, 9 min 55 s.
+**Tempo medido (21/10):** com `--only medalhao+`, ~5 min (medalhão ~2 min, IA ~2 min 40 s em paralelo com os testes). O job inteiro, sem `--only`, leva ~8 min: data lake 2 min 53 s (feriados 81 s, em paralelo) · conferência 30 s · medalhão 1 min 52 s · IA 2 min 38 s (163 textos) · testes 21 s, em paralelo com a IA. Com as tarefas do ML da noite 4, 9 min 55 s.

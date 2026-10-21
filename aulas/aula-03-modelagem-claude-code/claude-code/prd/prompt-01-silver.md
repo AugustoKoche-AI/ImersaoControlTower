@@ -130,7 +130,7 @@ Antes de tudo, arrume o bundle:
   (default lakehouse_vertice) e warehouse_id (descubra com
   databricks warehouses list); saem as variáveis catalog/schema do template.
   Mova os dois notebooks que o generate pôs em src/ para src/ingestao/
-  (ajuste o notebook_path). Apague fixtures/ e tests/ do template.
+  (ajuste o notebook_path). Deixe fixtures/ e tests/ do template onde estão.
 - o job: renomeie o arquivo para resources/vertice.job.yml, a chave e o
   name para vertice_farol, as tarefas para ingestao_feriados (a da API) e
   ingestao_data_lake (a do boto3), e schedule.pause_status para PAUSED. O
@@ -174,8 +174,10 @@ Um arquivo por assunto em src/silver/:
 Três CREATE TEMPORARY VIEW com as MESMAS colunas (projeto_id, ferramenta,
 id_na_ferramenta, fase, tarefa, responsavel, inicio_baseline, fim_baseline,
 inicio_real, fim_real, pct_como_veio, horas, status_na_ferramenta):
-- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se o
-  código faltar, o PRJ-xxx do nome do arquivo. Datas: com '/' é dd/MM/yyyy,
+- tarefas_excel: projeto pelo de-para (codigo_ferramenta = arquivo) e, se não
+  casar (código vazio, ou o arquivo chegou sem acento: 'Core bancario' ×
+  'Core bancário'), o PRJ-xxx do nome do arquivo:
+  coalesce(p.projeto_id, regexp_extract(arquivo, 'PRJ-[0-9]{3}', 0)). Datas: com '/' é dd/MM/yyyy,
   senão é número de série do Excel: date_add(DATE'1899-12-30', CAST(x AS INT)).
   %: com '%' tire o '%' e troque vírgula por ponto; sem '%' é fração (× 100).
   Horas: tire o 'h'. TIRE a linha onde tarefa = 'TOTAL'.
@@ -223,11 +225,17 @@ custos, colaboradores, apontamentos e entregas_fornecedor.
 Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
-Rode e me mostre a saída:
+Trabalhe direto, sem testar cada SELECT antes do deploy: o EXPECT e o
+pipeline são o teste. Se o pipeline falhar, leia o PRIMEIRO erro do evento,
+corrija e rode de novo. Nunca dispare um run com outro ainda ativo: o Free
+Edition tem limite de compute serverless (RESOURCE_EXHAUSTED).
+
+Rode e me mostre a saída (a bronze já está carregada: a ingestão fica para
+o prompt 3):
   databricks bundle validate --profile DEFAULT
   databricks bundle deploy --profile DEFAULT
-  databricks bundle run vertice_farol --profile DEFAULT
-E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
+  databricks bundle run vertice_farol --only conferencia_bronze,medalhao --profile DEFAULT
+E no fim, numa tabela: cada tarefa, quanto tempo levou e o resultado.
 ```
 
 ---
@@ -263,6 +271,8 @@ Abra o pipeline no workspace: o grafo com as três visões temporárias desaguan
 
 | Sintoma | Causa | Correção |
 |---|---|---|
+| `RESOURCE_EXHAUSTED: You've hit the limit for serverless compute` | Dois runs ao mesmo tempo (o pipeline tenta de novo sozinho depois de uma falha) | Espere o run ativo terminar (`databricks pipelines list-updates`) e rode uma vez só |
+| `EXPECT achou_o_projeto` falhou com projeto_id nulo no Excel | O arquivo chegou sem acento e não casou com o cadastro | `coalesce(p.projeto_id, regexp_extract(arquivo, 'PRJ-[0-9]{3}', 0))` |
 | `CREATE OR REPLACE ... not supported` | Sintaxe de SQL comum dentro do pipeline | `CREATE OR REFRESH MATERIALIZED VIEW` / `CREATE TEMPORARY VIEW` |
 | Pipeline falha em `achou_o_projeto` | Algum arquivo não casou com o cadastro do PMO | Confira o fallback: nome do arquivo (Excel) e nome da lista (ClickUp) |
 | Pipeline falha em `pct_entre_0_e_100` | Faltou o `least(…, 100)` ou o % fracionário não foi × 100 | É o `EXPECT` funcionando: corrija a regra, não o EXPECT |
@@ -270,4 +280,4 @@ Abra o pipeline no workspace: o grafo com as três visões temporárias desaguan
 | `Cannot resolve Baseline.Start` | A bronze do Project foi lida com `inferColumnTypes => false` | Na noite 1 o XML entra com inferência ligada (é o que mantém a struct) |
 | `Update is WAITING_FOR_RESOURCES` por 1 min | Serverless acordando | Normal na primeira execução |
 
-**Tempo medido:** deploy ~8 s; pipeline ~2 min na primeira execução.
+**Tempo medido (21/10):** com `--only conferencia_bronze,medalhao`, ~2 min 30 s de run (conferência 4 s, medalhão 2 min 22 s). No ensaio sem o `--only` e sem a regra do acento, o prompt levou ~15 min: 5 min de ingestão desnecessária e ~4 min de erro e conserto.
