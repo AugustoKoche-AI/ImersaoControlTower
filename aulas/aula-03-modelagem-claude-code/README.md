@@ -229,7 +229,9 @@ automático)? Não contorne: rode você mesmo, com `!` na frente, o comando que 
 exemplo `! databricks bundle deploy --profile DEFAULT`. O `!` roda na pasta onde o Claude Code
 está, que já é a raiz: não precisa de `cd`.
 
-> **Enquanto o prompt 1 roda:** leia com a turma [a camada silver](#-enquanto-o-prompt-1-roda-a-camada-silver): para que serve, o que pode (UNION, JOIN, mudar tipo) e o que não pode.
+> **Enquanto cada prompt roda, leia com a turma:** prompt 1 · [a camada silver](#-enquanto-o-prompt-1-roda-a-camada-silver) ·
+> prompt 2 · [a gold e os testes](#-enquanto-o-prompt-2-roda-a-camada-gold-e-os-testes) · prompt 3 · [o job e a IA](#️-enquanto-o-prompt-3-roda-o-job-e-a-ia-no-texto) ·
+> prompt 4 · [o dashboard (e AI/BI × Power BI)](#-enquanto-o-prompt-4-roda-o-dashboard)
 
 ### 4 · No fim, a prova
 
@@ -317,6 +319,134 @@ do de-para), roda em paralelo o que dá e desenha o grafo. Ninguém escreve orqu
   muda. Tabela comum precisaria de alguém para mandar atualizar.
 - **"E se uma regra falhar?"** O `EXPECT ... FAIL UPDATE` para o pipeline e diz qual regra e quantas
   linhas. Melhor parar do que gravar número errado.
+
+---
+
+## 🥇 Enquanto o prompt 2 roda: a camada gold e os testes
+
+### Para que serve
+
+A silver é o dado **confiável**. A gold é o dado **útil**: modelado para responder uma pergunta de
+negócio, com a regra de negócio já aplicada. Quem abre a gold (o dashboard, o Genie, o app, o
+diretor no SQL) não precisa saber que o Excel tinha linha de TOTAL: encontra o SPI pronto.
+
+**A regra que resume tudo:** cada tabela gold existe por causa de uma pergunta. Se ninguém pergunta,
+ela não existe.
+
+### O que pode e o que não pode na gold
+
+| Operação | Na gold? | Exemplo da Vértice |
+|---|---|---|
+| **Agregar** (SUM, COUNT, por projeto, por semana) | ✅ É o trabalho principal | horas e custo por projeto e semana |
+| **Regra de negócio** | ✅ Escrita uma vez, num lugar só | `crítico` se SPI ou CPI < 0,8; `atenção` se < 0,9; melancia |
+| **JOIN que monta a resposta** | ✅ | cadastro + tarefas + custos → a fotografia do projeto |
+| **Mudar o grão** | ✅ Declarando o novo grão | de "uma linha por tarefa" para "uma linha por projeto e semana" |
+| **Desnormalizar** (a tabela larga) | ✅ Quando simplifica quem consome | `projeto_situacao_atual` já traz cliente, gerente, contrato e KPIs: sem `dim_projeto` |
+| **Limpar dado** | ❌ Volta para a silver | se a gold precisa de `replace(',', '.')`, a silver falhou |
+| **Ler da bronze** | ❌ Só da silver | senão a limpeza fica duplicada e diverge |
+| **Média de razão** | ❌ Razão das somas | SPI da carteira = `SUM(ev) / SUM(pv)`, não `AVG(spi)`: o projeto pequeno não pesa igual ao grande |
+
+### As 3 tabelas: fotografia, filme e pessoas
+
+| Tabela | Grão | Responde | Confira |
+|---|---|---|---|
+| `projeto_situacao_atual` | 1 linha por projeto, **hoje** (a fotografia) | perguntas 1 e 2: quem atrasa, de qual cliente, quanto custa | 7 críticos · 10 atenção · 4 melancias · **R$ 6,47 mi** |
+| `fato_projeto_semana` | 1 linha por projeto e **semana** (o filme) | desde quando o projeto piora; a tendência do SPI e do CPI | a curva do CPI caindo a partir do 6º mês |
+| `utilizacao_pessoa_semana` | 1 linha por pessoa, projeto e semana | pergunta 3: tenho gente parada? | COL0017 e COL0018 a ~5% no PRJ-007 |
+
+**Por que fotografia e filme separados?** As ferramentas só guardam o % de **hoje**. O histórico vem
+do status semanal de cada sexta. A fotografia usa as tarefas (mais preciso hoje); o filme usa o
+status (o único com passado). O teste 9 garante que os dois contam a mesma história hoje.
+
+### Os 10 testes: melhor o job falhar do que o diretor ver número errado
+
+Os testes rodam depois do pipeline, como uma tarefa do job. Cada um termina em `raise_error()` se
+falhar, e o job fica vermelho.
+
+| Tipo | Testes | O que protege |
+|---|---|---|
+| **Integração** | 1 · 60 projetos têm cronograma · 2 · cada projeto veio de uma ferramenta só | nenhum projeto sumiu ou duplicou na `UNION` |
+| **Conservação** | 3 · horas do Excel = linhas de TOTAL · 6 · custo da silver = custo da bronze · 10 · AC do fato = soma dos lançamentos | a limpeza não criou nem sumiu com dado |
+| **Unicidade** | 4 · uma linha por pessoa · 5 · a CodeForge virou 1 fornecedor | dedup e padronização funcionaram |
+| **Completude** | 7 · 60 fotografias · 8 · todo projeto em andamento tem SPI e CPI | nenhum KPI nulo no dashboard |
+| **Coerência** | 9 · EV do status = EV das ferramentas (< 1%) | fotografia e filme não se contradizem |
+
+**`EXPECT` × teste:** o `EXPECT` olha **uma linha** de cada vez ("esta data não é nula"). O teste olha
+**a tabela inteira** ("a soma bate", "são 60"). Os dois juntos fecham o contrato.
+
+---
+
+## ⚙️ Enquanto o prompt 3 roda: o job e a IA no texto
+
+### O job: quem roda o quê, em que ordem, e quando
+
+| Conceito | No `vertice_farol` |
+|---|---|
+| **DAG** (o desenho das dependências) | ingestões em paralelo → conferência → medalhão → testes e IA em paralelo |
+| **Dependência** (`depends_on`) | o medalhão só começa com a bronze conferida; a IA só lê a silver pronta |
+| **Paralelo** | duas tarefas que não leem uma à outra rodam juntas: os testes não esperam a IA |
+| **Agendamento** | toda segunda às 6h (America/Sao_Paulo); no dev fica **pausado** |
+| **`max_concurrent_runs: 1`** | duas execuções ao mesmo tempo apagariam a bronze uma da outra |
+| **Repair run** | falhou a IA? Refaz só ela e o que vem depois. A ingestão de 3 minutos não roda de novo |
+
+**O DAG é a documentação.** Quem abre o job vê, sem ler código, o caminho do dado da planilha até o
+dashboard, e o tempo de cada etapa.
+
+### A IA dentro do SQL
+
+`ai_classify` e `ai_extract` são funções de SQL, como `upper()`: recebem um texto e devolvem uma
+coluna. Sem endpoint, sem Python, sem chave de API.
+
+| Função | Faz | Exemplo |
+|---|---|---|
+| `ai_classify` | **escolhe** uma opção de uma lista fechada | "Sem SRE alocado: pipeline quebrado" → `falta_sre` |
+| `ai_extract` | **tira** campos do texto, já tipados (versão 2.0 com JSON schema) | "Impacto estimado: 1 semana" → `dias_impacto = 7` |
+
+### Boas práticas de IA em dados
+
+1. **IA custa por linha.** ~5 s por status neste workspace: os 3,9 mil levariam uma hora.
+2. **Cada ferramenta onde ela é a certa:** **regra** para o que tem padrão fixo (três em cada quatro
+   status dizem "sem bloqueios"), **IA** só nos 163 textos com bloqueio dos últimos 90 dias (~2 min),
+   **palavra-chave** no histórico antigo, onde a resposta não muda decisão.
+3. **Incremental (`MERGE` só do que é novo).** A tabela acumula: na semana que vem a IA lê só os
+   status da semana que vem. A conta não se paga duas vezes.
+4. **Lista fechada.** `ai_classify` com 8 causas permite `GROUP BY`. Texto livre da IA não agrupa.
+5. **Guarde o método.** A coluna `metodo` (`regra`, `ia`, `palavra_chave`) diz de onde veio cada
+   resposta: quando alguém duvidar, você sabe qual conferir.
+
+---
+
+## 📊 Enquanto o prompt 4 roda: o dashboard
+
+### Para que serve um dashboard (e para que não serve)
+
+| Serve para | Não serve para |
+|---|---|
+| **acompanhar** o mesmo conjunto de números, toda semana | responder uma pergunta nova (isso é o Genie, amanhã) |
+| **comparar** (projeto × projeto, semana × semana, meta × real) | explorar o dado sem saber o que procura |
+| **alertar** com cor: crítico em vermelho, melancia na tabela | substituir a regra de negócio: ela mora na gold |
+
+**Boas práticas:** uma página por pergunta do dono, com a pergunta escrita no título; KPI no topo,
+detalhe embaixo; razão das somas, nunca média de razão; cor com significado (vermelho = crítico,
+não "bonito"); a gold faz a conta e o gráfico só mostra (o SQL de cada gráfico cabe em 5 linhas).
+
+### Dashboard do Databricks (AI/BI) × Power BI
+
+| | **AI/BI (Databricks)** | **Power BI** |
+|---|---|---|
+| **Onde o dado mora** | lê direto a gold, no SQL warehouse. Não copia o dado | importa uma cópia (modo Import) ou consulta o Databricks pelo conector (DirectQuery) |
+| **Atualização** | o job recalcula a gold às 6h: o dashboard já mostra | o refresh do dataset é mais um agendamento para manter |
+| **Permissão** | a do Unity Catalog: quem não pode ler a tabela não vê o gráfico | um segundo modelo de permissão (workspace, RLS no modelo) |
+| **Como código** | o JSON vai no bundle, com diff, revisão e deploy para dev e prod | o `.pbix` é binário; o formato de projeto (PBIP) melhora, mas é outro fluxo |
+| **Linhagem** | do gráfico até a planilha da bronze, no mesmo catálogo | termina no conector: o caminho dentro do Databricks fica de fora |
+| **Pergunta em português** | o Genie usa as mesmas tabelas e os mesmos `COMMENT` | Copilot, com outra licença e outro modelo semântico |
+| **Licença** | vem com o workspace (paga o warehouse que roda a query) | licença por usuário (Pro/PPU) ou capacidade (Fabric) |
+| **Onde o Power BI ganha** | | visuais mais ricos e customizáveis, DAX e modelagem semântica madura, Excel e Teams, a ferramenta que a área de negócio já conhece |
+
+**A resposta honesta para a turma:** não é um ou outro. Se a empresa já vive no Power BI, ele lê a
+mesma gold pelo conector, e o trabalho da noite vale do mesmo jeito. O AI/BI ganha quando o time
+de dados quer **um lugar só**: o dado, a regra, a permissão, o dashboard e o código no mesmo bundle,
+sem uma cópia do dado para manter sincronizada.
 
 ---
 
