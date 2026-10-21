@@ -1,4 +1,4 @@
--- Noite 2 · Verificação
+-- Noite 3 · Verificação
 -- Confere se o seu pipeline chegou nos mesmos números da aula.
 -- Cada linha mostra o esperado, o obtido e se bateu. Seed fixa (42): se algo der
 -- "CONFIRA", o problema está no código, não no dado.
@@ -48,7 +48,7 @@ WITH v AS (
          (SELECT COUNT(*) FROM (SELECT colaborador_id FROM lakehouse_vertice.gold.utilizacao_pessoa_semana
                                 WHERE papel = 'sre' AND semana > DATE'2026-07-24'
                                 GROUP BY colaborador_id HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2))
-  -- IA e métricas
+  -- IA
   UNION ALL SELECT 16, 'status semanais estruturados (todos)', 3911,
          (SELECT COUNT(*) FROM lakehouse_vertice.gold.status_estruturado)
   UNION ALL SELECT 17, 'semanas do PRJ-011 com falta de SRE (90 dias)', 12,
@@ -56,10 +56,13 @@ WITH v AS (
           WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio = 'falta_sre')
   UNION ALL SELECT 18, 'status classificados pela IA (últimos 90 dias, com bloqueio)', 163,
          (SELECT COUNT_IF(metodo = 'ia') FROM lakehouse_vertice.gold.status_estruturado)
-  UNION ALL SELECT 19, 'margem projetada da carteira pela metric view (×1000)', 204,
-         (SELECT CAST(ROUND(MEASURE(margem_projetada) * 1000) AS INT) FROM lakehouse_vertice.gold.mv_projetos)
-  UNION ALL SELECT 20, 'projetos críticos pela metric view', 7,
-         (SELECT CAST(MEASURE(projetos_criticos) AS INT) FROM lakehouse_vertice.gold.mv_projetos)
+  -- o KPI da carteira é razão das somas, como no dashboard (amanhã, na metric view)
+  UNION ALL SELECT 19, 'margem projetada da carteira (×1000)', 204,
+         (SELECT CAST(ROUND((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato) * 1000) AS INT)
+          FROM lakehouse_vertice.gold.projeto_situacao_atual WHERE status = 'em_andamento')
+  -- a ingestão de ontem, agora dentro do job, carregou a API também
+  UNION ALL SELECT 20, 'bronze.feriados carregada pela ingestão (1 = sim)', 1,
+         (SELECT CAST(COUNT(*) > 0 AS INT) FROM lakehouse_vertice.bronze.feriados)
 )
 SELECT n, item, esperado, obtido, CASE WHEN esperado = obtido THEN 'ok' ELSE 'CONFIRA' END AS status
 FROM v ORDER BY n;

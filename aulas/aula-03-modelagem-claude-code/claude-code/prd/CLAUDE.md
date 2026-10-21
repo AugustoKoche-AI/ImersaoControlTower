@@ -1,8 +1,9 @@
-# Projeto Farol · Vértice Tecnologia — contexto da noite 2
+# Projeto Farol · Vértice Tecnologia: contexto do projeto
 
 Projeto técnico da Imersão Jornada de Dados (**19 a 22 de outubro de 2026**, 19h30,
 ao vivo no YouTube). Este arquivo é o contexto do projeto: **leia antes de escrever
-qualquer código**. Ele vale para os seis prompts da noite 2.
+qualquer código**. Ele vale para os cinco prompts da noite 3 (bundle, silver, gold,
+job, dashboard) e para o modelo e o Genie da noite 4.
 
 ---
 
@@ -19,7 +20,7 @@ O dono fez **quatro perguntas**. A Torre responde as quatro:
 1. **Quais projetos estão atrasados, e de quais clientes?** (SPI, CPI, situação)
 2. **Quanto esse atraso vai me custar?** (EAC, estouro previsto, margem)
 3. **Tenho gente parada enquanto outro projeto pede gente?** (utilização do timesheet + causa no status)
-4. **O que vai dar errado no próximo mês?** (hoje: entregas de consultoria atrasadas e o change freeze da Black Friday; a resposta completa é o modelo da noite 3)
+4. **O que vai dar errado no próximo mês?** (na noite 3: entregas de consultoria atrasadas e o change freeze da Black Friday; a resposta completa é o modelo da noite 4)
 
 Regras de corte: SPI ou CPI **< 0,9 = atenção**, **< 0,8 = crítico**.
 
@@ -41,10 +42,17 @@ mudaria todo dia e não bateria com o de ninguém. Escreva `DATE'2026-10-16'`.
 
 ## 2. Onde está o dado
 
-Catálogo **`lakehouse_vertice`**, criado na noite 1 (pelo notebook `00-carregar-dados` ou por
-`aulas/aula-01-analista-sql/00-setup-catalogo.sql`). Schemas `bronze`, `silver`, `gold`
+Catálogo **`lakehouse_vertice`**, criado na noite 1. Schemas `bronze`, `silver`, `gold`
 e o volume `bronze.raw` já existem. **A bronze já está carregada** (9 tabelas, com a
-sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
+sujeira, mais `feriados`) e é a ÚNICA entrada da silver. Nunca altere a bronze à mão.
+
+Quem carrega a bronze é o **job de ingestão da noite 2**, montado clicando no workspace
+(na aula, `vertice_ingestao`): a tarefa `api` grava `bronze.feriados` (BrasilAPI) e a tarefa
+`data_lake` baixa os arquivos do Supabase Storage com `boto3` (protocolo S3), pousa no volume
+`bronze.raw` e recria as 9 tabelas com `read_files`. As chaves do data lake chegam ao notebook
+como parâmetros da tarefa (`S3_ENDPOINT`, `AWS_DEFAULT_REGION`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`). **No passo 1 (feito à mão, com a CLI) esse job vira código** e passa a ser a primeira etapa do
+`vertice_farol`. **Chave nunca vai para arquivo versionado:** o repositório é público.
 
 | Tabela bronze | Linhas | O que é |
 |---|---|---|
@@ -84,25 +92,34 @@ sujeira) e é a ÚNICA entrada da noite 2. Nunca altere a bronze.
 **O teste de uma boa limpeza:** o custo total não muda (R$ 193,35 mi na bronze com
 `replace` = R$ 193,35 mi na silver), e as horas de cada planilha batem com a linha de TOTAL.
 
-## 4. Arquitetura da noite 2
+## 4. Arquitetura
 
 ```
-bronze (noite 1)
-   │
-   ▼  job vertice_farol
-conferencia_bronze ── medalhao (pipeline Lakeflow) ──┬── testes_de_qualidade ──┬── metricas_governadas
-   sql_task            silver ×7  →  gold ×3         └── status_com_ia ─────────┘   (1 metric view: mv_projetos)
-                       (silver.tarefas = as 3            (ai_classify + ai_extract)
-                        ferramentas num modelo só)
-   dashboard_portfolio (bundle) · genie_farol (bundle)
+ job vertice_farol · toda segunda às 6h
+ ingestao_feriados ──┐
+                     ├── conferencia_bronze ── medalhao (pipeline Lakeflow) ──┬── testes_de_qualidade
+ ingestao_data_lake ─┘     sql_task             silver ×7  →  gold ×3         └── status_com_ia
+ (noite 2, notebooks)                           (silver.tarefas = as 3            (ai_classify + ai_extract)
+                                                 ferramentas num modelo só)
+ dashboard_portfolio (recurso do bundle, lê a gold)
+
+ noite 4: + ml_features → ml_modelo → ml_score · + metricas_governadas (mv_projetos) · + Genie
 ```
+
+| Prompt (noite 3) | O que entra no bundle |
+|---|---|
+| 1 · à mão, com a CLI (não é prompt) | `databricks.yml` (`bundle init default-minimal`), o job importado com `bundle generate` (`ingestao_feriados`, `ingestao_data_lake`), as chaves em `variable-overrides.json` |
+| 2 · conferência + silver | `conferencia_bronze`, pipeline `vertice_medalhao` (`src/silver/`), tarefa `medalhao` |
+| 3 · gold + testes | `src/gold/` no mesmo pipeline, tarefa `testes_de_qualidade` |
+| 4 · o job completo | tarefa `status_com_ia`, o agendamento de segunda, o job inteiro rodando |
+| 5 · dashboard | `resources/dashboard.dashboard.yml` + o JSON gerado por `scripts/gerar_dashboard.py` |
 
 **Pouca tabela, de propósito.** Silver: `projetos`, `tarefas`, `status_semanal`, `custos`,
 `colaboradores`, `apontamentos`, `entregas_fornecedor`. Gold: `fato_projeto_semana`,
 `projeto_situacao_atual` (que já traz o cadastro: cliente, segmento, tipo, ferramenta,
-gerente, contrato, prazo), `utilizacao_pessoa_semana`, mais `status_estruturado` (a IA) e
-`mv_projetos` (a métrica governada). Fornecedor não tem tabela gold: lê-se direto da
-`silver.entregas_fornecedor`. Não crie `dim_projeto` nem outras metric views.
+gerente, contrato, prazo), `utilizacao_pessoa_semana` e `status_estruturado` (a IA). Na
+noite 4 entram `score_estouro_30d` e `mv_projetos` (a métrica governada). Fornecedor não tem
+tabela gold: lê-se direto da `silver.entregas_fornecedor`. Não crie `dim_projeto`.
 
 - **Um bundle só**, chamado `vertice`, na **raiz deste repositório** (o `databricks.yml`
   fica ao lado deste CLAUDE.md). O gabarito, testado, está em
@@ -119,13 +136,19 @@ gerente, contrato, prazo), `utilizacao_pessoa_semana`, mais `status_estruturado`
   de hoje (`gold.projeto_situacao_atual`) usa as tarefas das ferramentas.
 - **IA, testes e métricas como `sql_task`** no warehouse, com o caminho completo das
   tabelas (`lakehouse_vertice.gold.x`).
-- **Dashboard e Genie como recursos do bundle** (`resources/*.yml` + JSON).
+- **A ingestão como `notebook_task` serverless** (`src/ingestao/`), com as chaves em
+  variáveis do bundle (`${var.s3_access_key_id}`, `${var.s3_secret_access_key}`) e o valor em
+  `.databricks/bundle/dev/variable-overrides.json`, que o `.gitignore` deixa fora do Git.
+- **Dashboard (noite 3) e Genie (noite 4) como recursos do bundle** (`resources/*.yml` + JSON).
 
 ## 5. Armadilhas medidas neste workspace (Free Edition, outubro/2026)
 
 | Armadilha | O que fazer |
 |---|---|
 | `mode: development` prefixa nomes com `[dev usuario]` | Não use. No target `dev` use `presets: { trigger_pause_status: PAUSED }` |
+| `bundle generate job` escreve `ingestão.job.yml` com a chave do job acentuada e as chaves do S3 em texto | Renomeie para `vertice.job.yml` / `vertice_farol` e troque cada chave por `${var.…}` |
+| Variável sem default e sem valor: `no value assigned to required variable` | O valor vai em `.databricks/bundle/dev/variable-overrides.json` (JSON simples, nome → valor) |
+| Dois jobs recarregando a mesma bronze | Depois do 1º deploy, pause o agendamento do job de ingestão da noite 2 |
 | Função de janela dentro de agregação dá erro no pipeline | Calcule a janela num CTE e agregue no CTE seguinte |
 | `CREATE OR REPLACE` não existe no pipeline | Use `CREATE OR REFRESH MATERIALIZED VIEW` (e `CREATE TEMPORARY VIEW` para as visões intermediárias) |
 | Metric view falha com `METRIC_VIEW_INVALID_VIEW_DEFINITION` pelo `aitools tools query` | O YAML perde a indentação. Rode como `sql_task` ou com `python3 scripts/run_sql.py` (API de statements) |
@@ -160,6 +183,6 @@ gerente, contrato, prazo), `utilizacao_pessoa_semana`, mais `status_estruturado`
 | SREs com < 20% de uso (12 semanas) | COL0017 e COL0018, no PRJ-007 (5,8% e 5,5%) |
 | PRJ-011: causa no status (90 dias) | falta de SRE, 12 semanas, 57 dias de impacto declarado |
 | Status classificados pela IA | 163 (últimos 90 dias, com bloqueio) |
-| Genie | 20/20 no `prd/genie-benchmark.json` |
+| Job da noite 3 | 6 tarefas: 2 de ingestão, conferência, medalhão, testes, IA |
 
 A conferência completa está em `prd/99-verificacao.sql`.

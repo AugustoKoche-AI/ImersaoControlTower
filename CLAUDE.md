@@ -22,8 +22,8 @@ Uma pasta por noite, autocontida (README, roteiro, verificação), no mesmo esqu
 |---|---|
 | `aulas/aula-01-analista-sql/` | 1 · navegador: setup, bronze (CSV, Excel, JSON, XML), 6 exemplos SQL, dashboard sobre a bronze, Genie sem curadoria |
 | `aulas/aula-02-python-engenheiro/` | 2 · notebooks: aquecimento de Python, data lake (Supabase Storage via S3/boto3) → raw → bronze, API de feriados, job de ingestão. Na pasta: README (com todo o código), aquecimento + gabarito e os notebooks 01_ingestao_api e 02_ingestao_boto3 |
-| `aulas/aula-03-modelagem-claude-code/` | 3 · prompts no Claude Code: bundle, silver (as 3 ferramentas viram uma), gold, testes, metric view. Em `claude-code/`: o passo a passo, os prompts (`prd/`) e o gabarito do bundle (`vertice/`). O ML (features, modelo, score) fica como bônus |
-| `aulas/aula-04-produtos-de-dados-ia/` | 4 · prompts: IA no texto do status, agente de contratos (ai_parse_document + ai_extract → gold.contratos), dashboard + Genie curado, app da Torre (AppKit) + Lakebase, pitch |
+| `aulas/aula-03-modelagem-claude-code/` | 3 · 5 prompts no Claude Code: o job de ingestão da noite 2 vira código (`bundle generate`, chaves em variável fora do Git) + conferência, silver (as 3 ferramentas viram uma), gold + testes, job completo + IA no texto do status, dashboard. Em `claude-code/`: o passo a passo, os prompts (`prd/`) e o gabarito do bundle (`vertice/`, estado final da semana) |
+| `aulas/aula-04-produtos-de-dados-ia/` | 4 · prompts: ML (features → modelo → score no mesmo job), metric view + Genie curado, app da Torre (AppKit), aprovação no Lakebase (opcional), pitch. O agente de contratos virou bônus (`bonus/`) |
 | `material/` | PRD, gerador do dataset, validador dos padrões, writer de PDF |
 | `scripts/` | `run_sql.py`, `genie.py`, `gerar_notebooks.py`, `gerar_slides.py`, `gerar_prompts.py` |
 | `slides/` | `_modelo.html` (motor dos slides do jornada-ops, com Mermaid) + `imersao.slides.html` → `imersao.html` (um deck só, as 4 noites) e `pptx/` (versão editável) |
@@ -86,7 +86,7 @@ conexão com a noite seguinte. Depois de editar um exemplo, rode `python3 script
 - Slides com Mermaid: `<div class="diagrama"><pre class="mermaid">…</pre></div>`; o motor desenha antes de esconder os
   slides e sem a escala do palco (senão o Mermaid mede o texto encolhido e corta os rótulos).
 
-Aprendizados detalhados de cada noite: `aulas/<noite>/APRENDIZADOS.md`.
+Aprendizados detalhados de cada noite: `aulas/<noite>/APRENDIZADOS.md` (na noite 3, `claude-code/APRENDIZADOS.md`; o do ML está no da noite 4).
 
 ## Dataset
 
@@ -113,19 +113,20 @@ lê as 3 ferramentas em Python). Um `random.Random` por assunto (`f"{seed}:{nome
 
 ## Números de referência
 
-Noite 2 (gold): os mesmos 7 críticos, 10 em atenção, 4 melancias e R$ 6,47 mi da noite 1 (a fotografia de hoje faz a
+Noite 3 (gold, replanejada em 21/10; era a noite 2): os mesmos 7 críticos, 10 em atenção, 4 melancias e R$ 6,47 mi da noite 1 (a fotografia de hoje faz a
 mesma conta sobre silver.tarefas) · SPI/CPI da carteira 0,92/0,97 · margem projetada 20,4% · 4.917 tarefas na silver
 (Excel 1.643, ClickUp 2.119, Project 1.155) · 5 entregas em atraso, todas
 da CodeForge (×1,41, 0% no prazo) · SREs COL0017/COL0018 a ~5,5% no PRJ-007 · PRJ-011: falta_sre 12 semanas, 57 dias ·
-IA: 163 status (2 min) · Genie "Farol · Diretoria" 20/20 · verificação 20/20. Pergunta 4 na noite 2: entregas atrasadas +
-freeze; a resposta completa é o score da noite 3.
+IA: 163 status (2 min) · Genie "Farol · Diretoria" 20/20 · verificação 20/20. Pergunta 4 na noite 3: entregas atrasadas +
+freeze; a resposta completa é o score da noite 4. (Genie e metric view saíram da noite 3 para a 4.)
 
-Noite 3 (schema `ml`): ml.features_projeto_semana 4.235 linhas · AUC 0,92 (regra atual 0,50; folga 0,87) · 9 de 10 estouros do teste no
+Noite 4 (schema `ml`; era a noite 3): ml.features_projeto_semana 4.235 linhas · AUC 0,92 (regra atual 0,50; folga 0,87) · 9 de 10 estouros do teste no
 top 5, 41 dias antes · score: 18 alto, 4 médio, 19 baixo · "uau": PRJ-024 ok hoje (SPI 0,91) com prob 0,46 e o freeze da
 Black Friday começando em 01/11 · vazamento: corte no tempo 0,92, aleatório 0,92, índice do futuro 0,99 · assert antivazamento < 0,98 ·
-job vertice_farol com 8 tarefas, 4 a 5 min. PRJ-013 tem status (43%) e planilha (45%) que não batem: lição de qualidade.
-Noite 4: 8 contratos, 72 cláusulas (silver), gold.contratos com 8 linhas · multa cobrável da CodeForge R$ 1,12 mi (vigência atual) ·
-NuvemSul e DataPrime renovaram sozinhos (R$ 21,4 mi/ano) · Genie "Farol · Diretoria + Contratos" 10/10 · simulador
+job vertice_farol com 10 tarefas: 9 min 55 s, todas verdes, verificação 20/20 (ensaio de 21/10; só a parte da noite 3 leva ~8 min). PRJ-013 tem status (43%) e planilha (45%) que não batem: lição de qualidade.
+Bônus (agente de contratos, fora do ao vivo desde 21/10): 8 contratos, 72 cláusulas (silver), gold.contratos com 8 linhas · multa cobrável da CodeForge R$ 1,12 mi (vigência atual) ·
+NuvemSul e DataPrime renovaram sozinhos (R$ 21,4 mi/ano) · Genie "Farol · Diretoria + Contratos" 10/10.
+Noite 4 (app): simulador
 COL0017 → PRJ-011: 19 dias e R$ 22,1 mil/mês de saldo · ROI ≈ R$ 3,0 mi no ano 1 contra R$ 0,4 mi · app `farol-torre`
 publicado em 18/10 (bundle deploy falha no 1º build → conceder-acesso.sh → apps deploy: RUNNING).
 

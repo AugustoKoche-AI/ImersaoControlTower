@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gera o dashboard de Portfólio da noite 2 (sobre a GOLD e as metric views).
+"""Gera o dashboard de Portfólio da noite 3 (sobre a GOLD).
 
 Uso:  python3 aulas/aula-03-modelagem-claude-code/claude-code/vertice/scripts/gerar_dashboard.py
 
@@ -23,13 +23,19 @@ CORES_SITUACAO = [{"value": "crítico", "color": "#FF5F46"}, {"value": "atençã
                   {"value": "ok", "color": "#22C2F4"}]
 
 DATASETS = {
-    "ds_kpis": ("KPIs governados (mv_projetos)", """
--- Os KPIs vêm da metric view: a fórmula do SPI e do CPI mora num lugar só.
-SELECT MEASURE(carteira) AS carteira, MEASURE(spi) AS spi, MEASURE(cpi) AS cpi,
-       MEASURE(estouro_previsto) AS estouro_previsto, MEASURE(margem_projetada) AS margem_projetada,
-       MEASURE(projetos_em_risco) AS projetos_em_risco, MEASURE(projetos_criticos) AS projetos_criticos,
-       MEASURE(projetos_melancia) AS projetos_melancia
-FROM mv_projetos"""),
+    "ds_kpis": ("KPIs da carteira em andamento", """
+-- Razão não se soma: o SPI da carteira é SUM(ev) / SUM(pv), não a média dos SPIs.
+-- Na noite 4 estas fórmulas mudam para a metric view mv_projetos (MEASURE(spi)).
+SELECT SUM(valor_contrato) AS carteira,
+       SUM(ev) / SUM(pv) AS spi,
+       SUM(ev) / SUM(ac) AS cpi,
+       SUM(estouro_previsto) AS estouro_previsto,
+       (SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato) AS margem_projetada,
+       COUNT_IF(situacao IN ('atenção', 'crítico')) AS projetos_em_risco,
+       COUNT_IF(situacao = 'crítico') AS projetos_criticos,
+       COUNT_IF(melancia) AS projetos_melancia
+FROM projeto_situacao_atual
+WHERE status = 'em_andamento'"""),
     "ds_projetos": ("Projetos em andamento hoje", """
 SELECT projeto_id, projeto, cliente, segmento, ferramenta, situacao, spi, cpi, estouro_previsto, margem_projetada,
        atraso_projetado_dias, termino_projetado, farol_do_gerente, farol_calculado,
@@ -131,8 +137,8 @@ def tabela(nome, dataset, colunas, titulo, p):
 def montar() -> dict:
     portfolio = [
         texto("titulo", "# Projeto Farol · Portfólio\n\n**Quais projetos estão atrasados, de quais clientes, e quanto isso custa?** "
-              "Agora sobre a camada **gold**, com Excel, ClickUp e MS Project integrados, e as **métricas governadas** "
-              "(`mv_projetos`): o SPI do card é o mesmo SPI do Genie e do SQL. Hoje do dataset: 16/10/2026.", pos(0, 0, 12, 3)),
+              "Agora sobre a camada **gold**, com Excel, ClickUp e MS Project integrados numa tabela só, "
+              "limpos e testados toda segunda às 6h. Hoje do dataset: 16/10/2026.", pos(0, 0, 12, 3)),
         kpi("kpi-carteira", "carteira", "Carteira em andamento", BRL0, pos(0, 3, 3, 4)),
         kpi("kpi-spi", "spi", "SPI da carteira", NUM2, pos(3, 3, 3, 4)),
         kpi("kpi-cpi", "cpi", "CPI da carteira", NUM2, pos(6, 3, 3, 4)),

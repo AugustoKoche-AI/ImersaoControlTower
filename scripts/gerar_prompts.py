@@ -16,27 +16,22 @@ import re
 import sys
 
 RAIZ = pathlib.Path(__file__).resolve().parents[1]
-A2, A3, A4 = "aulas/aula-03-modelagem-claude-code/claude-code/prd", "aulas/aula-03-modelagem-claude-code/prd", "aulas/aula-04-produtos-de-dados-ia/prd"
+A3, A4 = "aulas/aula-03-modelagem-claude-code/claude-code/prd", "aulas/aula-04-produtos-de-dados-ia/prd"
 
 # (noite, título, subtítulo, caminho, deploy) — o número do prompt é a posição na lista
 PROMPTS = [
-    (2, "O bundle", "o projeto nasce como código", f"{A2}/prompt-01-bundle.md", "bundle deploy + run"),
-    (2, "Silver", "as três ferramentas viram uma", f"{A2}/prompt-02-silver.md", "bundle deploy + run do pipeline"),
-    (2, "Gold", "o produto de dados e as perguntas do dono", f"{A2}/prompt-03-gold.md", "bundle deploy + run"),
-    (2, "Texto com IA", "o status semanal vira coluna", f"{A2}/prompt-04-texto-com-ia.md", "bundle deploy + run"),
-    (2, "Métricas governadas", "o KPI definido uma vez só", f"{A2}/prompt-05-metricas.md", "bundle deploy + run"),
-    (3, "Features", "o que descreve um projeto que vai estourar", f"{A3}/prompt-01-features.md", "bundle deploy"),
-    (3, "Modelo e MLflow", "o baseline primeiro", f"{A3}/prompt-02-modelo.md", "bundle deploy"),
-    (3, "Score em lote", "a probabilidade de estouro em 30 dias", f"{A3}/prompt-03-score.md", "bundle deploy"),
-    (3, "Dashboard e Genie", "o dono pergunta em português", f"{A3}/prompt-04-dashboard-e-genie.md", "bundle deploy"),
-    (4, "O agente que lê contrato", "o PDF que ninguém lê vira resposta", f"{A4}/prompt-01-agente-de-contratos.md", "Genie publicado"),
-    (4, "O app da Torre", "a Torre na tela do dono", f"{A4}/prompt-02-app.md", "apps deploy"),
-    (4, "A aprovação no Lakebase", "a decisão fica registrada", f"{A4}/prompt-03-aprovacao-lakebase.md", "apps deploy"),
+    (3, "Conferência + silver", "a bronze conferida e as três ferramentas viram uma", f"{A3}/prompt-02-silver.md", "bundle deploy + run do pipeline"),
+    (3, "Gold + testes", "o produto de dados e as perguntas do dono", f"{A3}/prompt-03-gold.md", "bundle deploy + run"),
+    (3, "O job completo", "a Torre roda sozinha, e lê o texto do status com IA", f"{A3}/prompt-04-job-completo.md", "bundle deploy + run"),
+    (3, "O dashboard", "o dono vê a Torre", f"{A3}/prompt-05-dashboard.md", "bundle deploy"),
+    (4, "O modelo", "o que vai dar errado no próximo mês", f"{A4}/prompt-01-modelo.md", "bundle deploy + run"),
+    (4, "Métricas + Genie", "o dono pergunta em português", f"{A4}/prompt-02-genie.md", "bundle deploy + run + deploy"),
+    (4, "O app da Torre", "a Torre na tela do dono", f"{A4}/prompt-03-app.md", "apps deploy"),
+    (4, "A aprovação no Lakebase", "a decisão fica registrada (opcional)", f"{A4}/prompt-04-aprovacao-lakebase.md", "apps deploy"),
 ]
 
-TITULOS = {2: "Noite 2 · o pipeline nasce", 3: "Noite 3 · o pipeline passa a prever",
-           4: "Noite 4 · o projeto ganha uma URL"}
-INTERVALO = {2: "prompts-meio-23.md", 3: "prompts-meio-34.md"}   # o rodapé entra sempre, no fim
+TITULOS = {3: "Noite 3 · a Torre roda sozinha", 4: "Noite 4 · a Torre prevê, responde e ganha uma URL"}
+INTERVALO = {3: "prompts-meio-34.md"}   # o rodapé entra sempre, no fim
 
 
 def extrair(caminho: str) -> str:
@@ -51,8 +46,9 @@ def extrair(caminho: str) -> str:
 
 def main() -> None:
     texto = (RAIZ / "scripts/prompts-cabecalho.md").read_text(encoding="utf-8")
-    n_total = 0
-    for noite in (2, 3, 4):
+    # o 1 da noite 3 é o bundle feito à mão com a CLI (prd/passo-01-bundle-na-mao.md), não um prompt
+    n_total = 1
+    for noite in (3, 4):
         da_noite = [p for p in PROMPTS if p[0] == noite]
         existentes = [p for p in da_noite if (RAIZ / p[3]).exists()]
         if not existentes:
@@ -72,7 +68,7 @@ def main() -> None:
             texto += (RAIZ / "scripts" / INTERVALO[noite]).read_text(encoding="utf-8")
     texto += (RAIZ / "scripts/prompts-rodape.md").read_text(encoding="utf-8")
     (RAIZ / "PROMPTS.md").write_text(texto, encoding="utf-8")
-    print(f"{n_total} prompts → PROMPTS.md")
+    print(f"{n_total - 1} prompts → PROMPTS.md")
 
 
 if __name__ == "__main__":

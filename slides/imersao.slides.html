@@ -1609,6 +1609,100 @@ os.makedirs(pasta, exist_ok=True)
   [[RODAPE]]
 </section>
 
+<!-- ================================================ NOITE 3 · passo 1 à mão + prompts 2 a 5 (21/10) -->
+
+<section class="slide">
+  <div class="kicker">Noite 3 · quarta, 21/10 · engenheiro de dados</div>
+  <h2>Um passo na mão, quatro prompts: <span class="grad">o job de ontem vira a Torre</span></h2>
+  <table class="t" style="font-size:24px;">
+    <tr><th>#</th><th>Quem faz</th><th>O que nasce</th><th>Pergunta do dono</th></tr>
+    <tr><td>1</td><td>você, na CLI</td><td><code>bundle init</code> + <code>bundle generate</code>: o job de ontem vira código, chaves fora do Git</td><td>quem mudou o quê?</td></tr>
+    <tr class="cur"><td>2</td><td>Claude Code</td><td>a bronze conferida; Excel + ClickUp + Project numa tabela só</td><td>a base é confiável?</td></tr>
+    <tr><td>3</td><td>Claude Code</td><td>a gold: situação do projeto, semana a semana, pessoas, com testes</td><td>quem atrasa? quanto custa?</td></tr>
+    <tr><td>4</td><td>Claude Code</td><td>IA no texto do status e o job inteiro, toda segunda às 6h</td><td>gente parada × gente pedida</td></tr>
+    <tr><td>5</td><td>Claude Code</td><td>o dashboard "Projeto Farol · Portfólio", como código</td><td>o dono vê tudo numa tela</td></tr>
+  </table>
+  <p class="note" style="margin-top:26px;">Ensaio de 21/10: o job da noite 3 inteiro em ~8 min, verificação 20/20. Amanhã o mesmo job ganha o modelo, o Genie e o app.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:56px;">
+  <div class="kicker">Noite 3 · passo 1 · na mão, com a CLI do Databricks</div>
+  <h2 style="margin-bottom:16px; font-size:46px;">Do clique <span class="grad">para o Git</span></h2>
+  <div class="grid g4" style="gap:18px;">
+    <div class="card"><div class="tag">O que faz</div><div class="lbl"><code>bundle init default-minimal</code> cria o repositório; <code>bundle generate job</code> lê o job da noite 2 e escreve o YAML e os notebooks</div></div>
+    <div class="card"><div class="tag">A decisão</div><div class="lbl">importar, não reescrever. E a chave do Supabase vira <code>${var…}</code>, com o valor em <code>.databricks/</code>, que o Git ignora</div></div>
+    <div class="card"><div class="tag">Por quê, técnico</div><div class="lbl">o template traz <code>mode: development</code> (prefixa as tabelas) e o job vem com o agendamento ligado: troca-se os dois. O <code>presets</code> não desliga um <code>UNPAUSED</code> escrito no YAML</div></div>
+    <div class="card hl"><div class="tag">Para o negócio</div><div class="lbl">o job ganha histórico, revisão e desfazer. Se o workspace sumir, um <code>bundle deploy</code> traz tudo de volta. E a chave não vaza num repositório público</div></div>
+  </div>
+  <div class="grid g2" style="gap:24px; margin-top:22px; grid-template-columns: 1.7fr 1fr;">
+    <pre class="code" style="font-size:19px; margin:0;">databricks bundle init default-minimal --profile &lt;perfil&gt;
+databricks bundle generate job --existing-job-id &lt;id&gt; --profile &lt;perfil&gt;
+databricks bundle deploy --profile &lt;perfil&gt;
+databricks bundle run vertice_farol --profile &lt;perfil&gt;</pre>
+    <img class="shot" style="width:100%; height:auto; object-fit:fill; " src="[[IMG:docs/img/slide-n3-passo1.jpg]]" alt="as duas ingestões verdes no vertice_farol">
+  </div>
+  <p class="note" style="margin-top:14px;">Confira: 2 caixas verdes · <code>git status</code> sem chave · o job "Ingestão" de ontem <b>pausado</b> (dois jobs na mesma bronze às 6h brigam).</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:56px;">
+  <div class="kicker">Noite 3 · prompt 2 · conferência + silver</div>
+  <h2 style="margin-bottom:16px; font-size:46px;">Três ferramentas, <span class="grad">uma tabela</span></h2>
+  <div class="grid g4" style="gap:18px;">
+    <div class="card"><div class="tag">O que faz</div><div class="lbl">confere as 9 tabelas da bronze e cria o pipeline <code>vertice_medalhao</code>: 7 tabelas na silver, com <code>silver.tarefas</code> juntando as 3 ferramentas</div></div>
+    <div class="card"><div class="tag">A decisão</div><div class="lbl">pipeline declarativo (Lakeflow), não notebook. Cada ferramenta vira uma visão com as <b>mesmas colunas</b>; depois é empilhar</div></div>
+    <div class="card"><div class="tag">Por quê, técnico</div><div class="lbl">o Lakeflow acha a ordem sozinho e roda em paralelo. <code>EXPECT … FAIL UPDATE</code> para o pipeline em vez de gravar errado. A conferência barra meio dado antes de tudo</div></div>
+    <div class="card hl"><div class="tag">Para o negócio</div><div class="lbl">o fim da conta à mão: o TOTAL do Excel, as tarefas-resumo do Project e a vírgula dos custos resolvidos uma vez. Custo bate com a bronze: R$ 193,35 mi</div></div>
+  </div>
+  <img class="shot" style="width:100%; height:auto; object-fit:fill; margin-top:22px;" src="[[IMG:docs/img/slide-n3-silver.jpg]]" alt="as tabelas do pipeline vertice_medalhao com as expectations cumpridas">
+  <p class="note" style="margin-top:12px;">Confira: 9 <b>ok</b> na conferência · <b>4.917 tarefas</b> (Excel 1.643 · ClickUp 2.119 · Project 1.155) · todas as expectations <b>met</b>, 0 erros.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:56px;">
+  <div class="kicker">Noite 3 · prompt 3 · gold + testes</div>
+  <h2 style="margin-bottom:16px; font-size:46px;">Uma tabela <span class="grad">por pergunta do dono</span></h2>
+  <div class="grid g4" style="gap:18px;">
+    <div class="card"><div class="tag">O que faz</div><div class="lbl"><code>projeto_situacao_atual</code> (a fotografia), <code>fato_projeto_semana</code> e <code>utilizacao_pessoa_semana</code> (o filme) e 10 testes no job</div></div>
+    <div class="card"><div class="tag">A decisão</div><div class="lbl">três tabelas, nem uma a mais. De trás para frente: pergunta → KPI → grão → tabela</div></div>
+    <div class="card"><div class="tag">Por quê, técnico</div><div class="lbl">grão explícito evita somar errado. SPI e CPI da carteira são <b>razão das somas</b> (<code>SUM(ev)/SUM(pv)</code>), não média de razões. Teste quebrado para o job</div></div>
+    <div class="card hl"><div class="tag">Para o negócio</div><div class="lbl">quem atrasa e quanto custa, com número: 7 críticos e R$ 6,47 mi de estouro. E 4 projetos verdes no farol que o dado desmente</div></div>
+  </div>
+  <img class="shot" style="width:100%; height:auto; object-fit:fill; margin-top:22px;" src="[[IMG:docs/img/slide-n3-gold.jpg]]" alt="o schema gold no catálogo">
+  <p class="note" style="margin-top:12px;">Confira: <b>7 críticos</b> · 10 em atenção · <b>4 melancias</b> (PRJ-012 028 034 042) · SPI 0,92 · margem 20,4%.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:56px;">
+  <div class="kicker">Noite 3 · prompt 4 · o job completo + IA</div>
+  <h2 style="margin-bottom:16px; font-size:46px;">A Torre <span class="grad">roda sozinha</span></h2>
+  <div class="grid g4" style="gap:18px;">
+    <div class="card"><div class="tag">O que faz</div><div class="lbl"><code>ai_classify</code> e <code>ai_extract</code> tiram do status a causa do atraso e os dias de impacto. E o job inteiro, toda segunda às 6h</div></div>
+    <div class="card"><div class="tag">A decisão</div><div class="lbl">IA só onde ela é a certa: regra para o óbvio, IA para os 163 status com bloqueio dos últimos 90 dias, palavra-chave no histórico</div></div>
+    <div class="card"><div class="tag">Por quê, técnico</div><div class="lbl">~5 s por texto: os 3,9 mil levariam 1 h. <code>MERGE</code> incremental não paga a IA duas vezes. Testes e IA em paralelo; <code>max_concurrent_runs: 1</code></div></div>
+    <div class="card hl"><div class="tag">Para o negócio</div><div class="lbl">pergunta 3: o PRJ-011 pede SRE há 12 semanas, e as duas SREs estão a 5% no PRJ-007. Toda segunda, sem ninguém apertar botão</div></div>
+  </div>
+  <img class="shot" style="width:100%; height:auto; object-fit:fill; margin-top:20px;" src="[[IMG:docs/img/slide-n3-dag.jpg]]" alt="o DAG do vertice_farol da noite 3, todo verde">
+  <img class="shot" style="width:100%; height:auto; object-fit:fill; margin-top:12px;" src="[[IMG:docs/img/slide-n3-timeline.jpg]]" alt="o timeline do job: quanto cada tarefa levou">
+  <p class="note" style="margin-top:10px;">Medido em 21/10: data lake 2m53s · conferência 30s · medalhão 1m52s · IA 2m38s · testes 21s. ~8 min. Falhou no meio? <b>Repair run</b> refaz só dali.</p>
+  [[RODAPE]]
+</section>
+
+<section class="slide" style="padding-top:56px;">
+  <div class="kicker">Noite 3 · prompt 5 · dashboard</div>
+  <h2 style="margin-bottom:16px; font-size:46px;">O dono <span class="grad">vê a Torre</span></h2>
+  <div class="grid g4" style="gap:18px;">
+    <div class="card"><div class="tag">O que faz</div><div class="lbl">"Projeto Farol · Portfólio": Portfólio, Pessoas e Fornecedores, lendo a gold</div></div>
+    <div class="card"><div class="tag">A decisão</div><div class="lbl">dashboard como código: um script gera o JSON, que vai no bundle. Nada de editar na tela</div></div>
+    <div class="card"><div class="tag">Por quê, técnico</div><div class="lbl">o SQL de cada gráfico cabe em 5 linhas (a limpeza está na silver). Nome de tabela puro: catálogo e schema entram no deploy, dev ou prod sem mudar uma linha</div></div>
+    <div class="card hl"><div class="tag">Para o negócio</div><div class="lbl">uma URL na segunda de manhã: o que atrasa, quanto custa, quem está parado e qual fornecedor não cumpre prazo. Sem planilha</div></div>
+  </div>
+  <img class="shot" style="width:100%; height:auto; object-fit:fill; margin-top:22px;" src="[[IMG:docs/img/slide-n3-dashboard.jpg]]" alt="o dashboard Projeto Farol · Portfólio">
+  <p class="note" style="margin-top:12px;">Confira: carteira R$ 208,6 mi · SPI <b>0,92</b> · CPI <b>0,965</b> (o widget mostra 0,96) · estouro <b>R$ 6,47 mi</b> · CodeForge ×1,41.</p>
+  [[RODAPE]]
+</section>
+
 <section class="slide">
   <div class="kicker">Antes do prompt 1 · por que juntar à mão não é produto</div>
   <h2>Juntar à mão funciona. <span class="grad">Mas é frágil</span></h2>

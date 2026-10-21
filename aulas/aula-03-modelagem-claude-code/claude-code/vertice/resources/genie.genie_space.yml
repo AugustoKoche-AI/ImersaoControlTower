@@ -1,9 +1,9 @@
 # O Genie Agent do Projeto Farol como CÓDIGO.
 #
-# Na noite 1 o Genie foi plugado direto na bronze e errou as quatro perguntas do
+# Noite 4, prompt 2. Na noite 1 o Genie foi plugado direto na bronze e errou as quatro perguntas do
 # dono com toda a confiança ("nenhum atraso custa nada"). Hoje ele lê a gold,
-# com as três ferramentas integradas, COMMENT em toda tabela, as métricas
-# governadas (mv_*) e instruções de negócio escritas.
+# com as três ferramentas integradas, COMMENT em toda tabela, a métrica
+# governada (mv_projetos), o score do modelo e instruções de negócio escritas.
 #
 # O modelo é o MESMO. O que mudou foi tudo que está embaixo dele.
 #
@@ -18,6 +18,6 @@ resources:
       description: >-
         Pergunte em português sobre os 60 projetos da Vértice Tecnologia: quais estão atrasados e de
         quais clientes, quanto o atraso custa, quem está parado enquanto outro projeto pede gente e o
-        que vai dar errado no próximo mês.
+        que vai dar errado no próximo mês (com o modelo de estouro em 30 dias).
       file_path: ../resources/farol.geniespace.json
       warehouse_id: ${var.warehouse_id}

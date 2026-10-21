@@ -276,10 +276,9 @@ slides/                        as apresentações de cada noite (abra o .html no
 | Genie da noite 1 | `python3 scripts/genie.py perguntar "Farol · Noite 1 (bronze, sem curadoria)" "Quanto esse atraso vai me custar?" --profile P` | resposta errada, de propósito |
 | Job completo (noites 2 e 3) | `cd aulas/aula-03-modelagem-claude-code/claude-code/vertice && databricks bundle deploy --profile P && databricks bundle run vertice_farol --profile P` | 8 tarefas verdes, ~4 a 5 min |
 | Noite 2 | `python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/99-verificacao.sql --profile P` | 20 × `ok` |
-| Genie da noite 2 | `python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-03-modelagem-claude-code/claude-code/prd/genie-benchmark.json --profile P` | 20/20 |
-| Noite 3 | `python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/99-verificacao.sql --profile P` | 17 × `ok` |
-| Noite 4 | `python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile P` | 12 × `ok` |
-| Genie de contratos | `python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" aulas/aula-04-produtos-de-dados-ia/prd/genie-benchmark.json --profile P` | 10/10 |
+| Genie da noite 4 | `python3 scripts/genie.py benchmark "Farol · Diretoria" aulas/aula-04-produtos-de-dados-ia/prd/genie-benchmark-diretoria.json --profile P` | 20/20 (18/10) |
+| Noite 4 (modelo, metric view, app) | `python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile P` | 23 × `ok` |
+| Bônus: contratos | `python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/bonus/99-verificacao-contratos.sql --profile P` e `python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" aulas/aula-04-produtos-de-dados-ia/bonus/genie-benchmark-contratos.json --profile P` | 11 × `ok` · 10/10 |
 | App + Lakebase | `cd aulas/aula-04-produtos-de-dados-ia/torre-app && npm test` e `python3 scripts/ver_decisoes.py` | 5 testes; a aprovação aparece no Postgres |
 
 ---

@@ -1,8 +1,10 @@
--- Conferência da bronze: as 9 tabelas da noite 1 estão lá, e inteiras?
+-- Conferência da bronze: as 9 tabelas que a ingestão acabou de recarregar do
+-- data lake chegaram, e inteiras?
 --
 -- Se qualquer contagem vier diferente, raise_error() INTERROMPE o job aqui,
 -- antes de a silver e a gold serem recalculadas em cima de meio dado.
 -- A seed é fixa (42): estes números são os mesmos para todo mundo.
+-- (bronze.feriados fica de fora: ela cresce a cada execução, de propósito.)
 
 WITH contagem AS (
   SELECT 'projetos' AS tabela, 60 AS esperado, (SELECT COUNT(*) FROM lakehouse_vertice.bronze.projetos) AS obtido
@@ -18,6 +20,6 @@ WITH contagem AS (
 SELECT tabela, esperado, obtido,
        CASE WHEN esperado = obtido THEN 'ok'
             ELSE raise_error(concat('bronze.', tabela, ': esperado ', esperado, ', veio ', obtido,
-                                    '. Rode de novo o 00-carregar-dados e o 01-ingestao-bronze da noite 1.'))
+                                    '. Veja a saída da tarefa ingestao_data_lake: faltou arquivo no bucket ou no raw.'))
        END AS status
 FROM contagem;

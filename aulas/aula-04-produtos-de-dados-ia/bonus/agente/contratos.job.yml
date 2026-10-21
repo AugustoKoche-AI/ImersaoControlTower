@@ -1,3 +1,5 @@
+# Bônus: o job que reprocessa os contratos. Para usar, copie para resources/ de um bundle e
+# ajuste o caminho do 01-contratos.sql (aqui ele está na mesma pasta).
 # O agente que lê contrato, como job: PDF → elementos → cláusulas → colunas tipadas.
 # Roda no SQL warehouse serverless (~1 min para os 8 PDFs).
 resources:

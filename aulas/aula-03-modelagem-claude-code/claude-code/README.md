@@ -1,14 +1,16 @@
-# 🤖 Claude Code: a bronze vira silver e gold (prompts 1 a 5) | Imersão Jornada de Dados
+# 🤖 Claude Code: o job de ontem vira a Torre inteira (prompts 1 a 5) | Imersão Jornada de Dados
 
-**Usado na noite 3 (quarta, 21/10).** A noite 2 recria a bronze a partir do Supabase: [README.md](README.md).
+**Usado na noite 3 (quarta, 21/10).** O resumo da noite, o roteiro e os números estão no
+[README da aula](../README.md). Aqui está o passo a passo para quem constrói junto.
 
-**Ao fim desta noite você terá** a Torre de Controle da Vértice rodando sozinha: Excel, ClickUp e
-MS Project juntos numa tabela só, os KPIs de prazo e custo calculados com teste, a causa de cada
-atraso tirada do texto do status por IA e a fórmula de cada KPI num lugar só. Tudo como código: um
-aquecimento em Python no Databricks (uma API nova na bronze) e **cinco prompts no Claude Code**, num job que roda toda segunda às 6h.
+**Ao fim desta noite você terá** a Torre de Controle da Vértice rodando sozinha, toda segunda às 6h:
+o job de ingestão que você montou clicando ontem, agora como código; Excel, ClickUp e MS Project
+juntos numa tabela só; os KPIs de prazo e custo calculados com teste; a causa de cada atraso tirada
+do texto do status por IA; e um **dashboard** que o dono abre. Tudo em **cinco prompts no Claude Code**.
 
-**Por que isso responde ao dono:** ontem o Genie errou as quatro perguntas dele ("nenhum atraso
-custa nada"), porque olhava dado sujo e espalhado. Hoje a gente constrói o dado limpo e testado que faz ele acertar amanhã.
+**Por que isso responde ao dono:** na segunda o Genie errou as quatro perguntas dele ("nenhum atraso
+custa nada"), porque olhava dado sujo e espalhado. Hoje a gente constrói o dado limpo e testado
+que faz ele acertar amanhã.
 
 ---
 
@@ -16,15 +18,17 @@ custa nada"), porque olhava dado sujo e espalhado. Hoje a gente constrói o dado
 
 ```mermaid
 flowchart LR
-  API["aquecimento<br/>API de feriados<br/>Python no notebook"] --> B
-  B[("bronze · noite 1<br/>9 tabelas<br/>CSV, Excel, JSON, XML")] --> P
+  DL[("data lake<br/>Supabase Storage")] --> J
+  API["API de feriados"] --> J
   subgraph JOB["job vertice_farol · toda segunda às 6h"]
-    P["pipeline vertice_medalhao<br/>silver ×7: limpa e junta as 3 ferramentas<br/>gold ×3: os KPIs"] --> T["testes de qualidade"]
+    J["ingestão<br/>o job de ontem, como código"] --> B[("bronze<br/>9 tabelas")]
+    B --> P["pipeline vertice_medalhao<br/>silver ×7: limpa e junta as 3 ferramentas<br/>gold ×3: os KPIs"]
+    P --> T["testes de qualidade"]
     P --> IA["IA no texto<br/>status semanal"]
-    T --> M["metric view<br/>mv_projetos"]
-    IA --> M
   end
-  M -.-> D["amanhã, noite 3<br/>dashboard + Genie"]
+  P --> D["dashboard<br/>Projeto Farol · Portfólio"]
+  IA --> D
+  D -.-> N4["amanhã, noite 4<br/>modelo + Genie + app"]
 ```
 
 <details>
@@ -32,15 +36,15 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  B[("bronze · 9 tabelas")] --> C
   subgraph JOB["job vertice_farol · toda segunda às 6h · serverless"]
+    F["ingestao_feriados<br/>notebook · API"] --> C
+    L["ingestao_data_lake<br/>notebook · boto3"] --> C
     C["conferencia_bronze<br/>sql_task · 9 contagens<br/>ou raise_error"] --> MED["medalhao<br/>pipeline · silver ×7 · gold ×3<br/>EXPECT"]
     MED --> T["testes_de_qualidade<br/>sql_task · 10 testes"]
     MED --> IA["status_com_ia<br/>regra + ai_classify + ai_extract<br/>MERGE incremental"]
-    T --> MV["metricas_governadas<br/>mv_projetos"]
-    IA --> MV
   end
-  MV -.-> N3["noite 3<br/>dashboard + Genie"]
+  T -.-> N4["noite 4<br/>ml_features → ml_modelo → ml_score<br/>metricas_governadas"]
+  IA -.-> N4
 ```
 
 ```mermaid
@@ -67,7 +71,6 @@ flowchart LR
   sa --> gup["gold.utilizacao_pessoa_semana<br/>as pessoas"]
   sco --> gup
   ss -- "job: status_com_ia" --> gse["gold.status_estruturado"]
-  gsa -- "job: metricas_governadas" --> gmv["gold.mv_projetos"]
 ```
 
 </details>
@@ -76,8 +79,9 @@ flowchart LR
 
 ## 🚀 Antes do prompt 1: o passo a passo, do zero
 
-A noite 1 foi toda pelo navegador. A noite 2 precisa de **terminal** (a tela onde se digitam
+As noites 1 e 2 foram pelo navegador. A noite 3 precisa de **terminal** (a tela onde se digitam
 comandos). Siga na ordem; cada passo termina com um comando que **confere** se deu certo.
+Faça os passos 1 a 9 **antes da aula**: ao vivo, a gente começa direto no [passo 1, o bundle à mão](prd/passo-01-bundle-na-mao.md).
 
 ### 🎥 Vídeos de referência
 
@@ -107,26 +111,16 @@ Sem conta no GitHub? Crie em <https://github.com/signup> antes do `gh auth login
 
 **Passo 3 · O seu repositório, do zero**
 
-Não tem `git clone`: o projeto nasce vazio, na sua conta. No fim da semana ele é o seu portfólio.
+Não tem `git clone`: o projeto nasce vazio, na sua conta, e no fim da semana é o seu portfólio.
+Quem cria a pasta é o próprio `databricks bundle init`, no [passo 1 da aula](prd/passo-01-bundle-na-mao.md):
+a pasta `~/projetos/vertice` já nasce bundle, e o `git init` vem logo depois. Antes da aula, só
+crie a pasta-mãe:
 
 ```bash
-mkdir -p ~/projetos/projeto-farol && cd ~/projetos/projeto-farol
-git init -b main
-
-# o contexto do projeto: o negócio, as 18 sujeiras do dado e as armadilhas do Free Edition.
-# Um CLAUDE.md na raiz é lido sozinho pelo Claude Code, antes de cada prompt.
-curl -fsSL -o CLAUDE.md https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/aulas/aula-03-modelagem-claude-code/claude-code/prd/CLAUDE.md
-
-# o script que roda SQL pela API (a metric view do prompt 5 precisa dele)
-mkdir -p scripts && curl -fsSL -o scripts/run_sql.py https://raw.githubusercontent.com/lvgalvao/ImersaoControlTower/main/scripts/run_sql.py
-
-gh repo create projeto-farol --public --source=. --remote=origin
-ls                     # CLAUDE.md  scripts
+mkdir -p ~/projetos
 ```
 
-No Antigravity: **File › Open Folder** e escolha `~/projetos/projeto-farol`. Daqui em diante, todo
-comando roda no terminal do Antigravity, **na raiz desta pasta**. O material do curso (prompts,
-gabarito, slides) fica no GitHub: <https://github.com/lvgalvao/ImersaoControlTower>.
+O material do curso (prompts, gabarito, slides) fica no GitHub: <https://github.com/lvgalvao/ImersaoControlTower>.
 
 **Passo 4 · Python**
 
@@ -160,15 +154,19 @@ O endereço do workspace é o da barra do navegador quando você está no Databr
 O *profile* (`vertice`) é o apelido do login: **todo comando daqui em diante leva `--profile vertice`**.
 Viu `refresh token is invalid` ou `Valid: NO`? Rode o `auth login` de novo.
 
-**Passo 7 · Confira a bronze da noite 1**
+**Passo 7 · Confira a bronze e o job de ontem**
 
 ```bash
 databricks experimental aitools tools query "SHOW TABLES IN lakehouse_vertice.bronze" --profile vertice
 # apontamentos, clickup_tarefas, colaboradores, custos, entregas_fornecedor,
-# excel_tarefas, msproject_tarefas, projetos, status_semanal (+ feriados, da noite 2)
+# excel_tarefas, feriados, msproject_tarefas, projetos, status_semanal
+
+databricks jobs list --profile vertice
+# o job de ingestão da noite 2 aparece aqui (o nome varia: vertice_ingestao, Ingestão...)
 ```
 
-Faltam tabelas? Faça a noite 1 primeiro (`00-carregar-dados` + `01-ingestao-bronze`).
+Faltam tabelas ou o job? Faça a [noite 2](../../aula-02-python-engenheiro) primeiro: os dois
+notebooks e o job de ingestão. O passo 1 começa importando esse job.
 
 **Passo 8 · O Claude Code**
 
@@ -214,10 +212,11 @@ raiz. A CLI tem um gerador de esqueleto:
 databricks bundle init                 # pergunta o template: default-python, default-sql, default-minimal...
 ```
 
-**Hoje você não roda o `bundle init` à mão.** Os templates criam o target com `mode: development`, que
-prefixa todos os nomes com `[dev seu_nome]` e quebra os caminhos da noite. Quem cria o bundle é o
-**prompt 1**, na raiz do seu repositório (o `databricks.yml` ao lado do `CLAUDE.md`), já do jeito
-certo. Depois, a cada prompt, o ciclo é sempre o mesmo, na raiz:
+**Hoje você roda o `bundle init` à mão**, com o template `default-minimal`, no passo 1 da aula. Ele
+vem com `mode: development`, que prefixa todos os nomes com `[dev seu_nome]` e quebra os caminhos
+da noite: o passo 1 troca o `databricks.yml` inteiro. Depois o `databricks bundle generate job` lê o
+job de ontem do workspace e escreve o YAML e os notebooks. A partir do prompt 2, o ciclo é sempre o
+mesmo, na raiz:
 
 ```bash
 databricks bundle validate --profile vertice          # confere o YAML antes de subir
@@ -230,10 +229,10 @@ databricks bundle run vertice_farol --profile vertice # roda o job
 **Passo 11 · Ao fim de cada prompt, salve no GitHub**
 
 ```bash
-git add . && git commit -m "prompt 1: bundle e conferência da bronze" && git push -u origin main
+git add . && git commit -m "prompt 2: conferência e silver" && git push
 ```
 
-Os prompts dizem "na raiz deste repositório": é a sua pasta `projeto-farol`. Se um prompt não
+Os prompts dizem "na raiz deste repositório": é a sua pasta `~/projetos/vertice`. Se um prompt não
 entregar, o **gabarito** está em
 <https://github.com/lvgalvao/ImersaoControlTower/tree/main/aulas/aula-03-modelagem-claude-code/claude-code/vertice>: compare o arquivo.
 
@@ -241,71 +240,45 @@ Pronto. Agora é prompt a prompt.
 
 ---
 
-<!-- prompts:inicio · gerado de prd/prompt-01..05-*.md (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e gere de novo. -->
+<!-- prompts:inicio · copiado de prd/prompt-02..05-*.md (o passo 1 é manual: prd/passo-01-bundle-na-mao.md) (o texto completo, com o que falar e "se der errado", está em cada arquivo). Não edite aqui: edite o arquivo e copie de novo. -->
 ## 📋 Os prompts da noite, prontos para copiar
 
-Cole um de cada vez no Claude Code, na raiz do seu repositório (`projeto-farol`). Espere terminar,
-confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`. A bronze vem da noite 2.
+Cole um de cada vez no Claude Code, na raiz do seu repositório (`~/projetos/vertice`). Espere terminar,
+confira o número e faça o commit (passo 11) antes do próximo. O `<perfil>` já está como `vertice`.
+A bronze e o job de ingestão vêm da noite 2.
 
-### Prompt 1 · O bundle: o projeto vira código (~40 s)
+### Passo 1 · O bundle, à mão, com a CLI (~15 min, sem Claude Code)
 
-```
-Leia o CLAUDE.md da raiz do repositório antes de começar.
+Não é prompt: você digita cada comando (`bundle init default-minimal`, `bundle generate job`, as
+chaves em `variable-overrides.json`, deploy e run). O passo a passo testado está em
+[`prd/passo-01-bundle-na-mao.md`](prd/passo-01-bundle-na-mao.md).
 
-Crie o projeto da noite 2 na raiz deste repositório como um
-Databricks Asset Bundle chamado vertice. Esta é a primeira de seis entregas: as
-outras cinco estendem este mesmo bundle, então deixe a estrutura pronta para
-crescer (resources/, src/conferencia, src/silver, src/gold, src/ia,
-src/metricas, src/testes, scripts/). Não copie de outro projeto: construa.
-
-CONTEXTO DO WORKSPACE
-- profile: vertice   (sempre passe --profile, nunca deixe implícito)
-- descubra o SQL Warehouse com `databricks warehouses list --profile vertice`
-- Databricks Free Edition: tudo serverless, nunca configure cluster
-- o catálogo lakehouse_vertice e os schemas bronze/silver/gold JÁ EXISTEM
-  (noite 1). O bundle NÃO cria nem gerencia catálogo nem schema.
-
-1. databricks.yml
-   - bundle name: vertice; include: resources/*.yml
-   - variables: catalog (default lakehouse_vertice) e warehouse_id (o id que
-     você descobriu)
-   - targets dev (default) e prod
-   - ARMADILHA: NÃO use `mode: development` no dev. Ele prefixa os nomes com
-     [dev seu_usuario] e quebra o SQL. Pause o agendamento com
-     `presets: { trigger_pause_status: PAUSED }`. Deixe um comentário no YAML
-     explicando isso.
-   - prod: mode production, root_path em /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
-
-2. resources/vertice.job.yml
-   - job vertice_farol, agendado toda segunda às 6h (America/Sao_Paulo),
-     depois do status semanal de sexta
-   - uma tarefa por enquanto: conferencia_bronze, sql_task no warehouse
-     ${var.warehouse_id} com o arquivo ../src/conferencia/00-conferencia-bronze.sql
-   - comentário no topo listando as tarefas que os próximos prompts vão
-     acrescentar (medalhao, testes_de_qualidade, status_com_ia,
-     metricas_governadas)
-
-3. src/conferencia/00-conferencia-bronze.sql
-   Confere as 9 tabelas da bronze contra a contagem esperada (seed 42):
-   projetos 60 · status_semanal 3911 · excel_tarefas 1663 · clickup_tarefas 2119 ·
-   msproject_tarefas 1260 · colaboradores 523 · apontamentos 30883 ·
-   custos 23640 · entregas_fornecedor 640
-   Uma linha por tabela com esperado e obtido; se alguma divergir, chame
-   raise_error() com uma mensagem que diga qual tabela e o que fazer
-   (rodar de novo o 00-carregar-dados e o 01-ingestao-bronze da noite 1).
-
-Rode e me mostre a saída de cada um:
-  databricks bundle validate --profile vertice
-  databricks bundle deploy --profile vertice
-  databricks bundle run vertice_farol --profile vertice
-```
-
-### Prompt 2 · Silver: as três ferramentas viram uma (~2 min)
+### Prompt 2 · Conferência + silver: as três ferramentas viram uma (~2 min)
 
 ```
-Continue o bundle na raiz deste repositório. A bronze está
-conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
-declarar o contrato.
+Leia o CLAUDE.md da raiz do repositório antes de começar. Use as skills
+databricks-core, databricks-dabs e databricks-pipelines. Sempre --profile <perfil>.
+
+O bundle vertice está na raiz deste repositório: eu criei à mão com a CLI.
+Tem o databricks.yml (variáveis catalog, warehouse_id e as duas chaves do
+data lake) e o job vertice_farol em resources/vertice.job.yml, importado do
+job de ontem, com as tarefas ingestao_feriados e ingestao_data_lake. NÃO
+mexa nas chaves, nem no .databricks/bundle/dev/variable-overrides.json, nem
+no catálogo e nos schemas (já existem). Se um comando for recusado por causa
+das chaves, pare e me mostre o comando para eu rodar com `!`.
+
+0. Antes da silver, a conferência da bronze: src/conferencia/00-conferencia-bronze.sql,
+   sql_task no warehouse ${var.warehouse_id}, tarefa conferencia_bronze no job,
+   depois das duas ingestões. Confere as 9 tabelas contra a contagem esperada
+   (seed 42): projetos 60 · status_semanal 3911 · excel_tarefas 1663 ·
+   clickup_tarefas 2119 · msproject_tarefas 1260 · colaboradores 523 ·
+   apontamentos 30883 · custos 23640 · entregas_fornecedor 640
+   (bronze.feriados fica de fora: cresce a cada execução). Uma linha por
+   tabela com esperado e obtido; se alguma divergir, raise_error() dizendo
+   qual tabela e onde olhar (a saída da tarefa ingestao_data_lake).
+
+Agora a silver: integrar as três ferramentas, limpar, tipar e declarar o
+contrato.
 
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
 resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
@@ -380,8 +353,10 @@ Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
 Rode e me mostre a saída:
-  databricks bundle deploy --profile vertice
-  databricks bundle run vertice_medalhao --profile vertice
+  databricks bundle validate --profile <perfil>
+  databricks bundle deploy --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
+E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
 ### Prompt 3 · Gold + testes: a modelagem (~3 min)
@@ -442,14 +417,16 @@ Rode e me mostre a saída:
   databricks bundle run vertice_farol --profile vertice
 ```
 
-### Prompt 4 · O texto do status vira coluna, com IA (~2 min)
+### Prompt 4 · O job completo, com IA no texto do status
 
 ```
-Continue o bundle na raiz deste repositório. Agora o texto livre
-do status semanal vira coluna. Use as funções de IA na versão 2.0
-(map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+Continue o bundle na raiz deste repositório. A gold e os testes estão
+prontos. Agora a última camada da noite, e o job inteiro rodando sozinho.
 
-src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+1. O texto livre do status vira coluna. Use as funções de IA na versão 2.0
+   (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+
+   src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
    a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
       COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
       bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
@@ -479,44 +456,80 @@ src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
         'impacto estimado: 1 semana' (= 7).
    c. No fim, um SELECT de leitura: quantos status por metodo e causa.
 
-Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
-com testes_de_qualidade).
+   Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
+   com testes_de_qualidade).
+
+2. O job inteiro
+   - confira em resources/vertice.job.yml a ordem: ingestao_feriados e
+     ingestao_data_lake em paralelo → conferencia_bronze → medalhao →
+     testes_de_qualidade e status_com_ia em paralelo
+   - agendamento toda segunda às 6h (America/Sao_Paulo); no dev ele fica
+     pausado pelo preset, e está certo
+   - max_concurrent_runs: 1 (duas execuções ao mesmo tempo apagariam a
+     bronze uma da outra)
+   - atualize o comentário do topo com as 6 tarefas e o que cada uma faz
 
 Rode e me mostre a saída:
+  databricks bundle validate --profile vertice
   databricks bundle deploy --profile vertice
   databricks bundle run vertice_farol --profile vertice
+E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
-### Prompt 5 · O KPI definido uma vez só (~10 s)
+### Prompt 5 · O dashboard: o dono vê a Torre (~10 s de deploy)
 
 ```
-Continue o bundle na raiz deste repositório. Agora os KPIs
-governados, numa metric view do Unity Catalog. Uma só.
+Continue o bundle na raiz deste repositório. O job está pronto e a gold
+atualizada. Agora o dashboard, como código. Use a skill
+databricks-aibi-dashboards.
 
-Crie src/metricas/metricas.sql (sql_task) com CREATE OR REPLACE VIEW
-lakehouse_vertice.gold.mv_projetos WITH METRICS LANGUAGE YAML AS $$ ... $$
-(version 1.1), comment em toda dimensão e medida que não for óbvia, e
-synonyms em português.
-- source: lakehouse_vertice.gold.projeto_situacao_atual, com
-  filter status = 'em_andamento'.
-- Dimensões: projeto_id, projeto, cliente, segmento, ferramenta, situacao,
-  farol_do_gerente, farol_calculado, gerente_projeto.
-- Medidas: projetos, carteira (SUM valor_contrato), spi (SUM(ev)/SUM(pv)),
-  cpi (SUM(ev)/SUM(ac)), eac, estouro_previsto, margem_projetada
-  ((SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato)),
-  atraso_projetado_medio_dias, projetos_em_risco, projetos_criticos,
-  projetos_melancia (COUNT FILTER WHERE melancia).
+1. scripts/gerar_dashboard.py gera resources/dashboard-portfolio.lvdash.json
+   (AI/BI, GRID_V1). As queries da gold usam o nome de tabela PURO, sem
+   catálogo nem schema; a silver.entregas_fornecedor vai com o nome completo
+   lakehouse_vertice.silver.entregas_fornecedor. Três páginas:
 
-ARMADILHAS MEDIDAS: o YAML precisa da indentação intacta (teste com
-python3 scripts/run_sql.py <arquivo> --profile vertice), e NUNCA use ';'
-dentro do YAML, nem num comment: a sql_task do job corta o arquivo em todo ';'.
+   Portfólio
+   - KPIs da carteira em andamento, calculados na projeto_situacao_atual
+     (WHERE status = 'em_andamento'): carteira (SUM(valor_contrato)), SPI
+     (SUM(ev)/SUM(pv)), CPI (SUM(ev)/SUM(ac)), estouro previsto, projetos em
+     risco (atenção + crítico), críticos e melancias. Razão é SUM/SUM, nunca
+     AVG de razão.
+   - barra de estouro previsto por projeto, colorida por situação
+     (crítico #FF5F46, atenção #F6C344, ok #22C2F4)
+   - dispersão SPI × CPI, um ponto por projeto
+   - linha de SPI e CPI semanais da carteira (SUM(ev)/SUM(pv) por semana no
+     fato_projeto_semana, a partir de 2025-03-07)
+   - tabela dos projetos em andamento com o farol do gerente ao lado do
+     farol pelo número e a coluna melancia
 
-Acrescente ao job a tarefa metricas_governadas, depois de
-testes_de_qualidade E status_com_ia.
+   Pessoas
+   - top 15 pessoas por custo da hora parada (utilizacao_pessoa_semana,
+     semana > 2026-07-24, as últimas 12 semanas)
+   - tabela de utilização por pessoa e projeto, da mais parada à mais ocupada
+   - barras de causas de bloqueio por projeto (status_estruturado, últimos
+     90 dias, sem 'sem_bloqueio' e 'nao_reportado')
+
+   Fornecedores (sobre silver.entregas_fornecedor)
+   - tabela por fornecedor: grafias no cadastro, entregas, prazo real ÷
+     prometido, % no prazo, em atraso hoje
+   - tabela das entregas em atraso hoje
+
+   Tema nas cores da Jornada: #0059DB, #22C2F4, fundo #14141A no escuro.
+   Um título de texto em cada página com a pergunta do dono que ela responde.
+
+2. resources/dashboard.dashboard.yml: recurso dashboard_portfolio, display
+   name "Projeto Farol · Portfólio", file_path para o JSON, dataset_catalog
+   ${var.catalog}, dataset_schema gold, warehouse_id ${var.warehouse_id}.
+
+Antes do deploy, rode cada query do dashboard (prefixando
+lakehouse_vertice.gold. nas tabelas da gold) e me mostre a contagem de linhas
+de cada uma e os valores dos KPIs.
 
 Rode e me mostre a saída:
+  python3 scripts/gerar_dashboard.py
+  databricks bundle validate --profile vertice
   databricks bundle deploy --profile vertice
-  databricks bundle run vertice_farol --profile vertice
+  databricks bundle summary --profile vertice
 ```
 
 <!-- prompts:fim -->
@@ -531,35 +544,20 @@ a sequência inteira está em [`PROMPTS.md`](../../../PROMPTS.md). Antes de cada
 [`prd/CLAUDE.md`](prd/CLAUDE.md): o negócio, as 18 sujeiras do dado, a arquitetura e as armadilhas
 do Free Edition já medidas.
 
-| # | Arquivo | O que entrega | Tempo medido |
+| # | Arquivo | O que entrega | Tempo |
 |---|---|---|---|
-| 1 | [`prompt-01-bundle.md`](prd/prompt-01-bundle.md) | bundle + job + conferência da bronze | ~40 s |
+| 1 | [`passo-01-bundle-na-mao.md`](prd/passo-01-bundle-na-mao.md) | o job de ontem como código (sem chave no Git) + conferência da bronze | ~4 min (a ingestão roda junto) |
 | 2 | [`prompt-02-silver.md`](prd/prompt-02-silver.md) | pipeline, `silver.tarefas` + 6 tabelas | ~2 min |
 | 3 | [`prompt-03-gold.md`](prd/prompt-03-gold.md) | 3 tabelas gold (fotografia, filme, pessoas) + 10 testes | ~3 min |
-| 4 | [`prompt-04-texto-com-ia.md`](prd/prompt-04-texto-com-ia.md) | `status_estruturado` (ai_classify + ai_extract) | ~2 min |
-| 5 | [`prompt-05-metricas.md`](prd/prompt-05-metricas.md) | a metric view `mv_projetos` | ~10 s |
+| 4 | [`prompt-04-job-completo.md`](prd/prompt-04-job-completo.md) | `status_estruturado` (ai_classify + ai_extract) e o job inteiro, de ponta a ponta | ~8 min |
+| 5 | [`prompt-05-dashboard.md`](prd/prompt-05-dashboard.md) | o dashboard "Projeto Farol · Portfólio", 3 páginas | ~10 s de deploy |
 
 Se um prompt não entregar, o **gabarito** está em [`vertice/`](vertice): compare o arquivo.
 
-### Prompt 1 · O projeto vira código
+### Passo 1 · O bundle, à mão
 
-**O que você pede:** criar o bundle `vertice` na raiz do seu repositório, com o job `vertice_farol` e uma
-primeira tarefa que só **confere** a bronze: as 9 tabelas da noite 1 têm o número de linhas
-esperado? Se não, o job para com uma mensagem dizendo o que fazer.
-
-**A ideia:** sexta que vem os gerentes atualizam tudo de novo. Quem roda? Na mão? Com o bundle, o
-projeto fica no Git (tem histórico e revisão) e o `bundle deploy` sobe tudo igual na máquina de
-qualquer pessoa. E antes de calcular qualquer KPI, a gente confere se o dado chegou inteiro: melhor
-o dashboard com o dado da semana passada do que com meio dado.
-
-**O que conferir:** abra o job no workspace. Uma caixa só, verde, com 9 linhas `ok`. Esse desenho
-vai crescer a noite inteira.
-
-![Pasta .bundle/vertice/dev/files/src no workspace](../../../docs/img/recurso-workspace-bundle.jpg)
-*O deploy copia o seu bundle para `Workspace › Users › você › .bundle › vertice › dev › files`. Repare no caminho no topo: é o mesmo `src/` da sua pasta. (No print, a pasta `ml` já é da noite 3.)*
-
-> **Teste se a conferência tem dente:** troque um número esperado (por exemplo `projetos 61`), faça
-> deploy e rode. O job falha com a sua mensagem. Desfaça e rode de novo.
+O job de ontem vira código sem Claude Code: [`prd/passo-01-bundle-na-mao.md`](prd/passo-01-bundle-na-mao.md).
+No fim, `vertice_farol` com 2 caixas verdes, `git status` sem chave e o job de ontem pausado.
 
 ### Prompt 2 · As três ferramentas viram uma
 
@@ -640,10 +638,11 @@ desenho. É meia pergunta 3 do dono respondida (a outra metade vem no prompt 4).
 > **"Melancia"** é o projeto verde por fora e vermelho por dentro: o gerente marca farol verde, mas o
 > SPI está abaixo de 0,9. São 4: PRJ-012, PRJ-028, PRJ-034, PRJ-042.
 
-### Prompt 4 · O texto vira coluna, com IA
+### Prompt 4 · O job completo: a Torre roda sozinha, e lê o texto do status
 
-**O que você pede:** uma tabela nova, a `status_estruturado`. Ela lê o texto livre do status
-semanal e tira a **causa do bloqueio**, o bloqueio, quem destrava e os dias de impacto.
+**O que você pede:** a última camada da noite, a `status_estruturado`, que lê o texto livre do status
+semanal e tira a **causa do bloqueio**, o bloqueio, quem destrava e os dias de impacto. E o job
+inteiro, da ingestão aos testes, rodando de ponta a ponta, agendado para toda segunda às 6h.
 
 **A ideia:**
 
@@ -655,8 +654,11 @@ semanal e tira a **causa do bloqueio**, o bloqueio, quem destrava e os dias de i
   bloqueio dos últimos 90 dias (163 status, ~2 min) e **palavra-chave** para o histórico antigo.
 - **Incremental.** A tabela guarda o que já foi lido. Rode de novo e ela processa zero linhas: a
   conta de IA não se paga duas vezes.
+- **O DAG é a documentação.** Testes e IA rodam em paralelo depois do medalhão, porque um não lê o
+  outro. Se uma tarefa falhar, o **Repair run** refaz só ela e as seguintes.
 
-**O que conferir:** a pergunta "por que o PRJ-011 atrasou?" agora tem resposta em dado.
+**O que conferir:** seis caixas verdes no `vertice_farol`, e a pergunta "por que o PRJ-011 atrasou?"
+com resposta em dado.
 
 ```sql
 SELECT causa_bloqueio, COUNT(*) AS semanas, SUM(coalesce(dias_impacto, 0)) AS dias_de_impacto
@@ -670,40 +672,33 @@ GROUP BY 1 ORDER BY 2 DESC;
 Junto com o prompt 3, é a pergunta 3 do dono inteira: **duas SREs paradas no PRJ-007 enquanto o
 PRJ-011 pede SRE no status há 12 semanas.**
 
-![Gráfico de causas de bloqueio por projeto no dashboard](../../../docs/img/noite2-bloqueios-ia.jpg)
-*É assim que essa tabela aparece no dashboard (noite 3, página **Pessoas**). Repare na barra laranja do PRJ-011 no topo: `falta_sre`, 12 semanas. Cada cor é uma causa que a IA tirou do texto.*
-
-### Prompt 5 · O KPI definido uma vez só
-
-**O que você pede:** uma metric view, a `mv_projetos`, e a última tarefa do job,
-`metricas_governadas`. Uma só, de propósito: é a dos números da diretoria. Evolução, pessoas e
-fornecedores o Genie responde direto nas tabelas.
-
-**A ideia:** ontem o mesmo CPI do PRJ-009 deu 0,77 no SQL e 1,9 no Genie (que inventou a fórmula).
-Quando o dono recebe dois números, não confia em nenhum. A metric view guarda a **fórmula**
-(`CPI = soma do EV ÷ soma do AC`), e `MEASURE(cpi)` dá o mesmo resultado no SQL, no dashboard e no
-Genie, em qualquer recorte (projeto, cliente, ferramenta, carteira). Os `comment` e `synonyms` são
-para o Genie: "índice de custo" passa a significar CPI.
-
-**O que conferir:**
-
-```sql
-SELECT MEASURE(spi) AS spi, MEASURE(cpi) AS cpi, MEASURE(estouro_previsto) AS estouro,
-       MEASURE(projetos_criticos) AS criticos, MEASURE(projetos_melancia) AS melancias
-FROM lakehouse_vertice.gold.mv_projetos;
--- 0,92 · 0,97 · R$ 6,47 mi · 7 · 4
-```
-
-![Metric view mv_projetos no Catalog Explorer](../../../docs/img/recurso-metric-view.jpg)
-*A `mv_projetos` no catálogo: 11 medidas, cada uma com o seu comentário em português ("Abaixo de 1 é atraso"). É esse texto que o Genie lê para entender o KPI.*
-
 ![DAG do job vertice_farol com todas as tarefas verdes](../../../docs/img/noite2-job.jpg)
-*O job depois do prompt 5: `conferencia_bronze` → `medalhao` → duas tarefas **em paralelo** (`status_com_ia`, `testes_de_qualidade`) → `metricas_governadas`. Hoje o seu termina aí, com cinco caixas; as três de `ml_` entram amanhã, na noite 3 (8 tarefas no total). O print é do ensaio: ainda mostra a antiga `postmortem_com_ia`.*
+*O job no ensaio de 18/10: `conferencia_bronze` → `medalhao` → duas tarefas **em paralelo** (`status_com_ia`, `testes_de_qualidade`). O seu tem ainda as duas caixas da ingestão na frente da conferência. (O print ainda mostra tarefas que saíram ou foram para a noite 4, como `postmortem_com_ia` e `metricas_governadas`.)*
 
-### Prompt 6 · mudou para a noite 3
+### Prompt 5 · O dashboard: o dono vê a Torre
 
-O dashboard "Projeto Farol · Portfólio" e o Genie "Farol · Diretoria" agora fecham a
-[noite 3](..): [`prompt-04-dashboard-e-genie.md`](../prd/prompt-04-dashboard-e-genie.md).
+**O que você pede:** o dashboard "Projeto Farol · Portfólio", como código no bundle, com três
+páginas: **Portfólio** (KPIs, estouro por projeto, SPI × CPI, a evolução semanal, o farol do
+gerente ao lado do farol pelo número), **Pessoas** (quem está parado e as causas que a IA tirou do
+status) e **Fornecedores** (quem promete e não cumpre).
+
+**A ideia:**
+
+- **Dashboard como código.** Um script (`scripts/gerar_dashboard.py`) escreve o JSON, e o JSON vai
+  para o Git, dentro do bundle. Tem diff, revisão e rollback.
+- **O SQL de cada gráfico cabe em cinco linhas.** Compare com o dashboard da noite 1: sem `CASE`,
+  sem `replace`, sem `try_cast`. A limpeza mora na silver.
+- **Razão não se soma.** O SPI da carteira é `SUM(ev) / SUM(pv)`, nunca a média dos SPIs. Amanhã
+  essa fórmula vai morar num lugar só, a metric view, e o Genie e o app vão usar a mesma.
+
+**O que conferir:** na página Portfólio, carteira de R$ 208,6 mi, SPI 0,92, CPI 0,97, estouro de
+**R$ 6,47 mi**, 17 projetos em risco, 7 críticos e 4 melancias.
+
+![Gráfico de causas de bloqueio por projeto no dashboard](../../../docs/img/noite2-bloqueios-ia.jpg)
+*A página **Pessoas**: a barra do PRJ-011 no topo, `falta_sre`, 12 semanas. Cada cor é uma causa que a IA tirou do texto.*
+
+> **Não edite o dashboard no workspace.** O próximo `bundle deploy` recusa ("modified remotely").
+> A mudança vai para o script, e o script gera o JSON.
 
 ---
 
@@ -733,13 +728,13 @@ python3 scripts/run_sql.py aulas/aula-03-modelagem-claude-code/claude-code/prd/9
 | PRJ-011 nos últimos 90 dias | falta de SRE: 12 semanas, 57 dias de impacto |
 | Status classificados por IA / regra / palavra-chave | 163 / 2.954 / 794 |
 
-**Por que o estouro é igual ao de ontem?** Porque a fotografia de hoje faz a mesma conta do
+**Por que o estouro é igual ao da noite 1?** Porque a fotografia de hoje faz a mesma conta do
 rascunho, sobre as mesmas tarefas. O que muda é que agora o número tem **contrato, teste e roda
-sozinho**. E a noite 2 traz o que a noite 1 não tinha como fazer: o **histórico** (o fato semanal),
+sozinho**. E a noite 3 traz o que a noite 1 não tinha como fazer: o **histórico** (o fato semanal),
 a **causa** (a IA lendo o texto) e as **pessoas** (o timesheet).
 
 ![Lineage da projeto_situacao_atual em lista](../../../docs/img/recurso-lineage-lista.jpg)
-*A prova de que é um número só: na aba **Lineage**, a mesma `projeto_situacao_atual` alimenta o Genie "Farol · Diretoria", o dashboard "Projeto Farol · Portfólio" e a `mv_projetos` (Downstream), e vem da silver (Upstream).*
+*A prova de que é um número só: na aba **Lineage**, a mesma `projeto_situacao_atual` alimenta o dashboard "Projeto Farol · Portfólio" (Downstream) e vem da silver (Upstream). (No print, do ensaio, também aparecem o Genie e a `mv_projetos`, que entram na noite 4.)*
 
 ---
 
@@ -748,12 +743,15 @@ a **causa** (a IA lendo o texto) e as **pessoas** (o timesheet).
 | Sintoma | Causa | Correção |
 |---|---|---|
 | `refresh token is invalid` | Login expirado | `databricks auth login --profile <perfil>` |
+| O Claude Code recusa o deploy (*"Credential Leakage"*) | O modo automático barra comando que leva chave | Rode você mesmo, com `!` na frente: `! databricks bundle deploy --profile <perfil>` (o `!` roda na pasta onde o Claude Code está; sem `cd` relativo) |
+| `no value assigned to required variable s3_access_key_id` | Faltou o arquivo das chaves | `.databricks/bundle/dev/variable-overrides.json` (prompt 1, passo 4) |
+| `ingestao_data_lake` falha com `preencha: [...]` | A chave não chegou como parâmetro | `base_parameters` com `${var.…}` na tarefa |
+| A chave aparece no `git status` | `.databricks/` fora do `.gitignore` | Acrescente ao `.gitignore` antes do commit |
 | `dev_fulano_silver` não existe | `mode: development` no target | `presets: { trigger_pause_status: PAUSED }` |
 | Pipeline falha em `achou_o_projeto` | Arquivo que não casou com o de-para | Fallback pelo nome do arquivo (Excel) e da lista (ClickUp) |
 | `CAST_INVALID_INPUT '1827,44'` | Vírgula decimal | `replace(',', '.')` antes do CAST |
-| `METRIC_VIEW_INVALID_VIEW_DEFINITION` | Rodou a metric view pelo `aitools tools query` | `sql_task` ou `scripts/run_sql.py` |
-| Deploy falha: `Table ... does not exist` (Genie) | Genie criado antes das tabelas | `bundle run vertice_farol` e deploy de novo |
 | A tarefa de IA leva 15+ minutos | IA rodando no histórico inteiro | Filtro dos 90 dias + regra para "sem bloqueio" |
+| Dashboard: `modified remotely` | Editado no workspace | Leve a mudança para o script e use `--force` só depois |
 | Um prompt não entrega | — | O gabarito está em [`vertice/`](vertice): compare o arquivo |
 
 Cada prompt tem a sua própria tabela "Se der errado", mais detalhada, no fim do arquivo.
@@ -766,17 +764,24 @@ BUNDLE_DIR=aulas/aula-03-modelagem-claude-code/claude-code/meu-vertice \
   bash aulas/aula-03-modelagem-claude-code/claude-code/prd/00-reset.sh <perfil> --apagar   # apaga silver, gold e os recursos do bundle
 ```
 
-A bronze e o volume nunca são apagados (são da noite 1).
+A bronze e o volume nunca são apagados: quem recarrega é a ingestão, a primeira tarefa do job.
 
 **Para rodar o gabarito inteiro de uma vez**
 
 ```bash
 cd aulas/aula-03-modelagem-claude-code/claude-code/vertice
+# as chaves do data lake, fora do Git (os valores estão na tabela de conexão da noite 2)
+mkdir -p .databricks/bundle/dev
+echo '{"s3_access_key_id": "...", "s3_secret_access_key": "..."}' > .databricks/bundle/dev/variable-overrides.json
+python3 scripts/gerar_dashboard.py
 databricks bundle deploy --profile <perfil>
-databricks bundle run vertice_farol --profile <perfil>    # 8 tarefas: silver, gold, IA, testes, métrica e (noite 3) o modelo
-databricks bundle deploy --profile <perfil>               # 2º deploy: o Genie precisa das tabelas
+databricks bundle run vertice_farol --profile <perfil>    # ingestão, conferência, silver, gold, testes, IA (e, da noite 4, o modelo e a métrica)
 python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 ```
+
+O gabarito é o estado final da semana: o job já traz as tarefas da noite 4 (`ml_*` e
+`metricas_governadas`) e o bundle já traz o Genie. Num workspace zerado, o Genie só sobe no
+segundo `bundle deploy`, depois do `run`, porque precisa das tabelas.
 
 ---
 
@@ -786,17 +791,18 @@ python3 ../../../scripts/run_sql.py ../prd/99-verificacao.sql --profile <perfil>
 |---|---|
 | `prd/CLAUDE.md` | contexto do projeto para o Claude Code |
 | `prd/prompt-01..05-*.md` | os 5 prompts, com o que mostrar, o que falar e "se der errado" |
-| `prd/genie-benchmark.json` | 20 perguntas com o SQL de referência |
 | `prd/99-verificacao.sql` | os 20 números da noite, esperado × obtido |
-| `prd/00-reset.sh` | zera a noite 2 (simula por padrão) |
+| `prd/00-reset.sh` | zera silver, gold e os recursos do bundle (simula por padrão) |
 | `vertice/` | **o gabarito**: o bundle completo, testado |
-| `vertice/scripts/gerar_dashboard.py`, `gerar_genie.py` | dashboard e Genie gerados por código |
-| `meu-vertice/` | onde o **seu** bundle nasce no prompt 1 |
+| `vertice/src/ingestao/` | os dois notebooks da noite 2, agora dentro do bundle |
+| `vertice/scripts/gerar_dashboard.py` | o dashboard gerado por código (o `gerar_genie.py` é da noite 4) |
+| `meu-vertice/` | uma pasta de rascunho, se você quiser construir dentro deste repositório |
 | `APRENDIZADOS.md` | o que falhou no ensaio do Free Edition e como foi resolvido |
 
 ## ➡️ Amanhã
 
 A gold sabe dizer **quais projetos estão** em risco hoje. A pergunta 4 do dono é outra: **o que vai
 dar errado no próximo mês?** A `fato_projeto_semana` tem a curva de cada projeto, semana a semana, e
-o `status_estruturado` tem as causas: é exatamente o que um modelo precisa para aprender o padrão
-antes de ele virar estouro. [Noite 3](..).
+o `status_estruturado` tem as causas: é o que um modelo precisa para aprender o padrão antes de ele
+virar estouro. Amanhã o job ganha o modelo, o dono ganha um Genie que acerta as 4 perguntas e a Torre
+ganha uma URL: o app. [Noite 4](../../aula-04-produtos-de-dados-ia).

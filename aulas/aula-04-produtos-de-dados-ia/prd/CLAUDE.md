@@ -1,75 +1,101 @@
-# Projeto Farol · Vértice Tecnologia — contexto da noite 4
+# Projeto Farol · Vértice Tecnologia: contexto da noite 4
 
-Noite 4 da Imersão Jornada de Dados (**quinta, 22/10/2026, 19h30**): **Engenheiro de IA**.
-Leia este arquivo antes de escrever qualquer código. Ele vale para os três prompts da noite.
+Noite 4 da Imersão Jornada de Dados (**quinta, 22/10/2026, 19h30**): **Cientista de dados e
+Engenheiro de IA**. Leia este arquivo antes de escrever qualquer código. Ele vale para os prompts da
+noite e completa o `CLAUDE.md` da raiz do repositório (o da noite 3), que continua valendo.
 
-> **A pergunta da noite: "E o dono, que não escreve SQL?"**
-> Três noites de trabalho estão atrás de um SQL Editor. Hoje o projeto ganha uma URL,
-> um agente que lê contrato, e um botão de aprovar. Nenhuma tabela de análise
-> nova sobre os projetos: a gold já está pronta. O trabalho é **entregar**.
+> **A pergunta da noite: "O que vai dar errado no próximo mês? E o dono, que não escreve SQL?"**
+> A noite 3 deixou a Torre rodando sozinha toda segunda às 6h, com um dashboard. Hoje ela ganha um
+> modelo que avisa **antes**, um Genie que responde em português e um app com URL.
 
 ---
 
 ## 1. O que já existe (noites 1 a 3)
 
 Catálogo `lakehouse_vertice`. O "hoje" do dataset é **16/10/2026**: nunca use `current_date()`.
+O bundle `vertice` está na raiz do repositório, com o job `vertice_farol` (6 tarefas: 2 de ingestão,
+conferência, medalhão, testes, IA) e o dashboard "Projeto Farol · Portfólio".
 
-| Tabela / view | O que é |
+| Tabela | O que é |
 |---|---|
 | `gold.projeto_situacao_atual` | fotografia de hoje por projeto: SPI, CPI, EAC, estouro previsto, margem, atraso projetado, situação (ok, atenção, crítico, concluído), farol do gerente × farol calculado, `melancia` |
+| `gold.fato_projeto_semana` | projeto × semana: PV, EV, AC **acumulados**, SPI, CPI, farol, horas |
 | `gold.status_estruturado` | status semanal em colunas: causa_bloqueio (change_freeze, falta_sre, dependencia_fornecedor, rotatividade, mudanca_escopo, bug_retrabalho, aprovacao_cliente, sem_bloqueio, nao_reportado), bloqueio, quem_destrava, dias_impacto |
 | `gold.utilizacao_pessoa_semana` | pessoa × projeto × semana: papel, senioridade, utilização, horas e custo ociosos |
-| `gold.mv_projetos` | KPIs governados (`MEASURE()`) |
-| `gold.score_estouro_30d` | noite 3: `projeto_id, data_referencia, prob_estouro_30d, ranking, faixa_risco, principais_fatores` |
-| `silver.entregas_fornecedor` | cada entrega de fornecedor: fornecedor, projeto_id, valor, data_prometida, data_entrega, dias_de_atraso_na_entrega, em_atraso (a CodeForge entrega com prazo ×1,41) |
-| Volume `bronze.raw/documentos/contratos/` | **8 contratos de fornecedor e SaaS em PDF** (CodeForge, Pixel Design Studio, QualiTest Brasil, SecureOps Segurança, DataPrime Analytics, NuvemSul Cloud, Observa360, CodeVault) |
-
-**A Vértice é a CONTRATANTE** nesses contratos; o fornecedor é a CONTRATADA. Multa por atraso é dinheiro
-que a Vértice **cobra** (desconta da fatura do fornecedor).
+| `silver.entregas_fornecedor` | cada entrega de fornecedor: prometido × entregue, `em_atraso` (a CodeForge entrega com prazo ×1,41) |
 
 ## 2. O que a noite 4 constrói
 
 ```
- 8 contratos PDF ──ai_parse_document──▶ silver.documentos_elementos (title, section_header, text)
-        │
-        └── agrupar pela última section_header ──▶ silver.contratos_clausulas (72)
-                 │
-                 └── ai_extract com JSON schema TIPADO ──▶ gold.contratos (1 linha por contrato: valor_anual,
-                       data_fim_vigencia, renovacao_automatica, aviso_previo_dias, multa_atraso_pct_dia,
-                       teto_multa_pct, sla, reajuste, clausulas = texto de todas as cláusulas)
+ job vertice_farol (o mesmo da noite 3, mais 4 tarefas)
+   ... testes_de_qualidade ─┬─ ml_features ── ml_modelo ── ml_score ──▶ gold.score_estouro_30d
+   ... status_com_ia ───────┤   (ml.features_projeto_semana · ml.modelo_estouro_30d@prod · ml.modelo_metricas)
+                            └─ metricas_governadas ──▶ gold.mv_projetos (metric view)
 
- Multa a cobrar e aviso prévio: CONSULTAS sobre gold.contratos (+ silver.entregas_fornecedor), não tabelas novas.
-
- Genie "Farol · Diretoria + Contratos"  ◀── gold.contratos + gold da noite 2 + mv_projetos + score (se existir)
+ Genie "Farol · Diretoria" (recurso do bundle vertice) ◀── gold + mv_projetos + score + entregas_fornecedor
         ▲
         │ aba "Perguntar"
- App "Projeto Farol" (Databricks App, AppKit) ── leitura: config/queries/*.sql no SQL warehouse
-        │                                      ── escrita: Lakebase (Postgres) torre.decisoes
-        └── Projetos em risco · Simulador de realocação de pessoa · Decisões · Perguntar
+ App "Projeto Farol" (Databricks App, AppKit, bundle próprio em minha-torre/)
+        ├── leitura: config/queries/*.sql no SQL warehouse (gold)
+        ├── score: rota do servidor /api/score-estouro (opcional, não quebra o build)
+        └── escrita (prompt 4, opcional): Lakebase (Postgres) torre.decisoes
+        Projetos em risco · Simulador de realocação · Perguntar · (Decisões)
 ```
 
-**Gold enxuta:** a noite 4 cria **uma** tabela na gold (`gold.contratos`). O passo a passo do PDF fica na silver.
-Não crie views nem tabelas para a multa ou para os avisos: são perguntas, e o Genie e o app as fazem em SQL.
+| Prompt | Entrega |
+|---|---|
+| 1 · o modelo | `src/ml/` (features SQL, modelo e score em notebook), 3 tarefas `ml_*`, `gold.score_estouro_30d` |
+| 2 · métricas + Genie | `src/metricas/metricas.sql` (`mv_projetos`), tarefa `metricas_governadas`, `scripts/gerar_genie.py` + `resources/genie.genie_space.yml` |
+| 3 · o app | `minha-torre/` (AppKit): KPIs, projetos em risco com P(estouro), simulador, Genie |
+| 4 · aprovação (opcional) | Lakebase + botão Aprovar/Recusar + tela Decisões |
+
+**Contrato do score** (o Genie e o app leem daqui; nome e tipo fixos):
+`projeto_id STRING, data_referencia DATE, prob_estouro_30d DOUBLE, ranking INT, faixa_risco STRING, principais_fatores STRING`.
+Projeto já abaixo de 0,9 na fotografia de hoje tem prob 1,0. Faixas: alto ≥ 0,5, medio ≥ 0,2, baixo.
+
+**Onde fica cada coisa:** o laboratório (features, métricas, modelo) no schema `ml`; na `gold` só o
+resultado (`score_estouro_30d`) e a metric view.
 
 ## 3. Armadilhas medidas neste workspace (Free Edition, outubro/2026)
 
+### ML
+
 | Armadilha | O que fazer |
 |---|---|
-| **Knowledge Assistant e Supervisor Agent** não criam mais ("legacy feature, use Genie Agents instead") | O agente é um **Genie Agent** com os contratos numa tabela (`gold.contratos`, com o texto das cláusulas). Ele cita a cláusula porque o texto está na linha |
-| `ai_parse_document` é a chamada cara | Rode uma vez e guarde os elementos numa tabela. Ele devolve `type` (`title`, `section_header`, `text`): agrupe o texto pela última `section_header`, sem regex de título |
-| `ai_extract` sem schema devolve **texto** ("0,5% do valor da entrega...") | Use `ai_extract(texto, '<JSON schema>', map('version','2.0'))` com `type` e `description` por campo: sai `0.5`, `true`, `60`. Leia com `:response:campo::DOUBLE` |
-| Sem "em português" na descrição do campo, o modelo escreveu um SLA em italiano ("disponibilità") | Peça o idioma na `description` dos campos de texto |
-| A multa histórica da CodeForge (desde 2024) é 3× a da vigência atual | Conte só a vigência atual (`data_prometida > add_months(data_fim_vigencia, -12)`): é o que dá para descontar das próximas faturas |
-| O Genie publicado com tabela inexistente falha | Crie as tabelas antes de publicar. A `score_estouro_30d` entra só se existir |
-| **Já existe** um Genie "Farol · Diretoria" (noite 2) | O da noite 4 se chama **"Farol · Diretoria + Contratos"**. `scripts/genie.py publicar` atualiza pelo título |
-| **O Free Edition aceita no máximo 3 apps por workspace** (`reached the maximum limit of 3 apps`) | Antes do prompt 2, confira `databricks apps list`; apague um app que você não usa mais |
+| Registrar modelo no Unity Catalog falha (`s3:PutObject ... explicit deny`) | O serverless traz MLflow 2.11: `%pip install -U "mlflow-skinny[databricks]>=2.21,<3"` + `dbutils.library.restartPython()` na 1ª célula |
+| XGBoost treina e não carrega de volta | `HistGradientBoostingRegressor` / `Classifier` do sklearn |
+| `spark_udf` quebra no serverless (`InvalidVersion`) | `mlflow.sklearn.load_model("models:/...@prod")` + pandas |
+| `mlflow.set_experiment` não cria a pasta pai | `WorkspaceClient().workspace.mkdirs(...)` antes |
+| MLflow 2.x | `log_model(..., artifact_path="modelo")`, nunca `name=` |
+| `Object of type Decimal is not JSON serializable` | `.astype(float)` antes do `input_example` |
+| Célula de texto sem `# MAGIC %md` | vira código Python e quebra com `SyntaxError` |
+| Janela nomeada com frame (`OVER (w ROWS BETWEEN ...)`) | `PARSE_SYNTAX_ERROR`: escreva a janela por extenso |
+| Registro que falhou deixa versão órfã (`Function ... is not empty`) | `prd/99-limpar-modelo.sh` apaga as versões antes do modelo |
+
+### Métricas e Genie
+
+| Armadilha | O que fazer |
+|---|---|
+| Metric view pelo `aitools tools query` falha (`Missing required creator property 'expr'`) | O YAML perde a indentação: `sql_task` ou `python3 scripts/run_sql.py` |
+| A `sql_task` corta o arquivo em todo `;`, inclusive dentro do `$$ ... $$` | Nada de `;` dentro do YAML da metric view (nem em comment) |
+| O Genie do bundle falha com `Table ... does not exist` | O Genie precisa das tabelas existindo: deploy → run → deploy |
+| Editar o Genie no workspace trava o `bundle deploy` ("modified remotely") | Leve a mudança para o `gerar_genie.py`; `--force` só depois |
+
+### App
+
+| Armadilha | O que fazer |
+|---|---|
+| **O Free Edition aceita no máximo 3 apps por workspace** (`reached the maximum limit of 3 apps`) | Antes do prompt 3, `databricks apps list`; apague um app que você não usa mais |
+| O app dentro da pasta do bundle `vertice` | `sync: { exclude: ["minha-torre/**"] }` no `databricks.yml` da raiz, senão o deploy do vertice sobe o `node_modules` |
 | `bundle deploy` cria o app **parado** | O deploy do código é `databricks apps deploy --profile <perfil>` (dentro da pasta do app) |
-| O app é um **usuário do Unity Catalog** e nasce sem acesso | Depois do `bundle deploy`: `GRANT USE CATALOG`, `USE SCHEMA` e `SELECT` na gold para o service principal (`apps get` → `service_principal_client_id`). Sem isso o **build** falha no typegen com `INSUFFICIENT_PERMISSIONS` |
-| Query em `config/queries/` com tabela inexistente **quebra o build** (typegen `--wait`) | Tabela de outra noite (o score) é lida por uma rota do servidor que responde `{disponivel:false}` |
+| O app é um **usuário do Unity Catalog** e nasce sem acesso | Depois do `bundle deploy`: `GRANT USE CATALOG`, `USE SCHEMA` e `SELECT` na gold e na silver para o service principal (`apps get` → `service_principal_client_id`). Sem isso o **build** falha no typegen com `INSUFFICIENT_PERMISSIONS` |
+| Query em `config/queries/` com tabela inexistente **quebra o build** (typegen `--wait`) | Tabela que pode faltar (o score) é lida por uma rota do servidor que responde `{disponivel:false}` |
 | `npm run typegen` fora do deploy dá `OFFLINE` em 0 s | Exporte o `.env` antes (`set -a; . ./.env; set +a`) e rode `npm run typegen -- --wait` |
 | O warehouse devolve **todo número como string** | `Number()` antes de formatar; `z.coerce.number()` no servidor |
-| Lakebase: o service principal **não enxerga o schema `public`** e não escreve em schema de outro dono | O app cria o próprio schema (`torre`) na subida. Se você testou local antes (`npm run dev`), apague o schema `torre` que **você** criou antes do deploy |
-| A 1ª visita ao app pede **consentimento OAuth** ("Permission Requested") | É esperado: o app pede para agir em seu nome (Genie). Clique em Authorize uma vez |
+| Arquivo `*.geniespace.json` dentro da pasta do app | `Requested node type [UNKNOWN] is not supported`: nenhum JSON de Genie dentro do app |
+| A 1ª visita ao app pede **consentimento OAuth** ("Permission Requested") | É esperado: o app pede para usar o Genie em seu nome. Authorize uma vez |
+| Lakebase: o service principal **não enxerga o schema `public`** | O app cria o próprio schema (`torre`) na subida. Se você testou local antes (`npm run dev`), apague o schema `torre` que **você** criou antes do deploy |
+| Lakebase apagado sem `--purge` prende o nome por 7 dias | `delete-project --purge`; confira com `list-projects`, não com `get-project` |
 
 ## 4. Convenções
 
@@ -78,23 +104,22 @@ Não crie views nem tabelas para a multa ou para os avisos: são perguntas, e o 
   (projeto `PRJ-000`, pessoa `COL0000`, tipo `pessoa`).
 - Toda decisão grava o **e-mail de quem clicou** (header `x-forwarded-email`), não o service principal.
 - Telas em português, números em `R$` e índices com 2 casas.
-- Sempre `--profile <perfil>`.
+- `random_state=42` em todo modelo. Sempre `--profile <perfil>`.
 
 ## 5. Números que servem como teste (seed 42)
 
 | O que | Valor |
 |---|---|
-| Projetos em risco / críticos / melancias | **17 / 7 / 4** (de 41 em andamento) |
-| Estouro previsto | **R$ 6,47 mi** |
-| Contratos lidos / cláusulas | 8 / 72 (9 por contrato) |
-| Contratos sem multa por atraso (só SLA) | 3 (`multa_atraso_pct_dia` nulo) |
-| Multa CodeForge | 0,5% ao dia, teto de 10% |
-| Multa cobrável da CodeForge na vigência atual | **R$ 1.122.967,65** (120 entregas atrasadas; R$ 3,24 mi no histórico) |
-| Multa cobrável de todos os fornecedores na vigência atual | R$ 1.186.147,46 |
-| Aviso prévio já vencido | DataPrime Analytics (01/10) e NuvemSul Cloud (02/10): renovaram sozinhos |
-| Aviso prévio vencendo em 60 dias | Observa360 (31/10, 15 dias) e QualiTest Brasil (01/12, **sem renovação automática**) |
-| SREs ociosos | COL0017 e COL0018 no PRJ-007, uso de 5 a 6%, R$ 179,5 mil de custo ocioso em 12 semanas |
+| `ml.features_projeto_semana` · treino · taxa base | 4.235 linhas · 1.643 · 16,7% |
+| Teste (a partir de 03/04/2026) | 580 projetos × semana, 70 terminaram o mês abaixo de 0,9 |
+| AUC: regra da folga · classificador · **modelo** | 0,87 · 0,90 · **0,92** |
+| Estouros avisados no top 5 · antecedência | **9 de 10** · **41 dias** |
+| Score: alto · medio · baixo | 18 · 4 · 19 |
+| O caso da noite | **PRJ-024**, ok hoje (SPI 0,91), 46% de chance; e-commerce, freeze a partir de 01/11 |
+| Vazamento: corte no tempo · aleatório · com índice do futuro | 0,92 · 0,92 · **0,99** (barrado pelo `assert < 0,98`) |
+| `mv_projetos`: SPI · CPI · estouro · críticos · melancias | 0,92 · 0,97 · R$ 6,47 mi · 7 · 4 |
+| Genie "Farol · Diretoria" | 20/20 no `prd/genie-benchmark-diretoria.json` (18/10, antes do score) |
+| App: em risco · críticos · melancias · estouro · alto risco em 30 dias | **17 de 41** · 7 · 4 · R$ 6,5 mi · 18 |
+| SREs ociosos | COL0017 e COL0018 no PRJ-007, uso de 5 a 6% |
 | PRJ-011 | 12 semanas com `falta_sre`, 57 dias de impacto declarados em 90 dias |
 | Simulador COL0017 (PRJ-007) → PRJ-011 | 151 h no mês · R$ 30,1 mil de ociosidade evitada · 19,0 dias recuperados · onboarding R$ 8,0 mil · saldo R$ 22,1 mil |
-| App · KPI "Alto risco em 30 dias" | 18 (faixa_risco = 'alto' no score da noite 3) |
-| Benchmark do Genie | ≥ 8/10 (10 perguntas) |

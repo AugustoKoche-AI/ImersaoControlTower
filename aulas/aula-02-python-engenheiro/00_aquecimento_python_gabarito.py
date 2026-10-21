@@ -296,7 +296,7 @@ import boto3
 # os valores estão na tabela de conexão, no começo deste README
 S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
 S3_REGION = "us-east-2"
-S3_BUCKET = "DataLakeCentralTower"
+S3_BUCKET = "DataLakeVertice"
 
 ACCESS_KEY = "COLE-AQUI"     # passada na aula
 SECRET_KEY = "COLE-AQUI"     # passada na aula

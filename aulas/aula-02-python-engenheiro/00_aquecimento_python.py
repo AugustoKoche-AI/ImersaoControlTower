@@ -346,7 +346,7 @@ import boto3
 # os valores estão na tabela de conexão, no README da noite 2
 S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
 S3_REGION = "us-east-2"
-S3_BUCKET = "DataLakeCentralTower"
+S3_BUCKET = "DataLakeVertice"
 
 ACCESS_KEY = "COLE-AQUI"     # passada na aula
 SECRET_KEY = "COLE-AQUI"     # passada na aula
@@ -360,7 +360,7 @@ SECRET_KEY = "COLE-AQUI"     # passada na aula
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Objetivo:** listar os arquivos do bucket `DataLakeCentralTower`, imprimindo o nome e o tamanho de cada um.
+# MAGIC **Objetivo:** listar os arquivos do bucket `DataLakeVertice`, imprimindo o nome e o tamanho de cada um.
 # MAGIC
 # MAGIC Dica: `s3.list_objects_v2(Bucket=S3_BUCKET)["Contents"]`, onde cada item tem `"Key"` e `"Size"`.
 

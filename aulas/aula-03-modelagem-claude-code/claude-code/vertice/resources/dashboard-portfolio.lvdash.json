@@ -2,14 +2,20 @@
   "datasets": [
     {
       "name": "ds_kpis",
-      "displayName": "KPIs governados (mv_projetos)",
+      "displayName": "KPIs da carteira em andamento",
       "queryLines": [
-        "-- Os KPIs vêm da metric view: a fórmula do SPI e do CPI mora num lugar só.\n",
-        "SELECT MEASURE(carteira) AS carteira, MEASURE(spi) AS spi, MEASURE(cpi) AS cpi,\n",
-        "       MEASURE(estouro_previsto) AS estouro_previsto, MEASURE(margem_projetada) AS margem_projetada,\n",
-        "       MEASURE(projetos_em_risco) AS projetos_em_risco, MEASURE(projetos_criticos) AS projetos_criticos,\n",
-        "       MEASURE(projetos_melancia) AS projetos_melancia\n",
-        "FROM mv_projetos\n"
+        "-- Razão não se soma: o SPI da carteira é SUM(ev) / SUM(pv), não a média dos SPIs.\n",
+        "-- Na noite 4 estas fórmulas mudam para a metric view mv_projetos (MEASURE(spi)).\n",
+        "SELECT SUM(valor_contrato) AS carteira,\n",
+        "       SUM(ev) / SUM(pv) AS spi,\n",
+        "       SUM(ev) / SUM(ac) AS cpi,\n",
+        "       SUM(estouro_previsto) AS estouro_previsto,\n",
+        "       (SUM(valor_contrato) - SUM(eac)) / SUM(valor_contrato) AS margem_projetada,\n",
+        "       COUNT_IF(situacao IN ('atenção', 'crítico')) AS projetos_em_risco,\n",
+        "       COUNT_IF(situacao = 'crítico') AS projetos_criticos,\n",
+        "       COUNT_IF(melancia) AS projetos_melancia\n",
+        "FROM projeto_situacao_atual\n",
+        "WHERE status = 'em_andamento'\n"
       ]
     },
     {
@@ -107,7 +113,7 @@
         {
           "widget": {
             "name": "titulo",
-            "textbox_spec": "# Projeto Farol · Portfólio\n\n**Quais projetos estão atrasados, de quais clientes, e quanto isso custa?** Agora sobre a camada **gold**, com Excel, ClickUp e MS Project integrados, e as **métricas governadas** (`mv_projetos`): o SPI do card é o mesmo SPI do Genie e do SQL. Hoje do dataset: 16/10/2026."
+            "textbox_spec": "# Projeto Farol · Portfólio\n\n**Quais projetos estão atrasados, de quais clientes, e quanto isso custa?** Agora sobre a camada **gold**, com Excel, ClickUp e MS Project integrados numa tabela só, limpos e testados toda segunda às 6h. Hoje do dataset: 16/10/2026."
           },
           "position": {
             "x": 0,

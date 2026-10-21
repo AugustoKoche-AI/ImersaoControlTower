@@ -1,66 +1,54 @@
--- Noite 4 · Verificação
--- Confere se o agente de contratos chegou nos mesmos números da aula.
--- Cada linha mostra o esperado, o obtido e se bateu. A seed é fixa (42).
--- (A gravação no Lakebase se confere com torre-app/scripts/ver_decisoes.py.)
---
--- Rode com:
---   python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile SEU-PERFIL
+-- Noite 4 · Verificação: esperado × obtido (o modelo, a metric view e os números do app)
+-- Rode com:  python3 scripts/run_sql.py aulas/aula-04-produtos-de-dados-ia/99-verificacao.sql --profile SEU-PERFIL
+-- Seed fixa (42) e random_state=42: os números se repetem. "CONFIRA" = algo diferente do ensaio.
+-- (O Genie se confere com scripts/genie.py benchmark; a gravação no Lakebase com torre-app/scripts/ver_decisoes.py.)
 
-WITH multa AS (   -- a mesma conta do 01-contratos.sql (passo 4a) e do Genie
-  SELECT e.fornecedor, e.valor * least(CASE WHEN e.data_entrega IS NOT NULL THEN e.dias_de_atraso_na_entrega
-                                            ELSE datediff(DATE'2026-10-16', e.data_prometida) END * c.multa_atraso_pct_dia,
-                                       c.teto_multa_pct) / 100 AS multa_cobravel
-  FROM lakehouse_vertice.silver.entregas_fornecedor e
-  JOIN lakehouse_vertice.gold.contratos c ON lower(c.fornecedor) = lower(e.fornecedor)
-  WHERE c.multa_atraso_pct_dia IS NOT NULL
-    AND ((e.data_entrega IS NOT NULL AND e.dias_de_atraso_na_entrega > 0) OR e.em_atraso)
-    AND e.data_prometida > add_months(c.data_fim_vigencia, -12)
-),
-avisos AS (
-  SELECT fornecedor, datediff(date_sub(data_fim_vigencia, aviso_previo_dias), DATE'2026-10-16') AS dias_ate_limite
-  FROM lakehouse_vertice.gold.contratos
-),
+WITH m AS (SELECT * FROM lakehouse_vertice.ml.modelo_metricas),
+s AS (SELECT * FROM lakehouse_vertice.gold.score_estouro_30d),
+f AS (SELECT * FROM lakehouse_vertice.ml.features_projeto_semana),
+p AS (SELECT * FROM lakehouse_vertice.gold.projeto_situacao_atual),
 checagens AS (
-  SELECT 'contratos lidos' AS item, '8' AS esperado,
-         CAST((SELECT COUNT(*) FROM lakehouse_vertice.gold.contratos) AS STRING) AS obtido
-  UNION ALL
-  SELECT 'cláusulas extraídas', '72',
-         CAST((SELECT COUNT(*) FROM lakehouse_vertice.silver.contratos_clausulas) AS STRING)
-  UNION ALL
-  SELECT 'multa da CodeForge: % ao dia · teto', '0.5 · 10.0',
-         (SELECT concat(CAST(multa_atraso_pct_dia AS STRING), ' · ', CAST(teto_multa_pct AS STRING))
-          FROM lakehouse_vertice.gold.contratos WHERE fornecedor LIKE '%CodeForge%')
-  UNION ALL
-  SELECT 'contrato sem renovação automática', 'QualiTest Brasil',
-         (SELECT array_join(sort_array(collect_list(fornecedor)), ', ')
-          FROM lakehouse_vertice.gold.contratos WHERE NOT renovacao_automatica)
-  UNION ALL
-  SELECT 'contratos sem multa por atraso (só SLA)', '3',
-         CAST((SELECT COUNT(*) FROM lakehouse_vertice.gold.contratos WHERE multa_atraso_pct_dia IS NULL) AS STRING)
-  UNION ALL
-  SELECT 'multa a cobrar da CodeForge na vigência atual (R$)', '1122967.66',
-         CAST((SELECT ROUND(SUM(multa_cobravel), 2) FROM multa WHERE fornecedor LIKE '%CodeForge%') AS STRING)
-  UNION ALL
-  SELECT 'entregas da CodeForge atrasadas na vigência atual', '120',
-         CAST((SELECT COUNT(*) FROM multa WHERE fornecedor LIKE '%CodeForge%') AS STRING)
-  UNION ALL
-  SELECT 'aviso prévio já vencido', 'DataPrime Analytics, NuvemSul Cloud',
-         (SELECT array_join(sort_array(collect_list(fornecedor)), ', ')
-          FROM avisos WHERE dias_ate_limite < 0)
-  UNION ALL
-  SELECT 'aviso prévio vencendo em até 60 dias', 'Observa360, QualiTest Brasil',
-         (SELECT array_join(sort_array(collect_list(fornecedor)), ', ')
-          FROM avisos WHERE dias_ate_limite BETWEEN 0 AND 60)
-  UNION ALL
-  SELECT 'SREs com uso < 20% nas últimas 12 semanas', 'COL0017, COL0018',
+  -- prompt 1 · o modelo
+  SELECT 'features: linhas' AS item, '4235' AS esperado, CAST(COUNT(*) AS STRING) AS obtido FROM f UNION ALL
+  SELECT 'features: linhas de treino (elegível com rótulo)', '1643', CAST(COUNT_IF(elegivel = 1 AND estoura_30d IS NOT NULL) AS STRING) FROM f UNION ALL
+  SELECT 'features: taxa base', '0.167', CAST(ROUND(AVG(CASE WHEN elegivel = 1 THEN estoura_30d END), 3) AS STRING) FROM f UNION ALL
+  SELECT 'features: nenhum alvo preenchido hoje', '0', CAST(COUNT_IF(semana = DATE'2026-10-16' AND alvo_pior_indice_30d IS NOT NULL) AS STRING) FROM f UNION ALL
+  SELECT 'modelo: AUC (2 casas)', '0.92', CAST(ROUND(auc, 2) AS STRING) FROM m UNION ALL
+  SELECT 'modelo: AUC da regra da folga (2 casas)', '0.87', CAST(ROUND(auc_baseline_folga, 2) AS STRING) FROM m UNION ALL
+  SELECT 'modelo: ganha da regra da folga', 'true', CAST(auc >= auc_baseline_folga AS STRING) FROM m UNION ALL
+  SELECT 'modelo: AUC abaixo de 0,98 (sem vazamento)', 'true', CAST(auc < 0.98 AS STRING) FROM m UNION ALL
+  SELECT 'modelo: estouros avisados no top 5', '9 de 10', estouros_avisados || ' de ' || estouros_teste FROM m UNION ALL
+  SELECT 'modelo: antecedência média (dias, arredondado)', '41', CAST(CAST(ROUND(antecedencia_media_dias) AS INT) AS STRING) FROM m UNION ALL
+  SELECT 'score: uma linha por projeto em andamento', '41', CAST(COUNT(*) AS STRING) FROM s UNION ALL
+  SELECT 'score: data de referência', '2026-10-16', CAST(MAX(data_referencia) AS STRING) FROM s UNION ALL
+  SELECT 'score: faixa alto · medio · baixo', '18 · 4 · 19',
+         COUNT_IF(faixa_risco = 'alto') || ' · ' || COUNT_IF(faixa_risco = 'medio') || ' · ' || COUNT_IF(faixa_risco = 'baixo') FROM s UNION ALL
+  SELECT 'score: todo projeto crítico ou em atenção com prob 1,0', '17',
+         CAST((SELECT COUNT(*) FROM s s2 JOIN p USING (projeto_id)
+               WHERE p.situacao IN ('crítico', 'atenção') AND s2.prob_estouro_30d = 1.0) AS STRING) UNION ALL
+  SELECT 'score: projetos ok para a regra com risco alto ou médio', '5',
+         CAST((SELECT COUNT(*) FROM s s3 JOIN p USING (projeto_id)
+               WHERE p.situacao = 'ok' AND s3.faixa_risco IN ('alto', 'medio')) AS STRING) UNION ALL
+  SELECT 'score: probabilidade do PRJ-024 (2 casas)', '0.46',
+         CAST((SELECT ROUND(prob_estouro_30d, 2) FROM s WHERE projeto_id = 'PRJ-024') AS STRING) UNION ALL
+  SELECT 'score: nenhum motivo vazio', '0', CAST(COUNT_IF(principais_fatores IS NULL OR principais_fatores = '') AS STRING) FROM s UNION ALL
+  -- prompt 2 · a metric view (a mesma conta da gold, agora como fórmula governada)
+  SELECT 'mv_projetos: SPI · CPI da carteira', '0.92 · 0.97',
+         (SELECT CAST(ROUND(MEASURE(spi), 2) AS STRING) || ' · ' || CAST(ROUND(MEASURE(cpi), 2) AS STRING) FROM lakehouse_vertice.gold.mv_projetos) UNION ALL
+  SELECT 'mv_projetos: estouro previsto (R$ mi)', '6.47',
+         (SELECT CAST(ROUND(MEASURE(estouro_previsto) / 1e6, 2) AS STRING) FROM lakehouse_vertice.gold.mv_projetos) UNION ALL
+  SELECT 'mv_projetos: em risco · críticos · melancias', '17 · 7 · 4',
+         (SELECT MEASURE(projetos_em_risco) || ' · ' || MEASURE(projetos_criticos) || ' · ' || MEASURE(projetos_melancia)
+          FROM lakehouse_vertice.gold.mv_projetos) UNION ALL
+  -- prompt 3 · o que o app mostra
+  SELECT 'app: alto risco em 30 dias (faixa alta)', '18', CAST(COUNT_IF(faixa_risco = 'alto') AS STRING) FROM s UNION ALL
+  SELECT 'app: SREs com uso < 20% nas últimas 12 semanas', 'COL0017, COL0018',
          (SELECT array_join(sort_array(collect_list(colaborador_id)), ', ') FROM (
             SELECT colaborador_id FROM lakehouse_vertice.gold.utilizacao_pessoa_semana
             WHERE papel = 'sre' AND semana > DATE'2026-07-24'
-            GROUP BY colaborador_id HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2))
-  UNION ALL
-  SELECT 'dias de impacto por falta de SRE no PRJ-011 (90 dias)', '57.0',
+            GROUP BY colaborador_id HAVING SUM(horas_apontadas) / SUM(horas_disponiveis) < 0.2)) UNION ALL
+  SELECT 'app: dias de impacto por falta de SRE no PRJ-011 (90 dias)', '57.0',
          CAST((SELECT SUM(dias_impacto) FROM lakehouse_vertice.gold.status_estruturado
                WHERE projeto_id = 'PRJ-011' AND data_status >= DATE'2026-07-18' AND causa_bloqueio = 'falta_sre') AS STRING)
 )
-SELECT item, esperado, obtido, CASE WHEN esperado = obtido THEN 'ok' ELSE 'CONFIRA' END AS status
-FROM checagens;
+SELECT item, esperado, obtido, CASE WHEN esperado = obtido THEN 'ok' ELSE 'CONFIRA' END AS status FROM checagens;

@@ -1,32 +1,30 @@
-# farol-torre · gabarito da noite 4
+# farol-torre · gabarito do app da noite 4
 
-O app **Projeto Farol** da Vértice Tecnologia (Databricks App, AppKit: React + TypeScript + Express) e o
-**agente que lê contrato**, num bundle só. É o resultado dos 3 prompts da noite 4.
-Para construir o seu, siga [`../prd/`](../prd) na pasta [`../minha-torre/`](../minha-torre).
+O app **Projeto Farol** da Vértice Tecnologia (Databricks App, AppKit: React + TypeScript + Express). É o
+resultado dos prompts 3 e 4 da noite 4, e o **plano B** da aula: suba antes de entrar ao vivo.
+Para construir o seu, siga [`../prd/prompt-03-app.md`](../prd/prompt-03-app.md).
 
 ```
 torre-app/
-├── agente/
-│   ├── 01-contratos.sql              8 PDFs → silver.documentos_elementos → silver.contratos_clausulas →
-│   │                                 gold.contratos (ai_extract com JSON schema tipado) + consultas da multa e dos avisos
-│   ├── gerar_genie.py                gera o Genie "Farol · Diretoria + Contratos"
-│   └── diretoria-contratos-genie.json  (gerado; NÃO use .geniespace.json: o import do app recusa)
 ├── config/queries/                   leitura no SQL warehouse (typegen gera os tipos)
 │   ├── kpis.sql · projetos_risco.sql · pessoas_ociosas.sql
 ├── server/
 │   ├── server.ts                     plugins analytics, genie, lakebase, server; sem cache
+│   ├── routes/score.ts               score do modelo (prompt 1), opcional ({disponivel:false} se não existir)
 │   ├── routes/decisoes.ts            Lakebase: schema torre, tabela decisoes, GET/POST com zod
-│   ├── routes/score.ts               score da noite 3, opcional ({disponivel:false} se não existir)
 │   └── decisoes.test.ts              vitest do schema que protege o endpoint que escreve
 ├── client/src/pages/                 Projetos em risco · Simulador · Decisões · Perguntar (GenieChat)
-├── resources/contratos.job.yml       job farol_contratos (sql_task com agente/01-contratos.sql)
 ├── scripts/
 │   ├── conceder-acesso.sh            GRANTs do service principal (sem eles o build falha)
-│   ├── subir-tudo.sh                 a noite 4 inteira do zero, na ordem certa
+│   ├── subir-tudo.sh                 Lakebase + id do Genie + deploy, na ordem certa
 │   └── ver_decisoes.py               lê torre.decisoes direto no Postgres (prova da gravação)
-├── databricks.yml                    app + recursos (warehouse, genie, postgres) + job
+├── databricks.yml                    app + recursos (warehouse, genie, postgres)
 └── app.yaml                          npm run start + envs (warehouse, genie, LAKEBASE_ENDPOINT)
 ```
+
+O app lê a gold do bundle `vertice` (noite 3), o score `gold.score_estouro_30d` (noite 4, prompt 1) e
+conversa com o Genie **"Farol · Diretoria"** (noite 4, prompt 2). O agente de contratos, que antes vivia
+aqui em `agente/`, virou bônus: [`../bonus/`](../bonus).
 
 ## Do zero
 
@@ -36,9 +34,8 @@ bash aulas/aula-04-produtos-de-dados-ia/torre-app/scripts/subir-tudo.sh <perfil>
 ```
 
 1. cria o projeto Lakebase `farol-torre` (7 s);
-2. roda `agente/01-contratos.sql` (~1 min para os 8 contratos);
-3. gera e publica o Genie e grava o id dele no `databricks.yml`;
-4. `apps deploy` → `conceder-acesso.sh` → `apps deploy` (o build falha sem os GRANTs).
+2. acha o id do Genie "Farol · Diretoria" pelo título e grava no `databricks.yml`;
+3. `bundle deploy` → `conceder-acesso.sh` → `apps deploy` (o build falha sem os GRANTs).
 
 ## Dia a dia
 
@@ -48,7 +45,6 @@ set -a; . ./.env; set +a; npm run typegen -- --wait   # tipos das queries (wareh
 npm run typecheck && npm run lint && npm test
 databricks apps validate --profile <perfil>
 databricks apps deploy   --profile <perfil>
-databricks bundle run farol_contratos --profile <perfil>   # reprocessa os contratos (~1 min)
 databricks apps logs farol-torre --profile <perfil>
 uv run --no-project --with "psycopg[binary]" python scripts/ver_decisoes.py --profile <perfil>
 ```
@@ -61,8 +57,8 @@ uv run --no-project --with "psycopg[binary]" python scripts/ver_decisoes.py --pr
 | Rota | O que faz |
 |---|---|
 | `POST /api/analytics/query/<kpis\|projetos_risco\|pessoas_ociosas>` | as queries de `config/queries` (plugin analytics) |
-| `GET /api/score-estouro` | probabilidade de estouro da noite 3, ou `{disponivel:false}` |
+| `GET /api/score-estouro` | probabilidade de estouro em 30 dias do modelo, ou `{disponivel:false}` |
 | `GET /api/quem-sou` | e-mail do usuário logado (header `x-forwarded-email`) |
 | `GET /api/decisoes` | as 200 decisões mais recentes |
 | `POST /api/decisoes` | grava uma decisão (zod: `PRJ-000`, `COL0000`, origem ≠ destino, justificativa ≥ 10) |
-| Genie | plugin genie, alias `default` → "Farol · Diretoria + Contratos" |
+| Genie | plugin genie, alias `default` → "Farol · Diretoria" |

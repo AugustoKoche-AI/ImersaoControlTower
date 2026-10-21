@@ -1,4 +1,4 @@
-# Prompt 1 · O agente que lê contrato — "e o que o contrato diz?"
+# Bônus · O agente que lê contrato: "e o que o contrato diz?"
 
 **Entrega:** os 8 contratos de fornecedor em PDF viram **uma tabela na gold**, `gold.contratos` (um contrato
 por linha, com colunas tipadas e o texto das cláusulas), e o Genie **"Farol · Diretoria + Contratos"** passa a
@@ -38,10 +38,10 @@ e leia em voz alta as cláusulas 4 (renovação) e 6 (multa). Depois pergunte ao
 ## O prompt
 
 ```
-Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md antes de começar. Use a skill
+Leia aulas/aula-04-produtos-de-dados-ia/prd/CLAUDE.md e aulas/aula-04-produtos-de-dados-ia/bonus/CLAUDE.md antes de começar. Use a skill
 databricks-ai-functions.
 
-Crie a pasta aulas/aula-04-produtos-de-dados-ia/meu-agente/ com o agente que lê os 8
+Crie a pasta aulas/aula-04-produtos-de-dados-ia/bonus/meu-agente/ com o agente que lê os 8
 contratos de fornecedor da Vértice. Perfil: <perfil> (sempre --profile).
 Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
 
@@ -84,7 +84,7 @@ Objetivo: gold enxuta. Só UMA tabela nova na gold; nada de views.
    python3 scripts/genie.py publicar meu-agente/diretoria-contratos-genie.json \
      --titulo "Farol · Diretoria + Contratos" --profile <perfil>
    python3 scripts/genie.py benchmark "Farol · Diretoria + Contratos" \
-     aulas/aula-04-produtos-de-dados-ia/prd/genie-benchmark.json --profile <perfil>
+     aulas/aula-04-produtos-de-dados-ia/bonus/genie-benchmark-contratos.json --profile <perfil>
    Se errar, ajuste as instruções (não as perguntas) e publique de novo.
 ```
 

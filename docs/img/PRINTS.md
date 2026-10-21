@@ -72,3 +72,14 @@ Workspace: `https://dbc-84cd5511-fa25.cloud.databricks.com` (o `?o=1253341796019
 | `recurso-genie-perguntas.jpg` · `recurso-genie-instrucoes.jpg` | Genie: perguntas sugeridas e instruções |
 | `recurso-lakebase-projeto.jpg` · `recurso-lakebase-tabela.jpg` | Lakebase → `farol-torre` e a tabela `torre.decisoes` |
 | `recurso-app-authorize.jpg` | 1º acesso ao app `farol-torre` (Authorize) |
+
+### Noite 3 · ensaio de 21/10 (run 869509423701450 do vertice_farol)
+
+| Arquivo | O que mostra |
+|---|---|
+| `noite3-job-passo1.jpg` | as duas ingestões (`ingestao_data_lake`, `ingestao_feriados`) verdes: o job de ontem como código |
+| `noite3-job-completo.jpg` | o DAG da noite 3: ingestões → conferência → medalhão → IA e testes (recortado antes do ML da noite 4) |
+| `noite3-job-timeline.jpg` | o Timeline das 6 tarefas da noite 3, com o tempo de cada uma |
+| `noite3-pipeline-tabelas.jpg` | as tabelas do `vertice_medalhao`, com linhas e expectations cumpridas |
+| `noite3-dashboard.jpg` | a página Portfólio do "Projeto Farol · Portfólio" (rascunho, antes do Publish) |
+| `noite3-dashboard-graficos.jpg` | o Portfólio publicado: estouro previsto por projeto (cor = situação) e SPI × CPI |

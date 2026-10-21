@@ -20,7 +20,7 @@ novo toda semana. Ir buscar, sem ninguém olhar, é o trabalho do engenheiro de 
 ```mermaid
 flowchart LR
   subgraph LAKE["data lake · Supabase Storage (protocolo S3)"]
-    B[("bucket DataLakeCentralTower<br/>pmo · rh · timesheet · financeiro · compras<br/>excel · clickup · msproject")]
+    B[("bucket DataLakeVertice<br/>pmo · rh · timesheet · financeiro · compras<br/>excel · clickup · msproject")]
   end
   API["API pública<br/>feriados de 2026"]
   B -- "02 · boto3<br/>extrair e pousar" --> RAW["volume<br/>bronze/raw/"]
@@ -64,7 +64,7 @@ apontando para o Supabase, **o mesmo código funciona na Amazon**.
 
 | Termo | O que é | Aqui |
 |---|---|---|
-| Bucket | a pasta raiz, o "balde" | `DataLakeCentralTower` |
+| Bucket | a pasta raiz, o "balde" | `DataLakeVertice` |
 | Key | o caminho do arquivo dentro do bucket | `pmo/projetos.csv` |
 | Endpoint | o endereço do serviço | `https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3` |
 | Access key / secret | o usuário e a senha da máquina | no ambiente: `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` |
@@ -92,7 +92,7 @@ job, pelos parâmetros. Um passo além, em produção: guardar a chave num *secr
 | `AWS_ACCESS_KEY_ID` | passada na aula |
 | `AWS_SECRET_ACCESS_KEY` | passada na aula |
 
-O bucket é `DataLakeCentralTower` (maiúsculas e minúsculas contam). Esses valores entram como **Job parameters** (etapa 4) ou nas caixinhas do topo do
+O bucket é `DataLakeVertice` (maiúsculas e minúsculas contam). Esses valores entram como **Job parameters** (etapa 4) ou nas caixinhas do topo do
 notebook, quando você roda na mão.
 
 ---
@@ -394,7 +394,7 @@ import boto3
 # os valores estão na tabela de conexão, no começo deste README
 S3_ENDPOINT = "https://ahebbqgjfrhrytognoew.storage.supabase.co/storage/v1/s3"
 S3_REGION = "us-east-2"
-S3_BUCKET = "DataLakeCentralTower"
+S3_BUCKET = "DataLakeVertice"
 
 ACCESS_KEY = "COLE-AQUI"     # passada na aula
 SECRET_KEY = "COLE-AQUI"     # passada na aula
@@ -600,7 +600,7 @@ Aqui o data lake é o Storage do Supabase, e o código é exatamente o que você
 muda só o `endpoint_url`.
 
 Os três passos de toda ingestão:
-1. **extrair** · o `boto3` lista e baixa cada arquivo do bucket `DataLakeCentralTower`
+1. **extrair** · o `boto3` lista e baixa cada arquivo do bucket `DataLakeVertice`
 2. **pousar** · cada arquivo vai para o volume, no mesmo caminho: `/Volumes/lakehouse_vertice/bronze/raw/`
 3. **carregar** · o mesmo `read_files` de ontem transforma o raw nas 9 tabelas da bronze
 
@@ -636,7 +636,7 @@ for nome in VARIAVEIS:
 faltando = [nome for nome in VARIAVEIS if not os.environ[nome]]
 assert not faltando, f"preencha: {faltando}"      # para aqui se faltar alguma chave
 
-S3_BUCKET = "DataLakeCentralTower"
+S3_BUCKET = "DataLakeVertice"
 RAW = "/Volumes/lakehouse_vertice/bronze/raw"
 print("ambiente pronto:", os.environ["S3_ENDPOINT"])
 ```
@@ -862,7 +862,7 @@ A bronze que volta é **idêntica** à de ontem: mesmas tabelas, mesmas colunas,
 | `EndpointConnectionError` | endpoint errado | confira o `S3_ENDPOINT`, com `/storage/v1/s3` no fim |
 | `InvalidAccessKeyId`, `SignatureDoesNotMatch` | chave ou segredo errados | copie de novo da tabela de conexão, sem espaço |
 | `AssertionError: preencha: [...]` | faltou um parâmetro | preencha a caixinha no topo, ou o Job parameter de mesmo nome |
-| `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `DataLakeCentralTower`, com as maiúsculas |
+| `KeyError: 'Contents'` | bucket vazio ou nome errado | o bucket é `DataLakeVertice`, com as maiúsculas |
 | `PATH_NOT_FOUND` no `read_files` | o arquivo não foi baixado | rode a célula que baixa os arquivos para o raw |
 | a contagem não bate com a de ontem | faltou arquivo no bucket | o passo 2 mostra quantos arquivos tem em cada pasta |
 

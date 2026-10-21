@@ -24,7 +24,6 @@ declare module "@databricks/appkit-ui/react" {
           /** @sqlType BIGINT */
           alto_risco_30d: number;
           /** @sqlType DOUBLE */
-          multa_a_cobrar: number;
         }>;
       };
     pessoas_ociosas: {
@@ -90,7 +89,6 @@ declare module "@databricks/appkit-ui/react" {
           /** @sqlType DOUBLE */
           dias_rotatividade: number;
           /** @sqlType DOUBLE */
-          multa_a_cobrar: number;
         }>;
       };
   }

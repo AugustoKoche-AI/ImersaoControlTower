@@ -1,7 +1,7 @@
 import { useAnalyticsQuery, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@databricks/appkit-ui/react';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { CAUSAS, corSituacao, indice, milhoes, num, pct, reais } from '../../lib/dados';
+import { CAUSAS, corSituacao, indice, milhoes, num, pct } from '../../lib/dados';
 
 // A tabela do modelo da noite 3 pode ainda não existir: valida em vez de confiar no tipo.
 const ScoreSchema = z.object({
@@ -63,10 +63,10 @@ export function ProjetosPage() {
             <Kpi titulo="Projetos em risco" valor={`${num(k.projetos_em_risco)} de ${num(k.projetos_em_andamento)}`}
                  detalhe={`${num(k.projetos_criticos)} críticos · ${num(k.projetos_melancia)} com farol verde`} alerta />
             <Kpi titulo="Estouro previsto" valor={milhoes(k.estouro_previsto)} detalhe="EAC − orçamento, só quem estoura" alerta />
-            <Kpi titulo="Multa a cobrar de fornecedor" valor={milhoes(k.multa_a_cobrar)}
-                 detalhe="entregas atrasadas na vigência atual dos contratos" />
+            <Kpi titulo="Carteira em andamento" valor={milhoes(k.carteira)}
+                 detalhe="valor de contrato dos projetos em andamento" />
             <Kpi titulo="Alto risco em 30 dias" valor={String(num(k.alto_risco_30d))}
-                 detalhe="ok hoje, mas o modelo da noite 3 prevê estouro" />
+                 detalhe="faixa alta no modelo de estouro em 30 dias" />
           </>
         )}
       </div>
@@ -78,7 +78,7 @@ export function ProjetosPage() {
           <CardTitle>Todos os projetos em andamento</CardTitle>
           <p className="text-xs text-muted-foreground">
             Causa = a mais frequente no status semanal dos últimos 90 dias (extraída por IA). Farol = o que o gerente publicou nesta sexta.
-            {temModelo ? ' Probabilidade de estouro em 30 dias: modelo da noite 3.' : ' Probabilidade de estouro: aguardando o modelo da noite 3 (—).'}
+            {temModelo ? ' Probabilidade de estouro em 30 dias: o modelo da noite 4.' : ' Probabilidade de estouro: aguardando o modelo (—).'}
           </p>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -113,7 +113,7 @@ export function ProjetosPage() {
                       </td>
                       <td className="text-right">{num(o.estouro_previsto) > 0 ? milhoes(o.estouro_previsto) : '—'}</td>
                       <td className="text-right">{num(o.atraso_projetado_dias) > 0 ? `+${num(o.atraso_projetado_dias)} d` : '—'}</td>
-                      <td className="pl-3 truncate" title={num(o.multa_a_cobrar) > 0 ? `multa a cobrar de fornecedor: ${reais(o.multa_a_cobrar)}` : ''}>
+                      <td className="pl-3 truncate" title={`dias de impacto por falta de SRE: ${num(o.dias_falta_sre)}`}>
                         {CAUSAS[o.causa_principal] ?? o.causa_principal}
                       </td>
                       <td className="text-right">{p == null ? '—' : pct(p)}</td>

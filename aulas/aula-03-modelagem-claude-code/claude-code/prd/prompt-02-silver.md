@@ -3,7 +3,7 @@
 **Entrega:** o pipeline declarativo `vertice_medalhao` com a silver: o cadastro do
 PMO, a **`silver.tarefas` que integra Excel, ClickUp e MS Project**, e as outras
 cinco tabelas limpas e tipadas (7 no total), com as regras de qualidade declaradas como `EXPECT`.
-**Deploy nº 2.**
+Começa pela **conferência da bronze** (a primeira tarefa nova do job). **Deploy nº 2.**
 
 > **A entrega mais importante da noite. Não corte.**
 
@@ -58,9 +58,29 @@ WHERE lower(fornecedor) LIKE '%forge%' GROUP BY 1;
 ## O prompt
 
 ```
-Continue o bundle na raiz deste repositório. A bronze está
-conferida. Agora a silver: integrar as três ferramentas, limpar, tipar e
-declarar o contrato.
+Leia o CLAUDE.md da raiz do repositório antes de começar. Use as skills
+databricks-core, databricks-dabs e databricks-pipelines. Sempre --profile <perfil>.
+
+O bundle vertice está na raiz deste repositório: eu criei à mão com a CLI.
+Tem o databricks.yml (variáveis catalog, warehouse_id e as duas chaves do
+data lake) e o job vertice_farol em resources/vertice.job.yml, importado do
+job de ontem, com as tarefas ingestao_feriados e ingestao_data_lake. NÃO
+mexa nas chaves, nem no .databricks/bundle/dev/variable-overrides.json, nem
+no catálogo e nos schemas (já existem). Se um comando for recusado por causa
+das chaves, pare e me mostre o comando para eu rodar com `!`.
+
+0. Antes da silver, a conferência da bronze: src/conferencia/00-conferencia-bronze.sql,
+   sql_task no warehouse ${var.warehouse_id}, tarefa conferencia_bronze no job,
+   depois das duas ingestões. Confere as 9 tabelas contra a contagem esperada
+   (seed 42): projetos 60 · status_semanal 3911 · excel_tarefas 1663 ·
+   clickup_tarefas 2119 · msproject_tarefas 1260 · colaboradores 523 ·
+   apontamentos 30883 · custos 23640 · entregas_fornecedor 640
+   (bronze.feriados fica de fora: cresce a cada execução). Uma linha por
+   tabela com esperado e obtido; se alguma divergir, raise_error() dizendo
+   qual tabela e onde olhar (a saída da tarefa ingestao_data_lake).
+
+Agora a silver: integrar as três ferramentas, limpar, tipar e declarar o
+contrato.
 
 Crie um pipeline Lakeflow Spark Declarative Pipelines em SQL:
 resources/vertice_medalhao.pipeline.yml com name vertice_medalhao, catalog
@@ -135,8 +155,10 @@ Acrescente ao job vertice_farol a tarefa medalhao (pipeline_task apontando
 para ${resources.pipelines.vertice_medalhao.id}), depois de conferencia_bronze.
 
 Rode e me mostre a saída:
+  databricks bundle validate --profile <perfil>
   databricks bundle deploy --profile <perfil>
-  databricks bundle run vertice_medalhao --profile <perfil>
+  databricks bundle run vertice_farol --profile <perfil>
+E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
 ---

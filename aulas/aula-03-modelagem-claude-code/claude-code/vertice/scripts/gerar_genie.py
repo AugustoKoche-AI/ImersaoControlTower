@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Gera o Genie Agent do Projeto Farol (noite 2) como JSON versionado.
+"""Gera o Genie Agent do Projeto Farol (noite 4, prompt 2) como JSON versionado.
 
 Uso:  python3 aulas/aula-03-modelagem-claude-code/claude-code/vertice/scripts/gerar_genie.py
 
 Escreve resources/farol.geniespace.json, que o bundle publica no deploy
 (resources/genie.genie_space.yml). O modelo de IA é o mesmo da noite 1: o que
-muda é tudo que está embaixo dele — as 3 ferramentas integradas, gold com
-COMMENT em toda tabela, métricas governadas e estas instruções.
+muda é tudo que está embaixo dele: as 3 ferramentas integradas, gold com
+COMMENT em toda tabela, a métrica governada, o score do modelo e estas instruções.
+
+Ordem: o Genie só publica com as tabelas existindo (mv_projetos e
+score_estouro_30d nascem no job). Do zero: deploy → run → deploy.
 """
 from __future__ import annotations
 
@@ -31,7 +34,8 @@ INSTRUCOES = [
     "Farol: farol_do_gerente é o que o gerente publicou; farol_calculado segue a regra do manual (verde com SPI >= 0,95, amarelo >= 0,90, vermelho abaixo). 'Melancia' = farol do gerente verde com SPI < 0,9 (coluna melancia em projeto_situacao_atual).",
     "'Por que o projeto X atrasou?': use status_estruturado (causa_bloqueio, bloqueio, quem_destrava, dias_impacto), contando as causas dos últimos 90 dias e ignorando 'sem_bloqueio' e 'nao_reportado'. Mostre também o SPI de projeto_situacao_atual. Se a causa for falta_sre, procure SREs com utilização abaixo de 20% em outros projetos (utilizacao_pessoa_semana, papel = 'sre').",
     "Gente parada: utilizacao_pessoa_semana (utilizacao, horas_ociosas, custo_ocioso, papel). Utilização baixa = abaixo de 20% nas últimas 12 semanas. Agrupe por pessoa e projeto e calcule SUM(horas_apontadas) / SUM(horas_disponiveis).",
-    "O que vai dar errado no próximo mês: (1) entregas de consultoria em atraso (silver.entregas_fornecedor com em_atraso = true); (2) o change freeze de varejo começa em 01/11/2026 e trava deploy até 10/01/2027 nos projetos de e-commerce (tipo_projeto com e-commerce, checkout ou marketplace) ainda em andamento. Junte os dois quando a pergunta for sobre o futuro.",
+    "O que vai dar errado no próximo mês: (1) o modelo de estouro em 30 dias, gold.score_estouro_30d (prob_estouro_30d de 0 a 1, ranking, faixa_risco alto/medio/baixo e principais_fatores em português), na data_referencia mais recente. Projeto que já está abaixo de 0,9 hoje tem prob 1,0: a pergunta sobre o futuro interessa mais pelos projetos com situacao = 'ok' e faixa alto ou medio (os que a regra de corte ainda não vê); (2) entregas de consultoria em atraso (silver.entregas_fornecedor com em_atraso = true); (3) o change freeze de varejo começa em 01/11/2026 e trava deploy até 10/01/2027 nos projetos de e-commerce (tipo_projeto com e-commerce, checkout ou marketplace) ainda em andamento. Junte os três quando a pergunta for sobre o futuro, e mostre o motivo (principais_fatores) do modelo.",
+    "Probabilidade de estouro, risco em 30 dias, 'qual projeto vai estourar': gold.score_estouro_30d, com join em projeto_situacao_atual por projeto_id para nome, cliente e situação. Mostre a probabilidade em %.",
     "Fornecedores: silver.entregas_fornecedor (o nome já está normalizado; prazo_real_dias / prazo_prometido_dias = fator de atraso; em_atraso = prometida antes de hoje e não entregue). Agrupe por fornecedor.",
     "Quando perguntarem por projeto, responda com projeto_id (ex.: PRJ-011), o nome e o cliente.",
     "Rankings de projeto (maior estouro, pior SPI, maior atraso): use a tabela projeto_situacao_atual com WHERE status = 'em_andamento', ORDER BY e LIMIT. A metric view mv_projetos serve para totais da carteira, não para ranking.",
@@ -64,6 +68,13 @@ EXEMPLOS = [
      f"WHERE status = 'em_andamento' AND (lower(tipo_projeto) LIKE '%commerce%' OR lower(tipo_projeto) LIKE '%checkout%' "
      f"OR lower(tipo_projeto) LIKE '%marketplace%') ORDER BY spi"),
     ("O que vai dar errado no próximo mês, e o que eu faço agora?",
+     f"SELECT 'risco de estouro em 30 dias (modelo)' AS risco, s.projeto_id, p.projeto, "
+     f"concat(CAST(ROUND(s.prob_estouro_30d * 100) AS INT), '% de chance: ', s.principais_fatores) AS detalhe, "
+     f"'olhar agora, antes de cruzar 0,9' AS o_que_fazer "
+     f"FROM {G}.score_estouro_30d s JOIN {G}.projeto_situacao_atual p ON p.projeto_id = s.projeto_id "
+     f"WHERE s.data_referencia = (SELECT MAX(data_referencia) FROM {G}.score_estouro_30d) "
+     f"AND p.situacao = 'ok' AND s.faixa_risco IN ('alto', 'medio') "
+     f"UNION ALL "
      f"SELECT 'entrega de fornecedor atrasada' AS risco, e.projeto_id, p.projeto, "
      f"concat(e.fornecedor, ': ', e.item, ' (', CAST(datediff(DATE'2026-10-16', e.data_prometida) AS STRING), ' dias de atraso)') AS detalhe, "
      f"'cobrar o fornecedor e aplicar a multa do contrato' AS o_que_fazer "
@@ -74,6 +85,10 @@ EXEMPLOS = [
      f"'antecipar o que der para subir até 31/10' "
      f"FROM {G}.projeto_situacao_atual WHERE status = 'em_andamento' "
      f"AND (lower(tipo_projeto) LIKE '%commerce%' OR lower(tipo_projeto) LIKE '%checkout%' OR lower(tipo_projeto) LIKE '%marketplace%')"),
+    ("Qual a chance de o PRJ-024 estourar no próximo mês?",
+     f"SELECT s.projeto_id, p.projeto, p.cliente, p.situacao, ROUND(s.prob_estouro_30d, 2) AS prob_estouro_30d, s.faixa_risco, "
+     f"s.principais_fatores FROM {G}.score_estouro_30d s JOIN {G}.projeto_situacao_atual p ON p.projeto_id = s.projeto_id "
+     f"WHERE s.projeto_id = 'PRJ-024' AND s.data_referencia = (SELECT MAX(data_referencia) FROM {G}.score_estouro_30d)"),
     ("Quais clientes têm projetos críticos?",
      f"SELECT cliente, COUNT(*) AS projetos_criticos FROM {G}.projeto_situacao_atual "
      f"WHERE status = 'em_andamento' AND situacao = 'crítico' GROUP BY cliente ORDER BY projetos_criticos DESC"),
@@ -91,7 +106,7 @@ PERGUNTAS = ["Quais projetos estão atrasados, e de quais clientes?",
              "O que vai dar errado no próximo mês, e o que eu faço agora?"]
 
 TABELAS = [f"{G}.fato_projeto_semana", f"{G}.projeto_situacao_atual", f"{G}.status_estruturado",
-           f"{G}.utilizacao_pessoa_semana", f"{S}.entregas_fornecedor"]
+           f"{G}.utilizacao_pessoa_semana", f"{G}.score_estouro_30d", f"{S}.entregas_fornecedor"]
 METRICAS = [f"{G}.mv_projetos"]
 
 

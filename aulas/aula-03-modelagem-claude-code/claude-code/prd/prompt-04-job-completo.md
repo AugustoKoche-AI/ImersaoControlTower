@@ -1,14 +1,18 @@
-# Prompt 4 · Texto com IA — o status semanal vira coluna
+# Prompt 4 · O job completo: a Torre roda sozinha, e lê o texto do status
 
-**Entrega:** `gold.status_estruturado` (causa do bloqueio, o bloqueio, quem destrava e
-dias de impacto, tirados dos 3.911 status semanais). Uma tabela, duas funções de IA.
-**Deploy nº 4.**
+**Entrega:** o job `vertice_farol` inteiro, da ingestão aos testes, agendado para toda segunda às
+6h, com a última camada da noite: `gold.status_estruturado`, a causa de cada atraso tirada do texto
+livre do status semanal por IA. **Deploy nº 4** e a primeira execução de ponta a ponta.
 
 ---
 
 ## O que mostrar antes
 
-Um status de verdade e a pergunta que ele responde:
+O DAG do `vertice_farol` como está agora: ingestão → conferência → medalhão → testes. Pergunte:
+*"isso responde as perguntas 1 e 2 do dono (quem atrasa e quanto custa). E a 3: tenho gente
+parada enquanto outro projeto pede gente? Quem pede gente, e onde está escrito?"*
+
+Um status de verdade:
 
 ```sql
 SELECT data_status, farol, texto_status FROM lakehouse_vertice.silver.status_semanal
@@ -37,7 +41,7 @@ SELECT ai_extract('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimad
 **Enquanto ele trabalha, você explica:**
 
 - **`ai_classify` escolhe; `ai_extract` tira.** A classificação põe o texto numa lista
-  fechada (dá para agrupar). A extração tira campos — e com o **schema tipado** da versão
+  fechada (dá para agrupar). A extração tira campos, e com o **schema tipado** da versão
   2.0 o `dias_impacto` já sai como **número**: "1 semana" vira 7, e dá para somar.
 - **IA custa, e custa por linha.** Medimos neste workspace: as duas funções juntas levam
   ~5 s por status. Os 3,9 mil levariam uma hora de warehouse. Então cada ferramenta onde
@@ -48,17 +52,23 @@ SELECT ai_extract('Sem SRE alocado: pipeline de deploy quebrado. Impacto estimad
   - **palavra-chave** para o histórico antigo, onde a resposta não muda decisão.
 - **`MERGE` incremental.** A tarefa só processa texto que ainda não está na tabela. Na
   semana que vem ela processa só os status da semana que vem. Não reprocesse o passado.
+- **O DAG é a documentação.** Duas tarefas em paralelo (testes e IA) depois do medalhão: o
+  job não espera uma terminar para começar a outra, porque uma não lê a outra.
+- **Falhou no meio? Repair.** Se a IA falhar, o **Repair run** roda só ela e o que vem
+  depois. A ingestão de 4 minutos não roda de novo.
 
 ---
 
 ## O prompt
 
 ```
-Continue o bundle na raiz deste repositório. Agora o texto livre
-do status semanal vira coluna. Use as funções de IA na versão 2.0
-(map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+Continue o bundle na raiz deste repositório. A gold e os testes estão
+prontos. Agora a última camada da noite, e o job inteiro rodando sozinho.
 
-src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
+1. O texto livre do status vira coluna. Use as funções de IA na versão 2.0
+   (map('version','2.0')); o resultado é VARIANT, lido com ':response'.
+
+   src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
    a. CREATE TABLE IF NOT EXISTS lakehouse_vertice.gold.status_estruturado com
       COMMENT em cada coluna: projeto_id, data_status, farol, causa_bloqueio,
       bloqueio, quem_destrava, dias_impacto (DOUBLE), metodo ('regra', 'ia' ou
@@ -88,17 +98,32 @@ src/ia/status_estruturado.sql (sql_task, caminho completo das tabelas)
         'impacto estimado: 1 semana' (= 7).
    c. No fim, um SELECT de leitura: quantos status por metodo e causa.
 
-Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
-com testes_de_qualidade).
+   Acrescente ao job a tarefa status_com_ia, depois de medalhao (em paralelo
+   com testes_de_qualidade).
+
+2. O job inteiro
+   - confira em resources/vertice.job.yml a ordem: ingestao_feriados e
+     ingestao_data_lake em paralelo → conferencia_bronze → medalhao →
+     testes_de_qualidade e status_com_ia em paralelo
+   - agendamento toda segunda às 6h (America/Sao_Paulo); no dev ele fica
+     pausado pelo preset, e está certo
+   - max_concurrent_runs: 1 (duas execuções ao mesmo tempo apagariam a
+     bronze uma da outra)
+   - atualize o comentário do topo com as 6 tarefas e o que cada uma faz
 
 Rode e me mostre a saída:
+  databricks bundle validate --profile <perfil>
   databricks bundle deploy --profile <perfil>
   databricks bundle run vertice_farol --profile <perfil>
+E no fim, numa tabela: cada tarefa do job, quanto tempo levou e o resultado.
 ```
 
 ---
 
 ## O que conferir
+
+Abra o `vertice_farol` no workspace: **seis caixas verdes**, e o gráfico de tempo de cada tarefa
+(a ingestão do data lake e o medalhão são as mais longas).
 
 ```sql
 -- a pergunta "por que o PRJ-011 atrasou?" agora tem resposta em dado
@@ -114,8 +139,13 @@ SELECT metodo, COUNT(*) FROM lakehouse_vertice.gold.status_estruturado GROUP BY 
 -- ia 163 · regra 2.954 · palavra_chave 794
 ```
 
-**Rode a tarefa de novo:** o `MERGE` insere zero linhas e termina em segundos. É o
-incremental funcionando — e a conta de IA que não se paga duas vezes.
+**Rode o job de novo:** a ingestão recarrega a bronze, o medalhão recalcula, e o `MERGE` da IA
+insere **zero** linhas e termina em segundos. É o incremental funcionando, e a conta de IA que
+não se paga duas vezes.
+
+> *"O PRJ-011 pede SRE há doze semanas. As duas SREs da empresa estão a 5% no PRJ-007. Os dois
+> fatos estavam no dado o tempo todo, em sistemas diferentes. Agora estão na mesma tabela, e toda
+> segunda às 6h eles se atualizam sozinhos."*
 
 ---
 
@@ -123,10 +153,12 @@ incremental funcionando — e a conta de IA que não se paga duas vezes.
 
 | Sintoma | Causa | Correção |
 |---|---|---|
-| A tarefa leva mais de 10 minutos | IA rodando em todos os 3,9 mil status | Confira o `metodo`: só os últimos 90 dias **com bloqueio** vão para a IA |
+| A tarefa da IA leva mais de 10 minutos | IA rodando em todos os 3,9 mil status | Confira o `metodo`: só os últimos 90 dias **com bloqueio** vão para a IA |
 | `dias_impacto` vem como texto `"7"` | `ai_extract` sem schema (versão 1) | JSON schema com `"type": "number"` e `map('version','2.0')`, lido com `::DOUBLE` |
 | `causa_bloqueio` nulo nas linhas da IA | Leu o VARIANT sem `:response[0]` | `ai_classify(...):response[0]::STRING` |
 | `TABLE_OR_VIEW_ALREADY_EXISTS` | Usou CREATE TABLE sem IF NOT EXISTS | `CREATE TABLE IF NOT EXISTS` (a tabela acumula) |
 | Rodou de novo e inseriu tudo outra vez | Faltou o LEFT ANTI JOIN | O MERGE só recebe o que ainda não está na tabela |
+| `testes_de_qualidade` falhou e a IA rodou mesmo assim | As duas dependem só do medalhão | É o desenho: os testes barram o que vem **depois** deles (na noite 4, o modelo) |
+| Uma tarefa falhou no meio | Qualquer erro numa camada | **Repair run** no workspace: refaz só a que falhou e as seguintes |
 
-**Tempo medido:** ~2 min (163 textos na IA).
+**Tempo medido (21/10):** o job da noite 3 leva ~8 min: data lake 2 min 53 s (feriados 81 s, em paralelo) · conferência 30 s · medalhão 1 min 52 s · IA 2 min 38 s (163 textos) · testes 21 s, em paralelo com a IA. Com as tarefas do ML da noite 4, 9 min 55 s.
