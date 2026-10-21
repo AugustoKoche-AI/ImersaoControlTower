@@ -9,6 +9,38 @@ Começa pela **conferência da bronze** (a primeira tarefa nova do job). **Deplo
 
 ---
 
+## Antes de colar: o Claude Code em 5 minutos
+
+É o primeiro prompt da semana: vale mostrar a ferramenta antes.
+
+| Comando | Para que serve |
+|---|---|
+| `/model` | escolhe o modelo |
+| `Shift+Tab` | troca o modo: normal (pede licença), aceitar edições, **plan** (só planeja) e **auto**. O rodapé mostra qual está ligado |
+| `@arquivo` | aponta um arquivo no prompt (`@CLAUDE.md`) |
+| `!comando` | roda o comando no seu terminal, e a saída entra na conversa |
+| `Esc` | interrompe. `Esc Esc` (ou `/rewind`) volta a um ponto anterior |
+| `/context` | quanto da memória da conversa já foi usado |
+| `/clear` | conversa nova (o `CLAUDE.md` continua valendo) |
+| `/voice` | dita o prompt em vez de digitar |
+
+**Não rode `/init`.** Ele reescreve o `CLAUDE.md`, e o `CLAUDE.md` do curso é o PRD: o negócio,
+as sujeiras do dado e as armadilhas do Free Edition. O prompt baixa e lê esse arquivo.
+
+**O ritmo:**
+
+1. `Shift+Tab` até **plan**. Cole o prompt.
+2. O Claude Code lê o PRD e o bundle e devolve um **plano**. Leia em voz alta com a turma: ele
+   entendeu a integração das 3 ferramentas? Tirou a linha de TOTAL e as tarefas-resumo? Achou a
+   vírgula decimal? Se faltar algo, peça a correção antes de aprovar.
+3. Aprove e troque para **auto**. Ele executa sozinho até o deploy.
+4. O auto **recusa** comando que vaza chave ou apaga dado ("Credential Leakage", "Irreversible
+   Deletion"). Não é erro: ele mostra o comando, e você roda com `!`.
+
+Os prompts 2 a 4 já vão direto em auto: o plano do 1 ensinou o caminho.
+
+---
+
 ## O que mostrar antes
 
 O rascunho da noite 1 (`bronze.rascunho_tarefas`) funcionou. Mostre por que ele não

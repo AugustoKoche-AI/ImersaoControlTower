@@ -152,24 +152,9 @@ pipelines, dashboards...): é o manual que o Claude Code consulta antes de cada 
 Sempre na raiz do repositório `vertice`. O prompt 1 começa arrumando o bundle (nomes, agendamento,
 o `CLAUDE.md` do curso) e depois faz a silver.
 
-**5 minutos de Claude Code, antes do prompt 1:**
-
-| Comando | Para que serve |
-|---|---|
-| `/model` | escolhe o modelo |
-| `Shift+Tab` | troca o modo: normal (pede licença), aceitar edições, **plan** (só planeja) e **auto**. O rodapé mostra qual está ligado |
-| `@arquivo` | aponta um arquivo no prompt (`@CLAUDE.md`) |
-| `!comando` | roda o comando no seu terminal, e a saída entra na conversa |
-| `Esc` | interrompe. `Esc Esc` (ou `/rewind`) volta a um ponto anterior |
-| `/context` | quanto da memória da conversa já foi usado |
-| `/clear` | conversa nova (o `CLAUDE.md` continua valendo) |
-| `/voice` | dita o prompt em vez de digitar |
-
-**O ritmo da noite:** o `CLAUDE.md` é o PRD (o negócio, as sujeiras, as armadilhas). O **prompt 1**
-roda em **plan**: o Claude Code lê o PRD, propõe o plano, você revisa e aprova, e ele executa em
-**auto**. Os prompts 2 a 4 já vão direto em auto. O auto **recusa** sozinho comando que vaza chave
-ou apaga dado ("Credential Leakage", "Irreversible Deletion"): quando acontecer, ele mostra o
-comando e você roda com `!`.
+**Antes do prompt 1:** o Claude Code em 5 minutos (`/model`, `Shift+Tab`, `!`, `@`, `/voice`) e o ritmo
+**plan → auto** estão no começo do [`prompt-01-silver.md`](claude-code/prd/prompt-01-silver.md). Não rode `/init`: ele
+reescreve o `CLAUDE.md`, que é o PRD do curso.
 
 ### 3 · Os prompts 1 a 4, um de cada vez
 
